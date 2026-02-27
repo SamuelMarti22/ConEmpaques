@@ -1,0 +1,67 @@
+datasource db {
+  provider = "mysql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+//////////////////////
+// ENUMS
+//////////////////////
+
+enum Role {
+  ADMIN
+  REPARTIDOR
+}
+
+enum EstadoRuta {
+  PENDIENTE
+  EN_PROCESO
+  ENTREGADA
+  CANCELADA
+}
+
+//////////////////////
+// MODELOS
+//////////////////////
+
+model Usuario {
+  id            Int              @id @default(autoincrement())
+  nombre        String
+  email         String           @unique
+  password      String           
+  rol           Role
+  activo        Boolean          @default(true)
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  disponibilidades Disponibilidad[]
+  rutas            Ruta[]
+
+  @@map("usuario") // nombre real de la tabla en MySQL
+}
+
+model Disponibilidad {
+  id          Int      @id @default(autoincrement())
+  usuarioId   Int      @map("usuarioID")
+  diaSemana   Int      @map("diaDeSemana") // 0-6 por ejemplo
+  horaInicio  String
+  horaFin     String
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("disponibilidad")
+}
+
+model Ruta {
+  id             Int        @id @default(autoincrement())
+  repartidorId   Int        @map("repartidor_id")
+  fechaReparto   DateTime   @map("fecha_reparto")
+  estadoRuta     EstadoRuta @map("estado_ruta")
+  horaEntrega    String     @map("horaEntrega")
+  createdAt      DateTime   @default(now()) @map("created_a")
+
+  repartidor Usuario @relation(fields: [repartidorId], references: [id])
+
+  @@map("rutas")
+}
