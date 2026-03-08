@@ -1,0 +1,58 @@
+.vistaPlaneacion {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(1, 1fr);
+  gap: 8px;
+  width: 100vw;
+  height: 100%;
+}
+
+.seccionMapaInteractivo {
+  grid-column: span 4 / span 4;
+  width: 95%;
+  height: 95%;
+  margin: 20px;
+  border-radius: 20px;
+  border: 2px solid #d1d5db;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.seccionPuntos {
+  grid-column-start: 5;
+  width: 100%;
+  height: 95%;
+  margin-top: 20px;
+  border-radius: 20px;
+  border: 2px solid #d1d5db;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* 📱 Tablet y móvil: secciones apiladas */
+@media (max-width: 768px) {
+  .vistaPlaneacion {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    height: auto;
+    width: 100vw;
+  }
+
+  .seccionMapaInteractivo {
+    grid-column: 1;
+    width: 90%;
+    height: 400px;
+    margin: 12px auto;
+  }
+
+  .seccionPuntos {
+    grid-column: 1;
+    width: 90%;
+    height: auto;
+    min-height: 200px;
+    margin: 0 auto 12px auto;
+    margin-top: 0;
+  }
+}

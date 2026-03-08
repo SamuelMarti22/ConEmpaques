@@ -1,4 +1,4 @@
-import { prisma } from "../prismaConfig/prisma";
+import { prisma } from "../../database/prismaConfig/prisma";
 
 async function main() {
   const user = await prisma.user.create({
