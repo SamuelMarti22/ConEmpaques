@@ -1,31 +1,37 @@
 {
   "name": "server",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
-  "main": "router.js",
+  "main": "index.js",
   "scripts": {
-    "dev": "nodemon --watch src --ext ts,js --exec \"node --loader ts-node/esm\" src/router.ts",
+    "dev": "nodemon --watch src --ext ts,js --exec \"tsx\" src/index.ts",
     "build": "tsc",
-    "start": "node dist/router.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node dist/index.js",
+    "format": "prettier --write src/**/*.ts",
+    "format:check": "prettier --check src/**/*.ts",
+    "seed": "tsx ./src/databases/mongo/seeds/plantillaFormulario.seed.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
-  "devDependencies": {
-    "@types/node": "^25.3.0",
-    "nodemon": "^3.1.14",
-    "prisma": "^7.4.1",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
-  },
   "dependencies": {
-    "@prisma/adapter-mariadb": "^7.4.1",
-    "@prisma/adapter-pg": "^7.4.1",
-    "@prisma/client": "^7.4.1",
+    "@prisma/adapter-mariadb": "^7.4.2",
+    "@prisma/client": "^7.4.2",
+    "cors": "^2.8.6",
     "dotenv": "^17.3.1",
-    "mongoose": "^9.2.2",
-    "mysql2": "^3.18.1"
+    "express": "^5.2.1",
+    "mongoose": "^9.2.4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/mongoose": "^5.11.96",
+    "@types/node": "^25.3.5",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.8.1",
+    "prisma": "^7.4.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.9.3"
   }
 }

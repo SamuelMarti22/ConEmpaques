@@ -11,6 +11,7 @@
     "lib": ["esnext"],
     "types": ["node"],
 
+
     // Other Outputs
     "sourceMap": true,
     "declaration": true,
@@ -22,13 +23,18 @@
 
     // Recommended Options
     "strict": true,
-    "verbatimModuleSyntax": true,
+    "verbatimModuleSyntax": false,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "ignoreDeprecations": ""
   },
-  "include": ["src/**/*", "src/prisma.config.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "ts-node": {
+    "esm": true,
+    "experimentalEsm": true
+  }
 }

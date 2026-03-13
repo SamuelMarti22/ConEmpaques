@@ -1,14 +1,13 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
 datasource db {
   provider = "mysql"
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-//////////////////////
-// ENUMS
-//////////////////////
+// Enums
 
 enum Role {
   ADMIN
@@ -22,9 +21,8 @@ enum EstadoRuta {
   CANCELADA
 }
 
-//////////////////////
-// MODELOS
-//////////////////////
+
+// Modelos
 
 model Usuario {
   id            Int              @id @default(autoincrement())
@@ -38,13 +36,13 @@ model Usuario {
   disponibilidades Disponibilidad[]
   rutas            Ruta[]
 
-  @@map("usuario") // nombre real de la tabla en MySQL
+  @@map("usuario") 
 }
 
 model Disponibilidad {
   id          Int      @id @default(autoincrement())
   usuarioId   Int      @map("usuarioID")
-  diaSemana   Int      @map("diaDeSemana") // 0-6 por ejemplo
+  diaSemana   Int      @map("diaDeSemana") 
   horaInicio  String
   horaFin     String
 
