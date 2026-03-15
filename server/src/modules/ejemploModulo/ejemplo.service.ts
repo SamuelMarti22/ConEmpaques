@@ -1,4 +1,4 @@
-import { RutaEntregaModel } from "../../database/mongoDB/models/rutaEntrega.model";
+import { RutaEntregaModel } from "../../databases/mongoDB/models/rutaEntrega.model";
 
 const ruta = await RutaEntregaModel.create({
   
