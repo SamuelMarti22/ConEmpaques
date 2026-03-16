@@ -1,6 +1,6 @@
 import './Header.css';
 
-type Vista = 'agregar' | 'entregas' | 'dashboard';
+type Vista = 'agregar' | 'entregas' | 'dashboard' | 'repartidores';
 
 interface HeaderProps {
     vistaActiva: Vista;
@@ -11,6 +11,7 @@ const tabs: { id: Vista; icono: string; label: string }[] = [
     { id: 'agregar',    icono: '📍', label: 'Agregar Puntos' },
     { id: 'entregas',   icono: '🗺',  label: 'Vista de Entregas' },
     { id: 'dashboard',  icono: '⊞',  label: 'Dashboard' },
+    { id: 'repartidores',  icono: '🚚',  label: 'Repartidores' },
 ];
 
 function Header({ vistaActiva, onCambiarVista }: HeaderProps) {

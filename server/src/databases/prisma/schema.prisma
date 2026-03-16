@@ -30,7 +30,8 @@ model Usuario {
   email         String           @unique
   password      String           
   rol           Role
-  activo        Boolean          @default(true)
+  activo        Boolean          @default(false)
+  capacidadVehiculo Int          @default(0)
   createdAt     DateTime         @default(now()) @map("created_at")
 
   disponibilidades Disponibilidad[]

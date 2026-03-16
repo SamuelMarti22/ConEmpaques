@@ -650,6 +650,7 @@ export const UsuarioScalarFieldEnum = {
   password: 'password',
   rol: 'rol',
   activo: 'activo',
+  capacidadVehiculo: 'capacidadVehiculo',
   createdAt: 'createdAt'
 } as const
 
