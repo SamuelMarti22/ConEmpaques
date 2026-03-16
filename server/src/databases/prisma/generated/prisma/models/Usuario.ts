@@ -28,10 +28,12 @@ export type AggregateUsuario = {
 
 export type UsuarioAvgAggregateOutputType = {
   id: number | null
+  capacidadVehiculo: number | null
 }
 
 export type UsuarioSumAggregateOutputType = {
   id: number | null
+  capacidadVehiculo: number | null
 }
 
 export type UsuarioMinAggregateOutputType = {
@@ -41,6 +43,7 @@ export type UsuarioMinAggregateOutputType = {
   password: string | null
   rol: $Enums.Role | null
   activo: boolean | null
+  capacidadVehiculo: number | null
   createdAt: Date | null
 }
 
@@ -51,6 +54,7 @@ export type UsuarioMaxAggregateOutputType = {
   password: string | null
   rol: $Enums.Role | null
   activo: boolean | null
+  capacidadVehiculo: number | null
   createdAt: Date | null
 }
 
@@ -61,6 +65,7 @@ export type UsuarioCountAggregateOutputType = {
   password: number
   rol: number
   activo: number
+  capacidadVehiculo: number
   createdAt: number
   _all: number
 }
@@ -68,10 +73,12 @@ export type UsuarioCountAggregateOutputType = {
 
 export type UsuarioAvgAggregateInputType = {
   id?: true
+  capacidadVehiculo?: true
 }
 
 export type UsuarioSumAggregateInputType = {
   id?: true
+  capacidadVehiculo?: true
 }
 
 export type UsuarioMinAggregateInputType = {
@@ -81,6 +88,7 @@ export type UsuarioMinAggregateInputType = {
   password?: true
   rol?: true
   activo?: true
+  capacidadVehiculo?: true
   createdAt?: true
 }
 
@@ -91,6 +99,7 @@ export type UsuarioMaxAggregateInputType = {
   password?: true
   rol?: true
   activo?: true
+  capacidadVehiculo?: true
   createdAt?: true
 }
 
@@ -101,6 +110,7 @@ export type UsuarioCountAggregateInputType = {
   password?: true
   rol?: true
   activo?: true
+  capacidadVehiculo?: true
   createdAt?: true
   _all?: true
 }
@@ -198,6 +208,7 @@ export type UsuarioGroupByOutputType = {
   password: string
   rol: $Enums.Role
   activo: boolean
+  capacidadVehiculo: number
   createdAt: Date
   _count: UsuarioCountAggregateOutputType | null
   _avg: UsuarioAvgAggregateOutputType | null
@@ -231,6 +242,7 @@ export type UsuarioWhereInput = {
   password?: Prisma.StringFilter<"Usuario"> | string
   rol?: Prisma.EnumRoleFilter<"Usuario"> | $Enums.Role
   activo?: Prisma.BoolFilter<"Usuario"> | boolean
+  capacidadVehiculo?: Prisma.IntFilter<"Usuario"> | number
   createdAt?: Prisma.DateTimeFilter<"Usuario"> | Date | string
   disponibilidades?: Prisma.DisponibilidadListRelationFilter
   rutas?: Prisma.RutaListRelationFilter
@@ -243,6 +255,7 @@ export type UsuarioOrderByWithRelationInput = {
   password?: Prisma.SortOrder
   rol?: Prisma.SortOrder
   activo?: Prisma.SortOrder
+  capacidadVehiculo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   disponibilidades?: Prisma.DisponibilidadOrderByRelationAggregateInput
   rutas?: Prisma.RutaOrderByRelationAggregateInput
@@ -259,6 +272,7 @@ export type UsuarioWhereUniqueInput = Prisma.AtLeast<{
   password?: Prisma.StringFilter<"Usuario"> | string
   rol?: Prisma.EnumRoleFilter<"Usuario"> | $Enums.Role
   activo?: Prisma.BoolFilter<"Usuario"> | boolean
+  capacidadVehiculo?: Prisma.IntFilter<"Usuario"> | number
   createdAt?: Prisma.DateTimeFilter<"Usuario"> | Date | string
   disponibilidades?: Prisma.DisponibilidadListRelationFilter
   rutas?: Prisma.RutaListRelationFilter
@@ -271,6 +285,7 @@ export type UsuarioOrderByWithAggregationInput = {
   password?: Prisma.SortOrder
   rol?: Prisma.SortOrder
   activo?: Prisma.SortOrder
+  capacidadVehiculo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.UsuarioCountOrderByAggregateInput
   _avg?: Prisma.UsuarioAvgOrderByAggregateInput
@@ -289,6 +304,7 @@ export type UsuarioScalarWhereWithAggregatesInput = {
   password?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
   rol?: Prisma.EnumRoleWithAggregatesFilter<"Usuario"> | $Enums.Role
   activo?: Prisma.BoolWithAggregatesFilter<"Usuario"> | boolean
+  capacidadVehiculo?: Prisma.IntWithAggregatesFilter<"Usuario"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Usuario"> | Date | string
 }
 
@@ -298,6 +314,7 @@ export type UsuarioCreateInput = {
   password: string
   rol: $Enums.Role
   activo?: boolean
+  capacidadVehiculo?: number
   createdAt?: Date | string
   disponibilidades?: Prisma.DisponibilidadCreateNestedManyWithoutUsuarioInput
   rutas?: Prisma.RutaCreateNestedManyWithoutRepartidorInput
@@ -310,6 +327,7 @@ export type UsuarioUncheckedCreateInput = {
   password: string
   rol: $Enums.Role
   activo?: boolean
+  capacidadVehiculo?: number
   createdAt?: Date | string
   disponibilidades?: Prisma.DisponibilidadUncheckedCreateNestedManyWithoutUsuarioInput
   rutas?: Prisma.RutaUncheckedCreateNestedManyWithoutRepartidorInput
@@ -321,6 +339,7 @@ export type UsuarioUpdateInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   disponibilidades?: Prisma.DisponibilidadUpdateManyWithoutUsuarioNestedInput
   rutas?: Prisma.RutaUpdateManyWithoutRepartidorNestedInput
@@ -333,6 +352,7 @@ export type UsuarioUncheckedUpdateInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   disponibilidades?: Prisma.DisponibilidadUncheckedUpdateManyWithoutUsuarioNestedInput
   rutas?: Prisma.RutaUncheckedUpdateManyWithoutRepartidorNestedInput
@@ -345,6 +365,7 @@ export type UsuarioCreateManyInput = {
   password: string
   rol: $Enums.Role
   activo?: boolean
+  capacidadVehiculo?: number
   createdAt?: Date | string
 }
 
@@ -354,6 +375,7 @@ export type UsuarioUpdateManyMutationInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -364,6 +386,7 @@ export type UsuarioUncheckedUpdateManyInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -380,11 +403,13 @@ export type UsuarioCountOrderByAggregateInput = {
   password?: Prisma.SortOrder
   rol?: Prisma.SortOrder
   activo?: Prisma.SortOrder
+  capacidadVehiculo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type UsuarioAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  capacidadVehiculo?: Prisma.SortOrder
 }
 
 export type UsuarioMaxOrderByAggregateInput = {
@@ -394,6 +419,7 @@ export type UsuarioMaxOrderByAggregateInput = {
   password?: Prisma.SortOrder
   rol?: Prisma.SortOrder
   activo?: Prisma.SortOrder
+  capacidadVehiculo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -404,11 +430,13 @@ export type UsuarioMinOrderByAggregateInput = {
   password?: Prisma.SortOrder
   rol?: Prisma.SortOrder
   activo?: Prisma.SortOrder
+  capacidadVehiculo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type UsuarioSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  capacidadVehiculo?: Prisma.SortOrder
 }
 
 export type UsuarioScalarRelationFilter = {
@@ -428,16 +456,16 @@ export type BoolFieldUpdateOperationsInput = {
   set?: boolean
 }
 
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
-}
-
 export type IntFieldUpdateOperationsInput = {
   set?: number
   increment?: number
   decrement?: number
   multiply?: number
   divide?: number
+}
+
+export type DateTimeFieldUpdateOperationsInput = {
+  set?: Date | string
 }
 
 export type UsuarioCreateNestedOneWithoutDisponibilidadesInput = {
@@ -474,6 +502,7 @@ export type UsuarioCreateWithoutDisponibilidadesInput = {
   password: string
   rol: $Enums.Role
   activo?: boolean
+  capacidadVehiculo?: number
   createdAt?: Date | string
   rutas?: Prisma.RutaCreateNestedManyWithoutRepartidorInput
 }
@@ -485,6 +514,7 @@ export type UsuarioUncheckedCreateWithoutDisponibilidadesInput = {
   password: string
   rol: $Enums.Role
   activo?: boolean
+  capacidadVehiculo?: number
   createdAt?: Date | string
   rutas?: Prisma.RutaUncheckedCreateNestedManyWithoutRepartidorInput
 }
@@ -511,6 +541,7 @@ export type UsuarioUpdateWithoutDisponibilidadesInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rutas?: Prisma.RutaUpdateManyWithoutRepartidorNestedInput
 }
@@ -522,6 +553,7 @@ export type UsuarioUncheckedUpdateWithoutDisponibilidadesInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rutas?: Prisma.RutaUncheckedUpdateManyWithoutRepartidorNestedInput
 }
@@ -532,6 +564,7 @@ export type UsuarioCreateWithoutRutasInput = {
   password: string
   rol: $Enums.Role
   activo?: boolean
+  capacidadVehiculo?: number
   createdAt?: Date | string
   disponibilidades?: Prisma.DisponibilidadCreateNestedManyWithoutUsuarioInput
 }
@@ -543,6 +576,7 @@ export type UsuarioUncheckedCreateWithoutRutasInput = {
   password: string
   rol: $Enums.Role
   activo?: boolean
+  capacidadVehiculo?: number
   createdAt?: Date | string
   disponibilidades?: Prisma.DisponibilidadUncheckedCreateNestedManyWithoutUsuarioInput
 }
@@ -569,6 +603,7 @@ export type UsuarioUpdateWithoutRutasInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   disponibilidades?: Prisma.DisponibilidadUpdateManyWithoutUsuarioNestedInput
 }
@@ -580,6 +615,7 @@ export type UsuarioUncheckedUpdateWithoutRutasInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   disponibilidades?: Prisma.DisponibilidadUncheckedUpdateManyWithoutUsuarioNestedInput
 }
@@ -631,6 +667,7 @@ export type UsuarioSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   password?: boolean
   rol?: boolean
   activo?: boolean
+  capacidadVehiculo?: boolean
   createdAt?: boolean
   disponibilidades?: boolean | Prisma.Usuario$disponibilidadesArgs<ExtArgs>
   rutas?: boolean | Prisma.Usuario$rutasArgs<ExtArgs>
@@ -646,10 +683,11 @@ export type UsuarioSelectScalar = {
   password?: boolean
   rol?: boolean
   activo?: boolean
+  capacidadVehiculo?: boolean
   createdAt?: boolean
 }
 
-export type UsuarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nombre" | "email" | "password" | "rol" | "activo" | "createdAt", ExtArgs["result"]["usuario"]>
+export type UsuarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nombre" | "email" | "password" | "rol" | "activo" | "capacidadVehiculo" | "createdAt", ExtArgs["result"]["usuario"]>
 export type UsuarioInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   disponibilidades?: boolean | Prisma.Usuario$disponibilidadesArgs<ExtArgs>
   rutas?: boolean | Prisma.Usuario$rutasArgs<ExtArgs>
@@ -669,6 +707,7 @@ export type $UsuarioPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     password: string
     rol: $Enums.Role
     activo: boolean
+    capacidadVehiculo: number
     createdAt: Date
   }, ExtArgs["result"]["usuario"]>
   composites: {}
@@ -1047,6 +1086,7 @@ export interface UsuarioFieldRefs {
   readonly password: Prisma.FieldRef<"Usuario", 'String'>
   readonly rol: Prisma.FieldRef<"Usuario", 'Role'>
   readonly activo: Prisma.FieldRef<"Usuario", 'Boolean'>
+  readonly capacidadVehiculo: Prisma.FieldRef<"Usuario", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Usuario", 'DateTime'>
 }
     
