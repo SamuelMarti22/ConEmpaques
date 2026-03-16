@@ -47,6 +47,6 @@ class RoutingService:
                 index = solucion.Value(modelo.NextVar(index))
 
             if paradas:
-                    rutas.append(RutaRepartidor(repartidor_id=repartidor.id,ruta=paradas,distancia_total=solucion.ObjectiveValue(),tiempo_estimado=0.0 ))
+                    rutas.append(RutaRepartidor(repartidor_id=repartidor.id,ruta=paradas,distancia_total=solucion.ObjectiveValue(),tiempo_estimado=0.0, geometria=[]))
             
         return OptimizacionResponse(rutas=rutas)
