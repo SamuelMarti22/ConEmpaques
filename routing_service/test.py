@@ -33,8 +33,11 @@ async def test():
     print("✅ Rutas optimizadas:")
     for ruta in resultado.rutas:
         print(f"\n🚗 {ruta.repartidor_id}")
-        print(f"   Paradas: {ruta.ruta}")
-        print(f"   Distancia total: {ruta.distancia_total}m")
-        print(f"   Tiempo estimado: {ruta.tiempo_estimado}s")
+        print(f"   Paradas:          {ruta.ruta}")
+        print(f"   Distancia total:  {ruta.distancia_total}m")
+        print(f"   Tiempo estimado:  {ruta.tiempo_estimado}s")
+        print(f"   Puntos geometría: {len(ruta.geometria)} coordenadas")
+        print(f"   Primera coord:    {ruta.geometria[0]}")
+        print(f"   Última coord:     {ruta.geometria[-1]}")
 
 asyncio.run(test())

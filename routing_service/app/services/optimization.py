@@ -1,5 +1,6 @@
 from app.services.matrix import MatrixService
 from app.services.routing import RoutingService
+from app.services.geometryRoute import GeometryRouteService
 from app.models.schema import OptimizacionRequest, OptimizacionResponse, PuntoEntrega
 
 class OptimizationService:
@@ -7,7 +8,8 @@ class OptimizationService:
     def __init__(self):
         self.matrix_service = MatrixService()
         self.routing_service = RoutingService()
-
+        self.geometry_service = GeometryRouteService()
+        
     async def optimizar(self, request: OptimizacionRequest) -> OptimizacionResponse:
     
         matriz_distancias = await self.matrix_service.get_matriz_distancias(request.deposito,request.puntos_entrega)
@@ -16,6 +18,7 @@ class OptimizationService:
         matriz_tiempos = await self.matrix_service.get_matriz_tiempos(request.deposito,request.puntos_entrega)
         for ruta in respuesta.rutas:
             ruta.tiempo_estimado = self.__calcular_tiempo(ruta.ruta,request.puntos_entrega,matriz_tiempos)
+            ruta.geometria = await self.geometry_service.get_geometry_route(ruta, request.puntos_entrega, request.deposito)
 
         return respuesta
     

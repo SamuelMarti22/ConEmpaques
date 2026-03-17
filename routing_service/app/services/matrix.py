@@ -14,7 +14,7 @@ class MatrixService:
         
         return coordenadas
     
-    def mapear_coordenadas_OSRM(self, coordenadas: list[list[float]]):
+    def mapear_coordenadas_OSRM(self, coordenadas: list[list[float]])-> str:
         coordenadasOSRM = ";".join([f"{coord[0]},{coord[1]}" for coord in coordenadas])
         
         return coordenadasOSRM

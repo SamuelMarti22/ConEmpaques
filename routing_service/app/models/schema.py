@@ -23,6 +23,7 @@ class OptimizacionRequest(BaseModel):
 class RutaRepartidor(BaseModel):
     repartidor_id: str
     ruta: list[str]  
+    geometria: list[list[float]]
     distancia_total: float
     tiempo_estimado: float
     
