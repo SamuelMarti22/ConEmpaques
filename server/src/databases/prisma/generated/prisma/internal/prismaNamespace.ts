@@ -649,7 +649,6 @@ export const UsuarioScalarFieldEnum = {
   email: 'email',
   password: 'password',
   rol: 'rol',
-  activo: 'activo',
   capacidadVehiculo: 'capacidadVehiculo',
   createdAt: 'createdAt'
 } as const
@@ -662,7 +661,8 @@ export const DisponibilidadScalarFieldEnum = {
   usuarioId: 'usuarioId',
   diaSemana: 'diaSemana',
   horaInicio: 'horaInicio',
-  horaFin: 'horaFin'
+  horaFin: 'horaFin',
+  activo: 'activo'
 } as const
 
 export type DisponibilidadScalarFieldEnum = (typeof DisponibilidadScalarFieldEnum)[keyof typeof DisponibilidadScalarFieldEnum]
@@ -740,16 +740,16 @@ export type EnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel
 
 
 /**
- * Reference to a field of type 'Boolean'
+ * Reference to a field of type 'DateTime'
  */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
     
 
 
 /**
- * Reference to a field of type 'DateTime'
+ * Reference to a field of type 'Boolean'
  */
-export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 

@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-
-const URL_API_BASE = ((import.meta.env.VITE_API_URL as string | undefined)?.trim() || "http://localhost:3000").replace(/\/$/, "");
-const URL_REPARTIDORES = `${URL_API_BASE}/api/repartidores`;
+import { URL_REPARTIDORES, obtenerMensajeErrorHttp } from "../estilosCompartidosRepartidores/repartidores.compartido";
 
 export interface Repartidor {
   id: number;
   nombre: string;
   email: string;
-  activo: boolean;
   capacidadVehiculo: number;
   rol: "REPARTIDOR";
   createdAt: string;
@@ -35,19 +32,6 @@ function ordenarPorId(repartidores: Repartidor[]): Repartidor[] {
   return [...repartidores].sort((a, b) => a.id - b.id);
 }
 
-async function obtenerMensajeError(response: Response): Promise<string> {
-  try {
-    const datos = (await response.json()) as { mensaje?: string };
-    if (typeof datos.mensaje === "string" && datos.mensaje.trim().length > 0) {
-      return datos.mensaje;
-    }
-  } catch {
-    // No es posible parsear el cuerpo de error
-  }
-
-  return `Error ${response.status}: ${response.statusText || "No se pudo completar la operación"}`;
-}
-
 export function useRepartidores() {
   const [repartidores, setRepartidores] = useState<Repartidor[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
@@ -60,7 +44,7 @@ export function useRepartidores() {
     try {
       const response = await fetch(URL_REPARTIDORES);
       if (!response.ok) {
-        throw new Error(await obtenerMensajeError(response));
+        throw new Error(await obtenerMensajeErrorHttp(response));
       }
 
       const datos = (await response.json()) as Repartidor[];
@@ -84,7 +68,7 @@ export function useRepartidores() {
       });
 
       if (!response.ok) {
-        throw new Error(await obtenerMensajeError(response));
+        throw new Error(await obtenerMensajeErrorHttp(response));
       }
 
       const payload = (await response.json()) as RespuestaRepartidor;
@@ -110,7 +94,7 @@ export function useRepartidores() {
         });
 
         if (!response.ok) {
-          throw new Error(await obtenerMensajeError(response));
+          throw new Error(await obtenerMensajeErrorHttp(response));
         }
 
         const payload = (await response.json()) as RespuestaRepartidor;
@@ -142,7 +126,7 @@ export function useRepartidores() {
       });
 
       if (!response.ok) {
-        throw new Error(await obtenerMensajeError(response));
+        throw new Error(await obtenerMensajeErrorHttp(response));
       }
 
       setRepartidores((repartidoresActuales) => repartidoresActuales.filter((repartidor) => repartidor.id !== repartidorId));

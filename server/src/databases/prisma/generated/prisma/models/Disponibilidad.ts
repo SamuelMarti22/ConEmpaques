@@ -44,6 +44,7 @@ export type DisponibilidadMinAggregateOutputType = {
   diaSemana: number | null
   horaInicio: string | null
   horaFin: string | null
+  activo: boolean | null
 }
 
 export type DisponibilidadMaxAggregateOutputType = {
@@ -52,6 +53,7 @@ export type DisponibilidadMaxAggregateOutputType = {
   diaSemana: number | null
   horaInicio: string | null
   horaFin: string | null
+  activo: boolean | null
 }
 
 export type DisponibilidadCountAggregateOutputType = {
@@ -60,6 +62,7 @@ export type DisponibilidadCountAggregateOutputType = {
   diaSemana: number
   horaInicio: number
   horaFin: number
+  activo: number
   _all: number
 }
 
@@ -82,6 +85,7 @@ export type DisponibilidadMinAggregateInputType = {
   diaSemana?: true
   horaInicio?: true
   horaFin?: true
+  activo?: true
 }
 
 export type DisponibilidadMaxAggregateInputType = {
@@ -90,6 +94,7 @@ export type DisponibilidadMaxAggregateInputType = {
   diaSemana?: true
   horaInicio?: true
   horaFin?: true
+  activo?: true
 }
 
 export type DisponibilidadCountAggregateInputType = {
@@ -98,6 +103,7 @@ export type DisponibilidadCountAggregateInputType = {
   diaSemana?: true
   horaInicio?: true
   horaFin?: true
+  activo?: true
   _all?: true
 }
 
@@ -193,6 +199,7 @@ export type DisponibilidadGroupByOutputType = {
   diaSemana: number
   horaInicio: string
   horaFin: string
+  activo: boolean
   _count: DisponibilidadCountAggregateOutputType | null
   _avg: DisponibilidadAvgAggregateOutputType | null
   _sum: DisponibilidadSumAggregateOutputType | null
@@ -224,6 +231,7 @@ export type DisponibilidadWhereInput = {
   diaSemana?: Prisma.IntFilter<"Disponibilidad"> | number
   horaInicio?: Prisma.StringFilter<"Disponibilidad"> | string
   horaFin?: Prisma.StringFilter<"Disponibilidad"> | string
+  activo?: Prisma.BoolFilter<"Disponibilidad"> | boolean
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
 }
 
@@ -233,6 +241,7 @@ export type DisponibilidadOrderByWithRelationInput = {
   diaSemana?: Prisma.SortOrder
   horaInicio?: Prisma.SortOrder
   horaFin?: Prisma.SortOrder
+  activo?: Prisma.SortOrder
   usuario?: Prisma.UsuarioOrderByWithRelationInput
   _relevance?: Prisma.DisponibilidadOrderByRelevanceInput
 }
@@ -246,6 +255,7 @@ export type DisponibilidadWhereUniqueInput = Prisma.AtLeast<{
   diaSemana?: Prisma.IntFilter<"Disponibilidad"> | number
   horaInicio?: Prisma.StringFilter<"Disponibilidad"> | string
   horaFin?: Prisma.StringFilter<"Disponibilidad"> | string
+  activo?: Prisma.BoolFilter<"Disponibilidad"> | boolean
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
 }, "id">
 
@@ -255,6 +265,7 @@ export type DisponibilidadOrderByWithAggregationInput = {
   diaSemana?: Prisma.SortOrder
   horaInicio?: Prisma.SortOrder
   horaFin?: Prisma.SortOrder
+  activo?: Prisma.SortOrder
   _count?: Prisma.DisponibilidadCountOrderByAggregateInput
   _avg?: Prisma.DisponibilidadAvgOrderByAggregateInput
   _max?: Prisma.DisponibilidadMaxOrderByAggregateInput
@@ -271,12 +282,14 @@ export type DisponibilidadScalarWhereWithAggregatesInput = {
   diaSemana?: Prisma.IntWithAggregatesFilter<"Disponibilidad"> | number
   horaInicio?: Prisma.StringWithAggregatesFilter<"Disponibilidad"> | string
   horaFin?: Prisma.StringWithAggregatesFilter<"Disponibilidad"> | string
+  activo?: Prisma.BoolWithAggregatesFilter<"Disponibilidad"> | boolean
 }
 
 export type DisponibilidadCreateInput = {
   diaSemana: number
   horaInicio: string
   horaFin: string
+  activo?: boolean
   usuario: Prisma.UsuarioCreateNestedOneWithoutDisponibilidadesInput
 }
 
@@ -286,12 +299,14 @@ export type DisponibilidadUncheckedCreateInput = {
   diaSemana: number
   horaInicio: string
   horaFin: string
+  activo?: boolean
 }
 
 export type DisponibilidadUpdateInput = {
   diaSemana?: Prisma.IntFieldUpdateOperationsInput | number
   horaInicio?: Prisma.StringFieldUpdateOperationsInput | string
   horaFin?: Prisma.StringFieldUpdateOperationsInput | string
+  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   usuario?: Prisma.UsuarioUpdateOneRequiredWithoutDisponibilidadesNestedInput
 }
 
@@ -301,6 +316,7 @@ export type DisponibilidadUncheckedUpdateInput = {
   diaSemana?: Prisma.IntFieldUpdateOperationsInput | number
   horaInicio?: Prisma.StringFieldUpdateOperationsInput | string
   horaFin?: Prisma.StringFieldUpdateOperationsInput | string
+  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type DisponibilidadCreateManyInput = {
@@ -309,12 +325,14 @@ export type DisponibilidadCreateManyInput = {
   diaSemana: number
   horaInicio: string
   horaFin: string
+  activo?: boolean
 }
 
 export type DisponibilidadUpdateManyMutationInput = {
   diaSemana?: Prisma.IntFieldUpdateOperationsInput | number
   horaInicio?: Prisma.StringFieldUpdateOperationsInput | string
   horaFin?: Prisma.StringFieldUpdateOperationsInput | string
+  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type DisponibilidadUncheckedUpdateManyInput = {
@@ -323,6 +341,7 @@ export type DisponibilidadUncheckedUpdateManyInput = {
   diaSemana?: Prisma.IntFieldUpdateOperationsInput | number
   horaInicio?: Prisma.StringFieldUpdateOperationsInput | string
   horaFin?: Prisma.StringFieldUpdateOperationsInput | string
+  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type DisponibilidadListRelationFilter = {
@@ -347,6 +366,7 @@ export type DisponibilidadCountOrderByAggregateInput = {
   diaSemana?: Prisma.SortOrder
   horaInicio?: Prisma.SortOrder
   horaFin?: Prisma.SortOrder
+  activo?: Prisma.SortOrder
 }
 
 export type DisponibilidadAvgOrderByAggregateInput = {
@@ -361,6 +381,7 @@ export type DisponibilidadMaxOrderByAggregateInput = {
   diaSemana?: Prisma.SortOrder
   horaInicio?: Prisma.SortOrder
   horaFin?: Prisma.SortOrder
+  activo?: Prisma.SortOrder
 }
 
 export type DisponibilidadMinOrderByAggregateInput = {
@@ -369,6 +390,7 @@ export type DisponibilidadMinOrderByAggregateInput = {
   diaSemana?: Prisma.SortOrder
   horaInicio?: Prisma.SortOrder
   horaFin?: Prisma.SortOrder
+  activo?: Prisma.SortOrder
 }
 
 export type DisponibilidadSumOrderByAggregateInput = {
@@ -419,10 +441,15 @@ export type DisponibilidadUncheckedUpdateManyWithoutUsuarioNestedInput = {
   deleteMany?: Prisma.DisponibilidadScalarWhereInput | Prisma.DisponibilidadScalarWhereInput[]
 }
 
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
+}
+
 export type DisponibilidadCreateWithoutUsuarioInput = {
   diaSemana: number
   horaInicio: string
   horaFin: string
+  activo?: boolean
 }
 
 export type DisponibilidadUncheckedCreateWithoutUsuarioInput = {
@@ -430,6 +457,7 @@ export type DisponibilidadUncheckedCreateWithoutUsuarioInput = {
   diaSemana: number
   horaInicio: string
   horaFin: string
+  activo?: boolean
 }
 
 export type DisponibilidadCreateOrConnectWithoutUsuarioInput = {
@@ -467,6 +495,7 @@ export type DisponibilidadScalarWhereInput = {
   diaSemana?: Prisma.IntFilter<"Disponibilidad"> | number
   horaInicio?: Prisma.StringFilter<"Disponibilidad"> | string
   horaFin?: Prisma.StringFilter<"Disponibilidad"> | string
+  activo?: Prisma.BoolFilter<"Disponibilidad"> | boolean
 }
 
 export type DisponibilidadCreateManyUsuarioInput = {
@@ -474,12 +503,14 @@ export type DisponibilidadCreateManyUsuarioInput = {
   diaSemana: number
   horaInicio: string
   horaFin: string
+  activo?: boolean
 }
 
 export type DisponibilidadUpdateWithoutUsuarioInput = {
   diaSemana?: Prisma.IntFieldUpdateOperationsInput | number
   horaInicio?: Prisma.StringFieldUpdateOperationsInput | string
   horaFin?: Prisma.StringFieldUpdateOperationsInput | string
+  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type DisponibilidadUncheckedUpdateWithoutUsuarioInput = {
@@ -487,6 +518,7 @@ export type DisponibilidadUncheckedUpdateWithoutUsuarioInput = {
   diaSemana?: Prisma.IntFieldUpdateOperationsInput | number
   horaInicio?: Prisma.StringFieldUpdateOperationsInput | string
   horaFin?: Prisma.StringFieldUpdateOperationsInput | string
+  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type DisponibilidadUncheckedUpdateManyWithoutUsuarioInput = {
@@ -494,6 +526,7 @@ export type DisponibilidadUncheckedUpdateManyWithoutUsuarioInput = {
   diaSemana?: Prisma.IntFieldUpdateOperationsInput | number
   horaInicio?: Prisma.StringFieldUpdateOperationsInput | string
   horaFin?: Prisma.StringFieldUpdateOperationsInput | string
+  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 
@@ -504,6 +537,7 @@ export type DisponibilidadSelect<ExtArgs extends runtime.Types.Extensions.Intern
   diaSemana?: boolean
   horaInicio?: boolean
   horaFin?: boolean
+  activo?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["disponibilidad"]>
 
@@ -515,9 +549,10 @@ export type DisponibilidadSelectScalar = {
   diaSemana?: boolean
   horaInicio?: boolean
   horaFin?: boolean
+  activo?: boolean
 }
 
-export type DisponibilidadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "diaSemana" | "horaInicio" | "horaFin", ExtArgs["result"]["disponibilidad"]>
+export type DisponibilidadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "diaSemana" | "horaInicio" | "horaFin" | "activo", ExtArgs["result"]["disponibilidad"]>
 export type DisponibilidadInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }
@@ -533,6 +568,7 @@ export type $DisponibilidadPayload<ExtArgs extends runtime.Types.Extensions.Inte
     diaSemana: number
     horaInicio: string
     horaFin: string
+    activo: boolean
   }, ExtArgs["result"]["disponibilidad"]>
   composites: {}
 }
@@ -908,6 +944,7 @@ export interface DisponibilidadFieldRefs {
   readonly diaSemana: Prisma.FieldRef<"Disponibilidad", 'Int'>
   readonly horaInicio: Prisma.FieldRef<"Disponibilidad", 'String'>
   readonly horaFin: Prisma.FieldRef<"Disponibilidad", 'String'>
+  readonly activo: Prisma.FieldRef<"Disponibilidad", 'Boolean'>
 }
     
 
