@@ -33,7 +33,7 @@ Esto va a iniciar los contenedores de las bases de datos
 **6. En la carpeta de server, correr este comando:**
 
 ```
-npx prisma migrate dev --name init
+npx prisma migrate dev --name init --config ./src/config/prisma.config.ts
 ```
 
 Esto hará las migraciones a la base de datos de sql
@@ -41,10 +41,14 @@ Esto hará las migraciones a la base de datos de sql
 **7. En la carpeta de server, correr este comando**
 
 ```
-npx prisma generate
+npx prisma generate --config src/config/prisma.config.ts
 ```
 
-¡Importante! Por organización del proyecto, mueve esta carpeta "generated"
+Además, si quieres ver la base de datos de manera visual, puedes entrar al gestor de base de datos de Primsa
+
+```
+npx prisma studio --config ./src/config/prisma.config.ts
+```
 
 ---
 
