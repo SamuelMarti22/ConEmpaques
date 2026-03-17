@@ -1,15 +1,18 @@
 import './PlaneacionRutas.css'
 import MapaInteractivo from '../../components/MapaInteractivo'
-import PuntosEntrega from '../../components/PuntosMapa'
+import PuntosEntrega from '../../components/PuntosEntrega'
 import type { MapaInteractivoFunciones } from '../../components/MapaInteractivo'
 import { useRef } from 'react'
+import { PuntoEntrega } from '../../classes/PuntoEntrega';
+import type { PuntosEntregaAtributos } from '../../components/PuntosEntrega';
 
 export default function PlaneacionRutas() {
 
     const mapaRef = useRef<MapaInteractivoFunciones>(null);
+    const puntosEntregaRef = useRef<PuntosEntregaAtributos>(null);
 
-    const agregarPunto = (cliente: string, latitud: number, longitud: number) => {
-        mapaRef.current?.agregarPunto(cliente, latitud, longitud);
+    const agregarPunto = (punto: PuntoEntrega) => {
+        mapaRef.current?.agregarPunto(punto);
     };
 
     const vaciarPuntos = () => {
@@ -20,6 +23,10 @@ export default function PlaneacionRutas() {
         mapaRef.current?.eliminarPunto(index);
     };
 
+    const obtenerPuntosFormateadosBackend = (): { id: number; latitud: number; longitud: number; peso: number }[] => {
+        return puntosEntregaRef.current?.obtenerPuntosFormateadosBackend() || [];
+    };
+
     return (
         <>
             <div className="vistaPlaneacion">
@@ -28,12 +35,14 @@ export default function PlaneacionRutas() {
                 </div>
                 <div className="seccionPuntos">
                     <PuntosEntrega
+                        ref={puntosEntregaRef}
                         onAgregarMarcadorMapa={agregarPunto}
                         onEliminarMarcadorMapa={eliminarPunto}
                         onVaciarMarcadoresMapa={vaciarPuntos}
                     />
                 </div>
+                <button className="btn btn--guardar" onClick={() => console.log(obtenerPuntosFormateadosBackend())}>💾 Guardar puntos (ver en consola)</button>
             </div>
         </>
     )
-} 
+}
