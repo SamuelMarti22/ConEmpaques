@@ -30,7 +30,6 @@ model Usuario {
   email         String           @unique
   password      String           
   rol           Role
-  activo        Boolean          @default(false)
   capacidadVehiculo Int          @default(0)
   createdAt     DateTime         @default(now()) @map("created_at")
 
@@ -46,6 +45,7 @@ model Disponibilidad {
   diaSemana   Int      @map("diaDeSemana") 
   horaInicio  String
   horaFin     String
+  activo      Boolean  @default(true)
 
   usuario Usuario @relation(fields: [usuarioId], references: [id])
 

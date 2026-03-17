@@ -9,7 +9,6 @@ const CAMPOS_PUBLICOS_REPARTIDOR = {
   id: true,
   nombre: true,
   email: true,
-  activo: true,
   capacidadVehiculo: true,
   rol: true,
   createdAt: true,
@@ -50,6 +49,20 @@ export class RepartidorConEntregasActivasError extends Error {
   }
 }
 
+async function verificarExistenciaRepartidor(repartidorId: number): Promise<void> {
+  const repartidorExistente = await prisma.usuario.findFirst({
+    where: {
+      id: repartidorId,
+      rol: Role.REPARTIDOR,
+    },
+    select: { id: true },
+  });
+
+  if (!repartidorExistente) {
+    throw new RepartidorNoEncontradoError();
+  }
+}
+
 async function hashearPassword(passwordPlano: string): Promise<string> {
   return hash(passwordPlano, RONDAS_HASH_PASSWORD);
 }
@@ -82,7 +95,6 @@ async function crear(datosCrear: DatosCrearRepartidor) {
       password: passwordHasheado,
       capacidadVehiculo: datosCrear.capacidadVehiculo,
       rol: Role.REPARTIDOR,
-      activo: false,
     },
     select: CAMPOS_PUBLICOS_REPARTIDOR,
   });
@@ -93,17 +105,7 @@ async function actualizar(repartidorId: number, datosActualizar: DatosActualizar
     throw new RepartidorSinCamposParaActualizarError();
   }
 
-  const repartidorExistente = await prisma.usuario.findFirst({
-    where: {
-      id: repartidorId,
-      rol: Role.REPARTIDOR,
-    },
-    select: { id: true },
-  });
-
-  if (!repartidorExistente) {
-    throw new RepartidorNoEncontradoError();
-  }
+  await verificarExistenciaRepartidor(repartidorId);
 
   const datosActualizarPersistencia: DatosActualizarRepartidor = {
     ...datosActualizar,

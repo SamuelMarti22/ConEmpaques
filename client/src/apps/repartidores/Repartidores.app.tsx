@@ -1,32 +1,26 @@
+import { useState } from "react";
 import Swal from "sweetalert2";
 import "./Repartidores.app.css";
+import HorariosRepartidorApp from "../horarios/HorariosRepartidor.app";
+import { escaparHtml, obtenerMensajeErrorOperacion } from "../estilosCompartidosRepartidores/repartidores.compartido";
 import {
-  useRepartidores,
   type DatosActualizarRepartidorRequest,
   type DatosCrearRepartidorRequest,
+  useRepartidores,
   type Repartidor,
 } from "./useRepartidores";
 
-function obtenerMensajeError(error: unknown): string {
-  if (error instanceof Error && error.message.trim().length > 0) {
-    return error.message;
-  }
-
-  return "No fue posible completar la operación";
-}
-
-function escaparHtml(valor: string): string {
-  return valor
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
 export default function RepartidoresApp() {
-  const { repartidores, cargando, procesando, error, crearRepartidor, actualizarRepartidor, eliminarRepartidor } =
-    useRepartidores();
+  const {
+    repartidores,
+    cargando,
+    procesando,
+    error,
+    crearRepartidor,
+    actualizarRepartidor,
+    eliminarRepartidor,
+  } = useRepartidores();
+  const [repartidorHorariosActivo, setRepartidorHorariosActivo] = useState<Repartidor | null>(null);
 
   const registrarRepartidor = async (): Promise<void> => {
     const { value, isConfirmed } = await Swal.fire<DatosCrearRepartidorRequest>({
@@ -62,6 +56,15 @@ export default function RepartidoresApp() {
           return false;
         }
 
+        const emailYaExiste = repartidores.some(
+          (repartidorExistente) => repartidorExistente.email.trim().toLowerCase() === email,
+        );
+
+        if (emailYaExiste) {
+          Swal.showValidationMessage("Ya existe un repartidor registrado con ese correo");
+          return false;
+        }
+
         if (!password) {
           Swal.showValidationMessage("La contraseña es obligatoria");
           return false;
@@ -91,7 +94,7 @@ export default function RepartidoresApp() {
       await Swal.fire({
         icon: "error",
         title: "No se pudo crear",
-        text: obtenerMensajeError(errorOperacion),
+        text: obtenerMensajeErrorOperacion(errorOperacion),
       });
     }
   };
@@ -127,6 +130,16 @@ export default function RepartidoresApp() {
 
         if (!email) {
           Swal.showValidationMessage("El correo es obligatorio");
+          return false;
+        }
+
+        const emailYaExisteEnOtro = repartidores.some(
+          (repartidorExistente) =>
+            repartidorExistente.id !== repartidor.id && repartidorExistente.email.trim().toLowerCase() === email,
+        );
+
+        if (emailYaExisteEnOtro) {
+          Swal.showValidationMessage("Ya existe otro repartidor registrado con ese correo");
           return false;
         }
 
@@ -177,7 +190,7 @@ export default function RepartidoresApp() {
       await Swal.fire({
         icon: "error",
         title: "No se pudo actualizar",
-        text: obtenerMensajeError(errorOperacion),
+        text: obtenerMensajeErrorOperacion(errorOperacion),
       });
     }
   };
@@ -207,17 +220,28 @@ export default function RepartidoresApp() {
       await Swal.fire({
         icon: "error",
         title: "No se pudo eliminar",
-        text: obtenerMensajeError(errorOperacion),
+        text: obtenerMensajeErrorOperacion(errorOperacion),
       });
     }
   };
+
+  if (repartidorHorariosActivo) {
+    return (
+      <HorariosRepartidorApp
+        repartidor={repartidorHorariosActivo}
+        onVolver={() => {
+          setRepartidorHorariosActivo(null);
+        }}
+      />
+    );
+  }
 
   return (
     <section className="repartidores">
       <header className="repartidores__encabezado">
         <div>
           <h2>Gestión de repartidores</h2>
-          <p>Registra, actualiza y elimina repartidores para mantener la operación al día.</p>
+          <p>Registra, actualiza y elimina repartidores. Entra a horarios desde el botón de cada fila.</p>
         </div>
 
         <button className="repartidores__botonPrincipal" onClick={registrarRepartidor} disabled={procesando}>
@@ -240,7 +264,6 @@ export default function RepartidoresApp() {
                 <th>Nombre</th>
                 <th>Correo</th>
                 <th>Capacidad (kg)</th>
-                <th>Estado</th>
                 <th>Creado</th>
                 <th>Acciones</th>
               </tr>
@@ -252,18 +275,16 @@ export default function RepartidoresApp() {
                   <td>{repartidor.nombre}</td>
                   <td>{repartidor.email}</td>
                   <td>{repartidor.capacidadVehiculo} kg</td>
-                  <td>
-                    <span
-                      className={`repartidores__estadoTag ${
-                        repartidor.activo ? "repartidores__estadoTag--activo" : "repartidores__estadoTag--inactivo"
-                      }`}
-                    >
-                      {repartidor.activo ? "Activo" : "Inactivo"}
-                    </span>
-                  </td>
                   <td>{new Date(repartidor.createdAt).toLocaleString("es-CO")}</td>
                   <td>
                     <div className="repartidores__accionesFila">
+                      <button
+                        className="repartidores__botonAccion repartidores__botonAccion--horarios"
+                        onClick={() => setRepartidorHorariosActivo(repartidor)}
+                        disabled={procesando}
+                      >
+                        Horarios
+                      </button>
                       <button
                         className="repartidores__botonAccion repartidores__botonAccion--editar"
                         onClick={() => editarRepartidor(repartidor)}

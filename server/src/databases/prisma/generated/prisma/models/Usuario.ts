@@ -42,7 +42,6 @@ export type UsuarioMinAggregateOutputType = {
   email: string | null
   password: string | null
   rol: $Enums.Role | null
-  activo: boolean | null
   capacidadVehiculo: number | null
   createdAt: Date | null
 }
@@ -53,7 +52,6 @@ export type UsuarioMaxAggregateOutputType = {
   email: string | null
   password: string | null
   rol: $Enums.Role | null
-  activo: boolean | null
   capacidadVehiculo: number | null
   createdAt: Date | null
 }
@@ -64,7 +62,6 @@ export type UsuarioCountAggregateOutputType = {
   email: number
   password: number
   rol: number
-  activo: number
   capacidadVehiculo: number
   createdAt: number
   _all: number
@@ -87,7 +84,6 @@ export type UsuarioMinAggregateInputType = {
   email?: true
   password?: true
   rol?: true
-  activo?: true
   capacidadVehiculo?: true
   createdAt?: true
 }
@@ -98,7 +94,6 @@ export type UsuarioMaxAggregateInputType = {
   email?: true
   password?: true
   rol?: true
-  activo?: true
   capacidadVehiculo?: true
   createdAt?: true
 }
@@ -109,7 +104,6 @@ export type UsuarioCountAggregateInputType = {
   email?: true
   password?: true
   rol?: true
-  activo?: true
   capacidadVehiculo?: true
   createdAt?: true
   _all?: true
@@ -207,7 +201,6 @@ export type UsuarioGroupByOutputType = {
   email: string
   password: string
   rol: $Enums.Role
-  activo: boolean
   capacidadVehiculo: number
   createdAt: Date
   _count: UsuarioCountAggregateOutputType | null
@@ -241,7 +234,6 @@ export type UsuarioWhereInput = {
   email?: Prisma.StringFilter<"Usuario"> | string
   password?: Prisma.StringFilter<"Usuario"> | string
   rol?: Prisma.EnumRoleFilter<"Usuario"> | $Enums.Role
-  activo?: Prisma.BoolFilter<"Usuario"> | boolean
   capacidadVehiculo?: Prisma.IntFilter<"Usuario"> | number
   createdAt?: Prisma.DateTimeFilter<"Usuario"> | Date | string
   disponibilidades?: Prisma.DisponibilidadListRelationFilter
@@ -254,7 +246,6 @@ export type UsuarioOrderByWithRelationInput = {
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   rol?: Prisma.SortOrder
-  activo?: Prisma.SortOrder
   capacidadVehiculo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   disponibilidades?: Prisma.DisponibilidadOrderByRelationAggregateInput
@@ -271,7 +262,6 @@ export type UsuarioWhereUniqueInput = Prisma.AtLeast<{
   nombre?: Prisma.StringFilter<"Usuario"> | string
   password?: Prisma.StringFilter<"Usuario"> | string
   rol?: Prisma.EnumRoleFilter<"Usuario"> | $Enums.Role
-  activo?: Prisma.BoolFilter<"Usuario"> | boolean
   capacidadVehiculo?: Prisma.IntFilter<"Usuario"> | number
   createdAt?: Prisma.DateTimeFilter<"Usuario"> | Date | string
   disponibilidades?: Prisma.DisponibilidadListRelationFilter
@@ -284,7 +274,6 @@ export type UsuarioOrderByWithAggregationInput = {
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   rol?: Prisma.SortOrder
-  activo?: Prisma.SortOrder
   capacidadVehiculo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.UsuarioCountOrderByAggregateInput
@@ -303,7 +292,6 @@ export type UsuarioScalarWhereWithAggregatesInput = {
   email?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
   password?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
   rol?: Prisma.EnumRoleWithAggregatesFilter<"Usuario"> | $Enums.Role
-  activo?: Prisma.BoolWithAggregatesFilter<"Usuario"> | boolean
   capacidadVehiculo?: Prisma.IntWithAggregatesFilter<"Usuario"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Usuario"> | Date | string
 }
@@ -313,7 +301,6 @@ export type UsuarioCreateInput = {
   email: string
   password: string
   rol: $Enums.Role
-  activo?: boolean
   capacidadVehiculo?: number
   createdAt?: Date | string
   disponibilidades?: Prisma.DisponibilidadCreateNestedManyWithoutUsuarioInput
@@ -326,7 +313,6 @@ export type UsuarioUncheckedCreateInput = {
   email: string
   password: string
   rol: $Enums.Role
-  activo?: boolean
   capacidadVehiculo?: number
   createdAt?: Date | string
   disponibilidades?: Prisma.DisponibilidadUncheckedCreateNestedManyWithoutUsuarioInput
@@ -338,7 +324,6 @@ export type UsuarioUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   disponibilidades?: Prisma.DisponibilidadUpdateManyWithoutUsuarioNestedInput
@@ -351,7 +336,6 @@ export type UsuarioUncheckedUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   disponibilidades?: Prisma.DisponibilidadUncheckedUpdateManyWithoutUsuarioNestedInput
@@ -364,7 +348,6 @@ export type UsuarioCreateManyInput = {
   email: string
   password: string
   rol: $Enums.Role
-  activo?: boolean
   capacidadVehiculo?: number
   createdAt?: Date | string
 }
@@ -374,7 +357,6 @@ export type UsuarioUpdateManyMutationInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -385,7 +367,6 @@ export type UsuarioUncheckedUpdateManyInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -402,7 +383,6 @@ export type UsuarioCountOrderByAggregateInput = {
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   rol?: Prisma.SortOrder
-  activo?: Prisma.SortOrder
   capacidadVehiculo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -418,7 +398,6 @@ export type UsuarioMaxOrderByAggregateInput = {
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   rol?: Prisma.SortOrder
-  activo?: Prisma.SortOrder
   capacidadVehiculo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -429,7 +408,6 @@ export type UsuarioMinOrderByAggregateInput = {
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   rol?: Prisma.SortOrder
-  activo?: Prisma.SortOrder
   capacidadVehiculo?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -450,10 +428,6 @@ export type StringFieldUpdateOperationsInput = {
 
 export type EnumRoleFieldUpdateOperationsInput = {
   set?: $Enums.Role
-}
-
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
 }
 
 export type IntFieldUpdateOperationsInput = {
@@ -501,7 +475,6 @@ export type UsuarioCreateWithoutDisponibilidadesInput = {
   email: string
   password: string
   rol: $Enums.Role
-  activo?: boolean
   capacidadVehiculo?: number
   createdAt?: Date | string
   rutas?: Prisma.RutaCreateNestedManyWithoutRepartidorInput
@@ -513,7 +486,6 @@ export type UsuarioUncheckedCreateWithoutDisponibilidadesInput = {
   email: string
   password: string
   rol: $Enums.Role
-  activo?: boolean
   capacidadVehiculo?: number
   createdAt?: Date | string
   rutas?: Prisma.RutaUncheckedCreateNestedManyWithoutRepartidorInput
@@ -540,7 +512,6 @@ export type UsuarioUpdateWithoutDisponibilidadesInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rutas?: Prisma.RutaUpdateManyWithoutRepartidorNestedInput
@@ -552,7 +523,6 @@ export type UsuarioUncheckedUpdateWithoutDisponibilidadesInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rutas?: Prisma.RutaUncheckedUpdateManyWithoutRepartidorNestedInput
@@ -563,7 +533,6 @@ export type UsuarioCreateWithoutRutasInput = {
   email: string
   password: string
   rol: $Enums.Role
-  activo?: boolean
   capacidadVehiculo?: number
   createdAt?: Date | string
   disponibilidades?: Prisma.DisponibilidadCreateNestedManyWithoutUsuarioInput
@@ -575,7 +544,6 @@ export type UsuarioUncheckedCreateWithoutRutasInput = {
   email: string
   password: string
   rol: $Enums.Role
-  activo?: boolean
   capacidadVehiculo?: number
   createdAt?: Date | string
   disponibilidades?: Prisma.DisponibilidadUncheckedCreateNestedManyWithoutUsuarioInput
@@ -602,7 +570,6 @@ export type UsuarioUpdateWithoutRutasInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   disponibilidades?: Prisma.DisponibilidadUpdateManyWithoutUsuarioNestedInput
@@ -614,7 +581,6 @@ export type UsuarioUncheckedUpdateWithoutRutasInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   rol?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  activo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   capacidadVehiculo?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   disponibilidades?: Prisma.DisponibilidadUncheckedUpdateManyWithoutUsuarioNestedInput
@@ -666,7 +632,6 @@ export type UsuarioSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   email?: boolean
   password?: boolean
   rol?: boolean
-  activo?: boolean
   capacidadVehiculo?: boolean
   createdAt?: boolean
   disponibilidades?: boolean | Prisma.Usuario$disponibilidadesArgs<ExtArgs>
@@ -682,12 +647,11 @@ export type UsuarioSelectScalar = {
   email?: boolean
   password?: boolean
   rol?: boolean
-  activo?: boolean
   capacidadVehiculo?: boolean
   createdAt?: boolean
 }
 
-export type UsuarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nombre" | "email" | "password" | "rol" | "activo" | "capacidadVehiculo" | "createdAt", ExtArgs["result"]["usuario"]>
+export type UsuarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nombre" | "email" | "password" | "rol" | "capacidadVehiculo" | "createdAt", ExtArgs["result"]["usuario"]>
 export type UsuarioInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   disponibilidades?: boolean | Prisma.Usuario$disponibilidadesArgs<ExtArgs>
   rutas?: boolean | Prisma.Usuario$rutasArgs<ExtArgs>
@@ -706,7 +670,6 @@ export type $UsuarioPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     email: string
     password: string
     rol: $Enums.Role
-    activo: boolean
     capacidadVehiculo: number
     createdAt: Date
   }, ExtArgs["result"]["usuario"]>
@@ -1085,7 +1048,6 @@ export interface UsuarioFieldRefs {
   readonly email: Prisma.FieldRef<"Usuario", 'String'>
   readonly password: Prisma.FieldRef<"Usuario", 'String'>
   readonly rol: Prisma.FieldRef<"Usuario", 'Role'>
-  readonly activo: Prisma.FieldRef<"Usuario", 'Boolean'>
   readonly capacidadVehiculo: Prisma.FieldRef<"Usuario", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Usuario", 'DateTime'>
 }
