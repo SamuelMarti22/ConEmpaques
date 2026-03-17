@@ -3,13 +3,13 @@ from pydantic import BaseModel
 # Modelos de datos Request
 
 class PuntoEntrega(BaseModel):
-    id: str
+    id: int
     latitud: float
     longitud: float
     peso: float
 
 class CapacidadRepartidor(BaseModel):
-    id: str
+    id: int
     capacidad: float
     
 class OptimizacionRequest(BaseModel):

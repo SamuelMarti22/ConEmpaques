@@ -4,9 +4,6 @@ from app.services.optimization import OptimizationService
 from app.models.schema import OptimizacionRequest, OptimizacionResponse
 import os
 
-from routing_service.app.models.schema import OptimizacionResponse
-from routing_service.app.services import optimization
-
 load_dotenv()
 
 app = FastAPI(title="Routing Service")

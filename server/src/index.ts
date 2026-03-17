@@ -4,12 +4,13 @@ import env from "./config/env.js";
 import { prisma } from "./databases/prisma/lib/prisma.js";
 import { horarioController } from "./modules/horarios/horario.controller.js";
 import { repartidorController } from "./modules/repartidores/repartidor.controller.js";
+import { routingController } from "./modules/routing/routing.controller.js";
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// rutas repartidor
+// Rutas repartidor
 app.get("/api/repartidores", repartidorController.obtenerTodos);
 app.get("/api/repartidores/:id", repartidorController.obtenerPorId);
 app.post("/api/repartidores", repartidorController.crear);
@@ -17,15 +18,18 @@ app.put("/api/repartidores/:id", repartidorController.actualizar);
 app.patch("/api/repartidores/:id", repartidorController.actualizar);
 app.delete("/api/repartidores/:id", repartidorController.eliminar);
 
-// rutas horarios repartidor
+// Rutas horarios repartidor
 app.get("/api/repartidores/:id/horarios", horarioController.obtenerHorarios);
 app.post("/api/repartidores/:id/horarios", horarioController.crearHorario);
 app.put("/api/repartidores/:id/horarios/:horarioId", horarioController.actualizarHorario);
 app.patch("/api/repartidores/:id/horarios/:horarioId", horarioController.actualizarHorario);
 app.delete("/api/repartidores/:id/horarios/:horarioId", horarioController.eliminarHorario);
 
-// validación operativa de recepción de rutas (sin asignar)
+// Validación operativa de recepción de rutas (sin asignar)
 app.post("/api/repartidores/:id/validar-recepcion-ruta", horarioController.validarRecepcionRuta);
+
+// Ruta para optimización de rutas
+app.post("/api/routing/optimizar", routingController.getRutaOptima);
 
 const iniciar = async () => {
 	await prisma.$connect();
