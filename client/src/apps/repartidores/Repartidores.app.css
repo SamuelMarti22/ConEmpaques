@@ -1,4 +1,4 @@
-@import "./repartidores.compartido.css";
+@import "../estilosCompartidosRepartidores/repartidores.compartido.css";
 
 .repartidores__botonAccion--horarios {
   background: #ede9fe;
