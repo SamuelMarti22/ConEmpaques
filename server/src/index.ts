@@ -12,6 +12,8 @@ app.use(cors());
 
 // Rutas repartidor
 app.get("/api/repartidores", repartidorController.obtenerTodos);
+app.get("/api/repartidores/disponibles-hoy", repartidorController.obtenerDisponiblesHoy);
+app.post("/api/repartidores/:id/validar-recepcion-ruta", horarioController.validarRecepcionRuta);
 app.get("/api/repartidores/:id", repartidorController.obtenerPorId);
 app.post("/api/repartidores", repartidorController.crear);
 app.put("/api/repartidores/:id", repartidorController.actualizar);
@@ -24,9 +26,6 @@ app.post("/api/repartidores/:id/horarios", horarioController.crearHorario);
 app.put("/api/repartidores/:id/horarios/:horarioId", horarioController.actualizarHorario);
 app.patch("/api/repartidores/:id/horarios/:horarioId", horarioController.actualizarHorario);
 app.delete("/api/repartidores/:id/horarios/:horarioId", horarioController.eliminarHorario);
-
-// Validación operativa de recepción de rutas (sin asignar)
-app.post("/api/repartidores/:id/validar-recepcion-ruta", horarioController.validarRecepcionRuta);
 
 // Ruta para optimización de rutas
 app.post("/api/routing/optimizar", routingController.getRutaOptima);

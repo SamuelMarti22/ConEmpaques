@@ -28,6 +28,11 @@ export interface DatosActualizarRepartidor {
   capacidadVehiculo?: number;
 }
 
+export interface RepartidorDisponibleHoy {
+  id: number;
+  capacidad: number;
+}
+
 export class RepartidorNoEncontradoError extends Error {
   constructor(mensaje = "No existe un repartidor con el identificador indicado") {
     super(mensaje);
@@ -73,6 +78,54 @@ async function listar() {
     orderBy: { id: "asc" },
     select: CAMPOS_PUBLICOS_REPARTIDOR,
   });
+}
+
+function formatearHora(horas: number, minutos: number): string {
+  return `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
+}
+
+async function listarDisponiblesHoy(fechaHora: Date = new Date()): Promise<RepartidorDisponibleHoy[]> {
+  const diaSemana = fechaHora.getDay();
+  const hora = formatearHora(fechaHora.getHours(), fechaHora.getMinutes());
+
+  const repartidoresDisponibles = await prisma.usuario.findMany({
+    where: {
+      rol: Role.REPARTIDOR,
+      disponibilidades: {
+        some: {
+          diaSemana,
+          activo: true,
+          horaInicio: {
+            lte: hora,
+          },
+          horaFin: {
+            gt: hora,
+          },
+        },
+      },
+      rutas: {
+        none: {
+          estadoRuta: {
+            in: [...ESTADOS_ENTREGA_ACTIVA],
+          },
+        },
+      },
+    },
+    orderBy: {
+      id: "asc",
+    },
+    select: {
+      id: true,
+      capacidadVehiculo: true,
+    },
+  });
+
+  return repartidoresDisponibles
+    .filter((repartidor) => typeof repartidor.capacidadVehiculo === "number" && repartidor.capacidadVehiculo > 0)
+    .map((repartidor) => ({
+      id: repartidor.id,
+      capacidad: repartidor.capacidadVehiculo,
+    }));
 }
 
 async function obtenerPorId(repartidorId: number) {
@@ -165,6 +218,7 @@ async function eliminar(repartidorId: number) {
 
 export const repartidorService = {
   listar,
+  listarDisponiblesHoy,
   obtenerPorId,
   crear,
   actualizar,
