@@ -31,11 +31,11 @@ class RoutingService:
 
         solucion = modelo.SolveWithParameters(parametros)
     
-        rutas = self.__extraer_rutas(solucion,modelo,gerente,repartidores,puntos_entrega) if solucion else []
+        rutas = self.__extraer_rutas(solucion,modelo,gerente,repartidores,puntos_entrega, matriz) if solucion else []
     
         return rutas
 
-    def __extraer_rutas(self,solucion,modelo,gerente,repartidores: list[CapacidadRepartidor],puntos: list[PuntoEntrega]) -> OptimizacionResponse:
+    def __extraer_rutas(self,solucion,modelo,gerente,repartidores: list[CapacidadRepartidor],puntos: list[PuntoEntrega],matriz: list[list[float]]) -> OptimizacionResponse:
         rutas = []
         for i, repartidor in enumerate(repartidores):
             paradas = []
@@ -47,6 +47,16 @@ class RoutingService:
                 index = solucion.Value(modelo.NextVar(index))
 
             if paradas:
-                    rutas.append(RutaRepartidor(repartidor_id=repartidor.id,ruta=paradas,distancia_total=solucion.ObjectiveValue(),tiempo_estimado=0.0, geometria=[]))
+                    rutas.append(RutaRepartidor(repartidor_id=repartidor.id,ruta=paradas,distancia_total=self.__calcular_distancia_ruta(paradas, puntos, matriz),tiempo_estimado=0.0, geometria=[]))
             
         return OptimizacionResponse(rutas=rutas)
+    
+    def __calcular_distancia_ruta(self,paradas: list[int],puntos: list[PuntoEntrega],matriz: list[list[float]]) -> float:
+        indice_por_id = {p.id: i + 1 for i, p in enumerate(puntos)}
+        orden = [0] + [indice_por_id[id] for id in paradas]
+        
+        distancia_total = 0
+        for i in range(len(orden) - 1):
+            distancia_total += matriz[orden[i]][orden[i + 1]]
+        
+        return distancia_total

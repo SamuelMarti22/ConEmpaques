@@ -23,7 +23,13 @@ export class RoutingService {
                 body: JSON.stringify(requestBody)
             })
 
-            return await response.json() as RutaRepartidor[];
+
+            const data = await response.json() as { rutas: RutaRepartidor[] };
+            if (!data.rutas || !Array.isArray(data.rutas)) {
+                throw new Error(`Respuesta inválida de servidor de routing: ${JSON.stringify(data)}`);
+            }
+
+            return data.rutas;
         }
         catch (error) {
             throw new Error("No fue posible encontrar una ruta optima para esta combinación de puntos de entrega y capacidades de repartidores.");

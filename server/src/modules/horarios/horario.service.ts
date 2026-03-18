@@ -1,6 +1,8 @@
-import { Role } from "../../databases/prisma/generated/prisma/enums.js";
+import { EstadoRuta, Role } from "../../databases/prisma/generated/prisma/enums.js";
 import { prisma } from "../../databases/prisma/lib/prisma.js";
 import { RepartidorNoEncontradoError } from "../repartidores/repartidor.service.js";
+
+const ESTADOS_RUTA_ASIGNADA = [EstadoRuta.PENDIENTE, EstadoRuta.EN_PROCESO] as const;
 
 const CAMPOS_PUBLICOS_HORARIO = {
   id: true,
@@ -29,6 +31,10 @@ export interface ResultadoValidacionRecepcionRuta {
   puedeRecibirRuta: boolean;
   mensaje: string;
   fechaHoraEvaluada: string;
+  repartidor: {
+    id: number;
+    capacidad: number;
+  } | null;
   horarioActivo: {
     id: number;
     diaSemana: number;
@@ -230,7 +236,20 @@ async function validarRecepcionRuta(
   repartidorId: number,
   fechaHora: Date,
 ): Promise<ResultadoValidacionRecepcionRuta> {
-  await verificarExistenciaRepartidor(repartidorId);
+  const repartidor = await prisma.usuario.findFirst({
+    where: {
+      id: repartidorId,
+      rol: Role.REPARTIDOR,
+    },
+    select: {
+      id: true,
+      capacidadVehiculo: true,
+    },
+  });
+
+  if (!repartidor) {
+    throw new RepartidorNoEncontradoError();
+  }
 
   const diaSemana = fechaHora.getDay();
   const hora = formatearHora(fechaHora.getHours(), fechaHora.getMinutes());
@@ -260,7 +279,30 @@ async function validarRecepcionRuta(
       puedeRecibirRuta: false,
       mensaje: "El repartidor no tiene un horario activo para la fecha y hora evaluadas",
       fechaHoraEvaluada: fechaHora.toISOString(),
+      repartidor: null,
       horarioActivo: null,
+    };
+  }
+
+  const rutaActiva = await prisma.ruta.findFirst({
+    where: {
+      repartidorId,
+      estadoRuta: {
+        in: [...ESTADOS_RUTA_ASIGNADA],
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (rutaActiva) {
+    return {
+      puedeRecibirRuta: false,
+      mensaje: "El repartidor ya tiene una ruta asignada",
+      fechaHoraEvaluada: fechaHora.toISOString(),
+      repartidor: null,
+      horarioActivo,
     };
   }
 
@@ -268,6 +310,10 @@ async function validarRecepcionRuta(
     puedeRecibirRuta: true,
     mensaje: "El repartidor sí puede recibir rutas en la fecha y hora evaluadas",
     fechaHoraEvaluada: fechaHora.toISOString(),
+    repartidor: {
+      id: repartidor.id,
+      capacidad: repartidor.capacidadVehiculo,
+    },
     horarioActivo,
   };
 }

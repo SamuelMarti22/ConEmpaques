@@ -17,7 +17,7 @@ class GeometryRouteService:
         
         url_osrm = f"{self.osrm_url}/route/v1/driving/{coordenadas_OSRM}?geometries=geojson"
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.get(url_osrm)
             response.raise_for_status()
             data = response.json()

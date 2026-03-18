@@ -22,7 +22,7 @@ class OptimizationService:
 
         return respuesta
     
-    def __calcular_tiempo(self,paradas: list[str],puntos_entrega: list[PuntoEntrega],matriz_tiempos: list[list[float]]) -> float:
+    def __calcular_tiempo(self,paradas: list[int],puntos_entrega: list[PuntoEntrega],matriz_tiempos: list[list[float]]) -> float:
         indice_por_id = {p.id: i + 1 for i, p in enumerate(puntos_entrega)}
         orden = [0] + [indice_por_id[id] for id in paradas]
     
