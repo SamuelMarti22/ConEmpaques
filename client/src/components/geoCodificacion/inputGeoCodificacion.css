@@ -1,0 +1,88 @@
+.geo-input {
+    position: relative;
+    width: 100%;
+}
+
+.geo-input__label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.geo-input__control {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease;
+}
+
+.geo-input__control:focus {
+    border-color: #2563eb;
+    outline: none;
+}
+
+.geo-input__status {
+    min-height: 1.1rem;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.geo-input__lista {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0.25rem 0;
+    list-style: none;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08);
+    z-index: 20;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.geo-input__item {
+    margin: 0;
+    padding: 0;
+}
+
+.geo-input__item-btn {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+}
+
+.geo-input__item-btn:hover {
+    background: #f9fafb;
+}
+
+.geo-input__item-main {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.geo-input__item-secondary {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.geo-input__error {
+    margin-top: 0.35rem;
+    font-size: 0.82rem;
+    color: #b91c1c;
+}

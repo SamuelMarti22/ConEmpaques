@@ -5,6 +5,7 @@ import { prisma } from "./databases/prisma/lib/prisma.js";
 import { horarioController } from "./modules/horarios/horario.controller.js";
 import { repartidorController } from "./modules/repartidores/repartidor.controller.js";
 import { routingController } from "./modules/routing/routing.controller.js";
+import { geocodificarDireccion } from "./modules/geoCodificacion/geoCodificacion.service.js";
 
 const app = express();
 app.use(express.json());
@@ -30,6 +31,8 @@ app.post("/api/repartidores/:id/validar-recepcion-ruta", horarioController.valid
 
 // Ruta para optimización de rutas
 app.post("/api/routing/optimizar", routingController.getRutaOptima);
+
+app.post("/api/geocodificacion", geocodificarDireccion);
 
 const iniciar = async () => {
 	await prisma.$connect();
