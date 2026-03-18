@@ -1,7 +1,7 @@
 import { useImperativeHandle, useRef, useState, forwardRef } from 'react';
 import { PuntoEntrega } from '../classes/PuntoEntrega';
+import ModalNuevoPunto, { type DatosNuevoPunto } from './modalNuevoPunto';
 import './PuntosEntrega.css';
-import { abrirModalNuevoPunto } from './modalNuevoPunto';
 
 interface PuntosEntregaProps {
     onAgregarMarcadorMapa: (punto: PuntoEntrega) => void;
@@ -17,17 +17,12 @@ export interface PuntosEntregaAtributos {
 const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ onAgregarMarcadorMapa, onEliminarMarcadorMapa, onVaciarMarcadoresMapa }, ref) => {
 
     const [puntosActuales, setPuntosActuales] = useState<PuntoEntrega[]>([]);
+    const [isOpenModal, setIsOpenModal] = useState(false);
     const nextId = useRef(1); //Variable para asignar IDs automáticos a los puntos, ya que el backend no los genera al ser solo un mock
 
-    const agregarPunto = async () => {
-        const valoresNuevoPunto = await abrirModalNuevoPunto();
-
-        if (!valoresNuevoPunto){
-            return;
-        }
-
+    const agregarPunto = (datosNuevoPunto: DatosNuevoPunto) => {
         const idAutomatico = nextId.current;
-        const nuevoPunto = new PuntoEntrega(idAutomatico, valoresNuevoPunto.cliente, valoresNuevoPunto.latitud, valoresNuevoPunto.longitud, valoresNuevoPunto.peso);
+        const nuevoPunto = new PuntoEntrega(idAutomatico, datosNuevoPunto.cliente, datosNuevoPunto.latitud, datosNuevoPunto.longitud, datosNuevoPunto.peso);
         setPuntosActuales(prev => [...prev, nuevoPunto]);
         onAgregarMarcadorMapa(nuevoPunto);
         nextId.current++;
@@ -50,16 +45,22 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
     }));
 
     return (
-        <div className="puntosMapa">
-            <div className="puntosMapa__header">
-                <h3>📍 Agregar Punto de Entrega</h3>
-                <p>Haz clic en el mapa para agregar un punto de entrega</p>
-            </div>
+        <>
+            <ModalNuevoPunto 
+                isOpen={isOpenModal}
+                onClose={() => setIsOpenModal(false)}
+                onConfirm={agregarPunto}
+            />
+            <div className="puntosMapa">
+                <div className="puntosMapa__header">
+                    <h3>📍 Agregar Punto de Entrega</h3>
+                    <p>Haz clic en el mapa para agregar un punto de entrega</p>
+                </div>
 
-            <div className="puntosMapa__acciones">
-                <button className="btn btn--agregar" onClick={agregarPunto}>+ Agregar punto</button>
-                <button className="btn btn--eliminar" onClick={vaciarListaPuntos}>🗑 Eliminar todos</button>
-            </div>
+                <div className="puntosMapa__acciones">
+                    <button className="btn btn--agregar" onClick={() => setIsOpenModal(true)}>+ Agregar punto</button>
+                    <button className="btn btn--eliminar" onClick={vaciarListaPuntos}>🗑 Eliminar todos</button>
+                </div>
 
             <div className="puntosMapa__lista">
                 <h4>Puntos Agregados ({puntosActuales.length})</h4>
@@ -83,6 +84,7 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
                 )}
             </div>
         </div>
+        </>
     );
 })
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 interface ResultadoGeocodificacion {
     direccion: string;
@@ -19,7 +19,7 @@ export function useGeocodificacion() {
     const [cargando, setCargando] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const geocodificar = async (direccion: string): Promise<ResultadoGeocodificacion | null> => {
+    const geocodificar = useCallback(async (direccion: string): Promise<ResultadoGeocodificacion | null> => {
         setCargando(true);
         setError(null);
         try {
@@ -40,19 +40,23 @@ export function useGeocodificacion() {
         } finally {
             setCargando(false);
         }
-    };
+    }, []);
 
-    const obtenerPredicciones = async (placeId: string): Promise<Prediccion[]> => {
-        if (!placeId.trim()) return [];
+    const obtenerPredicciones = useCallback(async (input: string): Promise<Prediccion[]> => {
+        if (!input.trim()) return [];
         try {
-            const response = await fetch(`http://localhost:3000/api/geocoding/predicciones?placeId=${encodeURIComponent(placeId)}`);
-            if (!response.ok) return [];
+            const response = await fetch(`http://localhost:3000/api/geocoding/predicciones?input=${encodeURIComponent(input)}`);
+            if (!response.ok) {
+                setError('No fue posible obtener sugerencias de direccion.');
+                return [];
+            }
             return await response.json();
         } catch (err) {
             console.error('Error obteniendo predicciones:', err);
+            setError('No fue posible obtener sugerencias de direccion.');
             return [];
         }
-    };
+    }, []);
 
     return { geocodificar, obtenerPredicciones, cargando, error };
 }

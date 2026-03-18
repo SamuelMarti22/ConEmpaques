@@ -8,6 +8,7 @@ import type { PuntosEntregaAtributos } from '../../components/PuntosEntrega';
 import { URL_REPARTIDORES, obtenerMensajeErrorHttp } from '../estilosCompartidosRepartidores/repartidores.compartido'
 import type { CapacidadRepartidor, PuntoEntregaFormateado, RutaRepartidorGeoJSON } from './../../types/routing.types'
 import BotonGeneracionRutas from '../../components/planteacionRuta/botonGeneracionRutas'
+import InputGeoCodificacion from '../../components/geoCodificacion/inputGeoCodificacion';
 
 interface RepartidorDisponibleHoyResponse {
     id: number;

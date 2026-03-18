@@ -1,21 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { PuntoGeocodificado } from '../../types/PuntoGeodificado.type';
 import './inputGeoCodificacion.css';
 import { useGeocodificacion } from './useGeoCodificacion';
+
+export type { PuntoGeocodificado };
 
 interface Prediccion {
 	id: string;
 	descripcion: string;
 	mainText: string;
 	secondaryText: string;
-}
-
-export interface PuntoGeocodificado {
-	cliente: string;
-	direccion: string;
-	latitud: number;
-	longitud: number;
-	confianza: number;
-	tipoResultado: string;
 }
 
 interface InputGeoCodificacionProps {
