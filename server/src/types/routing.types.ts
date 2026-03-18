@@ -23,7 +23,7 @@ export interface RutaRepartidor{
     tiempo_estimado: number;
 }
 
-export interface RutaRepartidoGeoJSON {
+export interface RutaRepartidorGeoJSON {
   repartidor_id: number
   ruta: number[]
   distancia_total: number

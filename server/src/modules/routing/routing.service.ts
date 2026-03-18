@@ -23,13 +23,8 @@ export class RoutingService {
                 body: JSON.stringify(requestBody)
             })
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP Error: ${response.status} ${response.statusText} - ${errorText}`);
-            }
 
             const data = await response.json() as { rutas: RutaRepartidor[] };
-
             if (!data.rutas || !Array.isArray(data.rutas)) {
                 throw new Error(`Respuesta inválida de servidor de routing: ${JSON.stringify(data)}`);
             }
@@ -37,8 +32,7 @@ export class RoutingService {
             return data.rutas;
         }
         catch (error) {
-            const errorMsg = error instanceof Error ? error.message : String(error);
-            throw new Error(`No fue posible encontrar una ruta optima: ${errorMsg}`);
+            throw new Error("No fue posible encontrar una ruta optima para esta combinación de puntos de entrega y capacidades de repartidores.");
         }
     }
 }

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 
 # Modelos de datos Request
 
@@ -9,8 +9,10 @@ class PuntoEntrega(BaseModel):
     peso: float
 
 class CapacidadRepartidor(BaseModel):
-    id: int
-    capacidad: float
+    id: int = Field(alias="idRepartidor")
+    capacidad: float = Field(alias="capacidadRepartidor")
+    
+    model_config = ConfigDict(populate_by_name=True)
     
 class OptimizacionRequest(BaseModel):
     deposito: dict[str, float]  

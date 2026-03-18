@@ -2,27 +2,25 @@ import './PlaneacionRutas.css'
 import MapaInteractivo from '../../components/MapaInteractivo'
 import PuntosEntrega from '../../components/PuntosEntrega'
 import type { MapaInteractivoFunciones } from '../../components/MapaInteractivo'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PuntoEntrega } from '../../classes/PuntoEntrega';
 import type { PuntosEntregaAtributos } from '../../components/PuntosEntrega';
 import { URL_REPARTIDORES, obtenerMensajeErrorHttp } from '../estilosCompartidosRepartidores/repartidores.compartido'
+import type { CapacidadRepartidor, PuntoEntregaFormateado, RutaRepartidorGeoJSON } from './../../types/routing.types'
+import BotonGeneracionRutas from '../../components/planteacionRuta/botonGeneracionRutas'
 
 interface RepartidorDisponibleHoyResponse {
     id: number;
     capacidad: number;
 }
 
-export interface CapacidadRepartidorPlaneacion {
-    idRepartidor: number;
-    capacidadRepartidor: number;
-}
-
-export let capacidadesRepartidores: CapacidadRepartidorPlaneacion[] = [];
-
 export default function PlaneacionRutas() {
 
     const mapaRef = useRef<MapaInteractivoFunciones>(null);
     const puntosEntregaRef = useRef<PuntosEntregaAtributos>(null);
+    const [capacidadesRepartidores, setCapacidadesRepartidores] = useState<CapacidadRepartidor[]>([]);
+    const [rutasGeneradas, setRutasGeneradas] = useState<RutaRepartidorGeoJSON[]>([]);
+
 
     useEffect(() => {
         const cargarCapacidadesRepartidores = async (): Promise<void> => {
@@ -34,20 +32,23 @@ export default function PlaneacionRutas() {
                 }
 
                 const repartidoresDisponibles = (await response.json()) as RepartidorDisponibleHoyResponse[];
-
-                capacidadesRepartidores = repartidoresDisponibles.map((repartidor) => ({
-                    idRepartidor: repartidor.id,
-                    capacidadRepartidor: repartidor.capacidad,
+                const capacidadesFormateadas = repartidoresDisponibles.map((repartidor) => ({
+                    id: repartidor.id,
+                    capacidad: repartidor.capacidad,
                 }));
+                setCapacidadesRepartidores(capacidadesFormateadas);
             } catch (errorOperacion) {
                 console.error('No se pudo obtener la lista de repartidores disponibles de hoy', errorOperacion);
-                capacidadesRepartidores = [];
+                setCapacidadesRepartidores([]);
             }
         };
 
         void cargarCapacidadesRepartidores();
     }, []);
 
+    useEffect(() => {
+        console.log('✅ Rutas generadas:', rutasGeneradas);
+    }, [rutasGeneradas]);
     const agregarPunto = (punto: PuntoEntrega) => {
         mapaRef.current?.agregarPunto(punto);
     };
@@ -60,7 +61,7 @@ export default function PlaneacionRutas() {
         mapaRef.current?.eliminarPunto(index);
     };
 
-    const obtenerPuntosFormateadosBackend = (): { id: number; latitud: number; longitud: number; peso: number }[] => {
+    const obtenerPuntosFormateadosBackend = (): PuntoEntregaFormateado[] => {
         return puntosEntregaRef.current?.obtenerPuntosFormateadosBackend() || [];
     };
 
@@ -78,7 +79,12 @@ export default function PlaneacionRutas() {
                         onVaciarMarcadoresMapa={vaciarPuntos}
                     />
                 </div>
-                <button className="btn btn--guardar" onClick={() => console.log(obtenerPuntosFormateadosBackend())}>💾 Guardar puntos (ver en consola)</button>
+                
+                <BotonGeneracionRutas
+                    obtenerPuntosFormateados={obtenerPuntosFormateadosBackend}
+                    capacidadesRepartidores={capacidadesRepartidores}
+                    onRutasGeneradas={(rutas) => setRutasGeneradas(rutas)}
+                />
             </div>
         </>
     )
