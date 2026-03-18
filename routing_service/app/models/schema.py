@@ -21,8 +21,8 @@ class OptimizacionRequest(BaseModel):
 # Modelos de datos Response
 
 class RutaRepartidor(BaseModel):
-    repartidor_id: str
-    ruta: list[str]  
+    repartidor_id: int
+    ruta: list[int]
     geometria: list[list[float]]
     distancia_total: float
     tiempo_estimado: float
