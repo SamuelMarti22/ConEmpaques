@@ -6,8 +6,9 @@ import { useEffect, useRef, useState } from 'react'
 import { PuntoEntrega } from '../../classes/PuntoEntrega';
 import type { PuntosEntregaAtributos } from '../../components/PuntosEntrega';
 import { URL_REPARTIDORES, obtenerMensajeErrorHttp } from '../estilosCompartidosRepartidores/repartidores.compartido'
-import type { CapacidadRepartidor, PuntoEntregaFormateado, RutaRepartidorGeoJSON } from './../../types/routing.types'
+import type { CapacidadRepartidor, PuntoEntregaFormateado } from './../../types/routing.types'
 import BotonGeneracionRutas from '../../components/planteacionRuta/botonGeneracionRutas'
+import {RutaRepartidorGeoJSON} from './../../classes/RutaRepartidorGeoJSON'
 
 interface RepartidorDisponibleHoyResponse {
     id: number;
@@ -47,8 +48,9 @@ export default function PlaneacionRutas() {
     }, []);
 
     useEffect(() => {
-        console.log('✅ Rutas generadas:', rutasGeneradas);
+        console.log('✅ Rutas generadas:', rutasGeneradas[0]?.getGeometria());
     }, [rutasGeneradas]);
+
     const agregarPunto = (punto: PuntoEntrega) => {
         mapaRef.current?.agregarPunto(punto);
     };
@@ -83,7 +85,18 @@ export default function PlaneacionRutas() {
                 <BotonGeneracionRutas
                     obtenerPuntosFormateados={obtenerPuntosFormateadosBackend}
                     capacidadesRepartidores={capacidadesRepartidores}
-                    onRutasGeneradas={(rutas) => setRutasGeneradas(rutas)}
+                    onRutasGeneradas={(rutas) => {
+                        const rutasInstanciadas = rutas.map(ruta => 
+                            new RutaRepartidorGeoJSON(
+                                ruta.repartidor_id,
+                                ruta.ruta,
+                                ruta.distancia_total,
+                                ruta.tiempo_estimado,
+                                ruta.geometria
+                            )
+                        );
+                        setRutasGeneradas(rutasInstanciadas);
+                    }}
                 />
             </div>
         </>
