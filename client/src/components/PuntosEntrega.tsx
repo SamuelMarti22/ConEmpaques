@@ -1,11 +1,12 @@
-import { useImperativeHandle, useRef, useState, forwardRef } from 'react';
-import Swal from 'sweetalert2';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { PuntoEntrega } from '../classes/PuntoEntrega';
+import ModalNuevoPunto, { type DatosNuevoPunto } from './modalNuevoPunto';
 import './PuntosEntrega.css';
+import { recuperarPuntosGuardados, STORAGE_KEY_PUNTOS } from './recuperarPuntosLS';
 
 interface PuntosEntregaProps {
     onAgregarMarcadorMapa: (punto: PuntoEntrega) => void;
-    onEliminarMarcadorMapa: (index: number) => void;
+    onEliminarMarcadorMapa: (id: number) => void;
     onVaciarMarcadoresMapa: () => void;
 }
 
@@ -16,67 +17,49 @@ export interface PuntosEntregaAtributos {
 
 const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ onAgregarMarcadorMapa, onEliminarMarcadorMapa, onVaciarMarcadoresMapa }, ref) => {
 
-    const [puntosActuales, setPuntosActuales] = useState<PuntoEntrega[]>([]);
+    const [puntosActuales, setPuntosActuales] = useState<PuntoEntrega[]>(() => recuperarPuntosGuardados());
+    const [isOpenModal, setIsOpenModal] = useState(false);
     const nextId = useRef(1); //Variable para asignar IDs automáticos a los puntos, ya que el backend no los genera al ser solo un mock
 
-    const agregarPunto = async () => {
-        const { value: valoresNuevoPunto, isConfirmed } = await Swal.fire({
-            title: 'Nuevo punto de entrega',
-            html: `
-                <div style="display:flex;flex-direction:column;gap:10px;text-align:left">
-                    <label style="font-size:0.9rem;font-weight:600">Nombre del cliente</label>
-                    <input id="swal-cliente" class="swal2-input" placeholder="Ej: Empresa XYZ" style="margin:0">
-                    <label style="font-size:0.9rem;font-weight:600">Latitud</label>
-                    <input id="swal-latitud" class="swal2-input" type="number" step="any" placeholder="Ej: 6.2442" style="margin:0">
-                    <label style="font-size:0.9rem;font-weight:600">Longitud</label>
-                    <input id="swal-longitud" class="swal2-input" type="number" step="any" placeholder="Ej: -75.5636" style="margin:0">
-                    <label style="font-size:0.9rem;font-weight:600">Peso (kg)</label>
-                    <input id="swal-peso" class="swal2-input" type="number" step="any" placeholder="Ej: 5.5" style="margin:0">
-                </div>
-            `,
-            confirmButtonText: '📍 Agregar',
-            confirmButtonColor: '#3b82f6',
-            showCancelButton: true,
-            cancelButtonText: 'Cancelar',
-            focusConfirm: false,
-            preConfirm: () => {
-                const cliente = (document.getElementById('swal-cliente') as HTMLInputElement).value.trim();
-                const latitud = parseFloat((document.getElementById('swal-latitud') as HTMLInputElement).value);
-                const longitud = parseFloat((document.getElementById('swal-longitud') as HTMLInputElement).value);
-                const peso = parseFloat((document.getElementById('swal-peso') as HTMLInputElement).value);
+    useEffect(() => {
+        puntosActuales.forEach((punto) => onAgregarMarcadorMapa(punto));
+        // Se ejecuta solo al montar para rehidratar marcadores desde localStorage.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-                if (!cliente) {
-                    Swal.showValidationMessage('El nombre del cliente es obligatorio');
-                    return false;
-                }
-                if (isNaN(latitud) || isNaN(longitud)) {
-                    Swal.showValidationMessage('Las coordenadas deben ser números válidos');
-                    return false;
-                }
-                if (isNaN(peso)) {
-                    Swal.showValidationMessage('El peso debe ser un número válido');
-                    return false;
-                }
-                return { cliente, latitud, longitud, peso };
-            }
-        });
+    useEffect(() => {
+        const maxId = puntosActuales.reduce((maximo, punto) => Math.max(maximo, punto.getId()), 0);
+        nextId.current = maxId + 1;
+    }, [puntosActuales]);
 
-        if (!isConfirmed || !valoresNuevoPunto) return;
+    useEffect(() => {
+        window.localStorage.setItem(STORAGE_KEY_PUNTOS, JSON.stringify(puntosActuales));
+    }, [puntosActuales]);
 
+    const agregarPunto = (datosNuevoPunto: DatosNuevoPunto) => {
         const idAutomatico = nextId.current;
-        const nuevoPunto = new PuntoEntrega(idAutomatico, valoresNuevoPunto.cliente, valoresNuevoPunto.latitud, valoresNuevoPunto.longitud, valoresNuevoPunto.peso);
+        const nuevoPunto = new PuntoEntrega(
+            idAutomatico,
+            datosNuevoPunto.cliente,
+            datosNuevoPunto.latitud,
+            datosNuevoPunto.longitud,
+            datosNuevoPunto.peso,
+            datosNuevoPunto.direccion
+        );
         setPuntosActuales(prev => [...prev, nuevoPunto]);
         onAgregarMarcadorMapa(nuevoPunto);
         nextId.current++;
     };
     const EliminarMarcadorMapa = (index: number) => {
+        const punto = puntosActuales[index];
+        if (!punto) return;
+        
         setPuntosActuales(prev => prev.filter((_, i) => i !== index));
-        onEliminarMarcadorMapa(index);
+        onEliminarMarcadorMapa(punto.getId());
     };
     const vaciarListaPuntos = () => {
         setPuntosActuales([]);
         onVaciarMarcadoresMapa();
-        nextId.current = 1;
     };
     
     useImperativeHandle(ref, () => ({
@@ -87,16 +70,22 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
     }));
 
     return (
-        <div className="puntosMapa">
-            <div className="puntosMapa__header">
-                <h3>📍 Agregar Punto de Entrega</h3>
-                <p>Haz clic en el mapa para agregar un punto de entrega</p>
-            </div>
+        <>
+            <ModalNuevoPunto
+                isOpen={isOpenModal}
+                onClose={() => setIsOpenModal(false)}
+                onConfirm={agregarPunto}
+            />
+            <div className="puntosMapa">
+                <div className="puntosMapa__header">
+                    <h3>📍 Agregar Punto de Entrega</h3>
+                    <p>Haz clic en el mapa para agregar un punto de entrega</p>
+                </div>
 
-            <div className="puntosMapa__acciones">
-                <button className="btn btn--agregar" onClick={agregarPunto}>+ Agregar punto</button>
-                <button className="btn btn--eliminar" onClick={vaciarListaPuntos}>🗑 Eliminar todos</button>
-            </div>
+                <div className="puntosMapa__acciones">
+                    <button className="btn btn--agregar" onClick={() => setIsOpenModal(true)}>+ Agregar punto</button>
+                    <button className="btn btn--eliminar" onClick={vaciarListaPuntos}>🗑 Eliminar todos</button>
+                </div>
 
             <div className="puntosMapa__lista">
                 <h4>Puntos Agregados ({puntosActuales.length})</h4>
@@ -104,14 +93,13 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
                     <p className="puntosMapa__vacio">No hay puntos agregados</p>
                 ) : (
                     puntosActuales.map((punto, index) => (
-                        <div key={index} className="puntosMapa__tarjeta">
+                        <div key={punto.getId()} className="puntosMapa__tarjeta">
                             <div className="puntosMapa__tarjeta__titulo">
                                 <span>📦</span>
                                 <strong>{punto.cliente}</strong> - <strong>ID: {punto.getId()}</strong>
                             </div>
                             <div className="puntosMapa__tarjeta__coords">
-                                <span>🌐 Lat: {punto.getLatitud().toFixed(4)}</span>
-                                <span>🌐 Lng: {punto.getLongitud().toFixed(4)}</span>
+                                <span>📍 Dirección: {punto.getDireccion() || 'Sin dirección'}</span>
                                 <span>⚖️ Peso: {punto.getPeso()} kg</span>
                             </div>
                             <button className="btn btn--eliminar btn--eliminar-uno" onClick={() => EliminarMarcadorMapa(index)}>🗑</button>
@@ -120,6 +108,7 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
                 )}
             </div>
         </div>
+        </>
     );
 })
 

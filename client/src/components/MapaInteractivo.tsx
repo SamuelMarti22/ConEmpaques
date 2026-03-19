@@ -13,14 +13,14 @@ const coordenadasMedellin: [number, number] = [-75.5636, 6.2442];
 //Funciones que expone a otros componentes, para modificar sus propios marcadores
 export interface MapaInteractivoFunciones {
     agregarPunto: (punto: PuntoEntrega) => void;
-    eliminarPunto: (index: number) => void;
+    eliminarPunto: (id: number) => void;
     vaciarPuntos: () => void;
 }
 
 const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
     const contenedorMapa = useRef<HTMLDivElement>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
-    const marcadoresRef = useRef<{ id: number; marker: mapboxgl.Marker }[]>([]);
+    const marcadoresRef = useRef<Map<number, mapboxgl.Marker>>(new Map());
 
     useEffect(() => {
         if (!contenedorMapa.current) return;
@@ -42,17 +42,17 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
                 .setLngLat([punto.getLongitud(), punto.getLatitud()])
                 .setPopup(new mapboxgl.Popup().setText(punto.getCliente()))
                 .addTo(mapRef.current);
-            marcadoresRef.current.push({ id: punto.getId(), marker });
+            marcadoresRef.current.set(punto.getId(), marker);
         },
-        eliminarPunto: (index: number) => {
-            const marcadorObj = marcadoresRef.current[index];
-            if (!marcadorObj) return;
-            marcadorObj.marker.remove();
-            marcadoresRef.current.splice(index, 1);
+        eliminarPunto: (id: number) => {
+            const marker = marcadoresRef.current.get(id);
+            if (!marker) return;
+            marker.remove();
+            marcadoresRef.current.delete(id);
         },
         vaciarPuntos: () => {
-            marcadoresRef.current.forEach(marcadorObj => marcadorObj.marker.remove());
-            marcadoresRef.current = [];
+            marcadoresRef.current.forEach(marker => marker.remove());
+            marcadoresRef.current.clear();
         }
     }));
 

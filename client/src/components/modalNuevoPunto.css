@@ -1,0 +1,227 @@
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(2px);
+}
+
+.modal-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-titulo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.modal-cerrar {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.modal-cerrar:hover:not(:disabled) {
+    color: #1f2937;
+}
+
+.modal-cerrar:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-seccion {
+    margin-bottom: 1.3rem;
+}
+
+.modal-seccion:last-of-type {
+    margin-bottom: 0.5rem;
+}
+
+.modal-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #1f2937;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+.modal-input::placeholder {
+    color: #6b7280;
+}
+
+.modal-input:focus {
+    outline: none;
+    background-color: #f9fafb;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.modal-input:disabled {
+    background-color: #f9fafb;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.modal-ubicacion-confirmada {
+    margin-top: 0.8rem;
+    padding: 1rem;
+    background-color: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 8px;
+}
+
+.modal-ubicacion-texto {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.95rem;
+    color: #15803d;
+}
+
+.modal-ubicacion-coords {
+    margin: 0.3rem 0;
+    font-size: 0.85rem;
+    color: #4b5563;
+    font-family: monospace;
+}
+
+.modal-ubicacion-confianza {
+    margin: 0.3rem 0 0 0;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.modal-error {
+    padding: 0.75rem;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #b91c1c;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 0.8rem;
+    padding: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    justify-content: flex-end;
+}
+
+.modal-btn {
+    padding: 0.65rem 1.3rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.modal-btn--cancelar {
+    background-color: #e5e7eb;
+    color: #1f2937;
+}
+
+.modal-btn--cancelar:hover:not(:disabled) {
+    background-color: #d1d5db;
+}
+
+.modal-btn--confirmar {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.modal-btn--confirmar:hover:not(:disabled) {
+    background-color: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .modal-container {
+        width: 95%;
+    }
+
+    .modal-header {
+        padding: 1.2rem;
+    }
+
+    .modal-body {
+        padding: 1.2rem;
+    }
+
+    .modal-footer {
+        padding: 1.2rem;
+        flex-direction: column-reverse;
+    }
+
+    .modal-btn {
+        width: 100%;
+    }
+}

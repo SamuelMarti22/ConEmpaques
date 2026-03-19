@@ -1,10 +1,9 @@
-import './PlaneacionRutas.css'
-import MapaInteractivo from '../../components/MapaInteractivo'
-import PuntosEntrega from '../../components/PuntosEntrega'
-import type { MapaInteractivoFunciones } from '../../components/MapaInteractivo'
 import { useEffect, useRef, useState } from 'react'
-import { PuntoEntrega } from '../../classes/PuntoEntrega';
-import type { PuntosEntregaAtributos } from '../../components/PuntosEntrega';
+import { PuntoEntrega } from '../../classes/PuntoEntrega'
+import type { MapaInteractivoFunciones } from '../../components/MapaInteractivo'
+import MapaInteractivo from '../../components/MapaInteractivo'
+import type { PuntosEntregaAtributos } from '../../components/PuntosEntrega'
+import PuntosEntrega from '../../components/PuntosEntrega'
 import { URL_REPARTIDORES, obtenerMensajeErrorHttp } from '../estilosCompartidosRepartidores/repartidores.compartido'
 import type { CapacidadRepartidor, PuntoEntregaFormateado } from './../../types/routing.types'
 import BotonGeneracionRutas from '../../components/planteacionRuta/botonGeneracionRutas'
@@ -59,8 +58,8 @@ export default function PlaneacionRutas() {
         mapaRef.current?.vaciarPuntos();
     };
 
-    const eliminarPunto = (index: number) => {
-        mapaRef.current?.eliminarPunto(index);
+    const eliminarPunto = (id: number) => {
+        mapaRef.current?.eliminarPunto(id);
     };
 
     const obtenerPuntosFormateadosBackend = (): PuntoEntregaFormateado[] => {
