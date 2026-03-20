@@ -16,7 +16,7 @@ export class RutasController {
                 return;
             }
 
-            const response = await rutasService.guardarRuta(puntosEntrega, rutaRepartidorGeoJSON);
+            // const response = await rutasService.guardarRuta(puntosEntrega, rutaRepartidorGeoJSON);
 
             res.status(201).json({ message: 'Ruta guardada exitosamente' });
         } catch (error) {

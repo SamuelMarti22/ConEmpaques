@@ -11,8 +11,9 @@ export interface IPuntoEntrega {
   direccion: string;
   latitud: number;
   longitud: number;
+  pesoProducto: number;
   cantidadProducto: number;
-  descripcionProducto: string;
+  descripcionEntrega: string;
   estadoEntrega: "PENDIENTE" | "ENTREGADO" | "FALLIDO";
   fechaHoraEntrega?: Date;
   firmaUrl?: string;
@@ -39,8 +40,8 @@ export interface IPuntoEntregaMethods {
   setLongitud(valor: number): void;
   getCantidadProducto(): number;
   setCantidadProducto(valor: number): void;
-  getDescripcionProducto(): string;
-  setDescripcionProducto(valor: string): void;
+  getDescripcionEntrega(): string;
+  setDescripcionEntrega(valor: string): void;
   getEstadoEntrega(): "PENDIENTE" | "ENTREGADO" | "FALLIDO";
   setEstadoEntrega(valor: "PENDIENTE" | "ENTREGADO" | "FALLIDO"): void;
   getFechaHoraEntrega(): Date | undefined;
@@ -75,7 +76,8 @@ export const PuntoEntregaSchema = new Schema<IPuntoEntrega, mongoose.Model<IPunt
   latitud: { type: Number, required: true },
   longitud: { type: Number, required: true },
   cantidadProducto: { type: Number, required: true },
-  descripcionProducto: { type: String },
+  pesoProducto: { type: Number, required: true },
+  descripcionEntrega: { type: String },
   direccion: { type: String, required: true },
 
   estadoEntrega: {
