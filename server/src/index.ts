@@ -6,6 +6,8 @@ import { horarioController } from "./modules/horarios/horario.controller.js";
 import { repartidorController } from "./modules/repartidores/repartidor.controller.js";
 import { routingController } from "./modules/routing/routing.controller.js";
 import { rutasController } from "./modules/rutas/rutas.controller.js";
+import geoCodificacionRutasController from "./modules/geoCodificacion/geoCodificacion.controller.js";
+
 
 const app = express();
 app.use(express.json());
@@ -31,8 +33,14 @@ app.delete("/api/repartidores/:id/horarios/:horarioId", horarioController.elimin
 // Rutas para optimización de rutas
 app.post("/api/routing/optimizar", routingController.getRutaOptima);
 
+
 // Rutas para CRUD rutas
 app.post("/api/rutas", rutasController.guardarRutas);
+
+// Alias para mantener compatibilidad entre frontend y backend
+app.use("/api/geocodificacion", geoCodificacionRutasController);
+app.use("/api/geocoding", geoCodificacionRutasController);
+
 
 const iniciar = async () => {
 	await prisma.$connect();
