@@ -2,9 +2,32 @@ from platform import node
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 from app.models.schema import PuntoEntrega, CapacidadRepartidor, RutaRepartidor, OptimizacionResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 class RoutingService:
     def resolver_rutas(self, matriz: list[list[float]], puntos_entrega: list[PuntoEntrega], repartidores: list[CapacidadRepartidor] ) -> OptimizacionResponse:
+        logger.info(f"Iniciando optimización con {len(puntos_entrega)} puntos y {len(repartidores)} repartidores")
+        logger.info(f"Capacidades: {[r.capacidad for r in repartidores]}")
+        logger.info(f"Pesos de puntos: {[p.peso for p in puntos_entrega]}")
+        
+        # Validaciones
+        capacidad_total = sum(r.capacidad for r in repartidores)
+        peso_total = sum(p.peso for p in puntos_entrega)
+        logger.info(f"Capacidad total disponible: {capacidad_total}, Peso total a repartir: {peso_total}")
+        
+        if peso_total > capacidad_total:
+            logger.error(f"ERROR: No hay suficiente capacidad. Necesitas {peso_total} pero solo tienes {capacidad_total}")
+            return OptimizacionResponse(rutas=[])
+            
+        if not puntos_entrega:
+            logger.warning("No hay puntos de entrega")
+            return OptimizacionResponse(rutas=[])
+            
+        if not repartidores:
+            logger.warning("No hay repartidores")
+            return OptimizacionResponse(rutas=[])
           
         gerente = pywrapcp.RoutingIndexManager(len(matriz),len(repartidores),  0 )
         modelo = pywrapcp.RoutingModel(gerente)
@@ -32,10 +55,14 @@ class RoutingService:
         parametros.time_limit.seconds = 30
 
         solucion = modelo.SolveWithParameters(parametros)
-    
-        rutas = self.__extraer_rutas(solucion,modelo,gerente,repartidores,puntos_entrega, matriz) if solucion else []
-    
-        return rutas
+        
+        logger.info(f"Status de solucion: {solucion}")
+        if solucion:
+            logger.info("Solución encontrada")
+            return self.__extraer_rutas(solucion,modelo,gerente,repartidores,puntos_entrega, matriz)
+        else:
+            logger.warning("NO se encontró solución")
+            return OptimizacionResponse(rutas=[])
 
     def __extraer_rutas(self,solucion,modelo,gerente,repartidores: list[CapacidadRepartidor],puntos: list[PuntoEntrega],matriz: list[list[float]]) -> OptimizacionResponse:
         rutas = []
@@ -49,8 +76,13 @@ class RoutingService:
                 index = solucion.Value(modelo.NextVar(index))
 
             if paradas:
-                    rutas.append(RutaRepartidor(repartidor_id=repartidor.id,ruta=paradas,distancia_total=self.__calcular_distancia_ruta(paradas, puntos, matriz),tiempo_estimado=0.0, geometria=[]))
+                distancia = self.__calcular_distancia_ruta(paradas, puntos, matriz)
+                logger.info(f"Repartidor {repartidor.id}: {len(paradas)} paradas, distancia: {distancia}")
+                rutas.append(RutaRepartidor(repartidor_id=repartidor.id,ruta=paradas,distancia_total=distancia,tiempo_estimado=0.0, geometria=[]))
+            else:
+                logger.debug(f"Repartidor {repartidor.id}: sin paradas asignadas")
             
+        logger.info(f"Total de rutas generadas: {len(rutas)}")
         return OptimizacionResponse(rutas=rutas)
     
     def __calcular_distancia_ruta(self,paradas: list[int],puntos: list[PuntoEntrega],matriz: list[list[float]]) -> float:

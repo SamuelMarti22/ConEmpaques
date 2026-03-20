@@ -8,15 +8,15 @@ export class RutasController {
         try {
             
             const puntosEntrega: IPuntoEntrega[] = req.body.puntosEntrega;
-            const rutaRepartidorGeoJSON: RutaRepartidorGeoJSON = req.body.rutaRepartidorGeoJSON;
+            const rutasRepartidorGeoJSON: RutaRepartidorGeoJSON[] = req.body.rutasRepartidorGeoJSON 
             const fechaReparto: Date = req.body.fechaReparto;
 
-            if (!puntosEntrega || !rutaRepartidorGeoJSON || !fechaReparto) {
-                res.status(400).json({ error: 'Faltan datos necesarios: puntosEntrega, rutaRepartidorGeoJSON o fechaReparto' });
+            if (!puntosEntrega || !rutasRepartidorGeoJSON || !fechaReparto) {
+                res.status(400).json({ error: 'Faltan datos necesarios: puntosEntrega, rutasRepartidorGeoJSON o fechaReparto' });
                 return;
             }
 
-            // const response = await rutasService.guardarRuta(puntosEntrega, rutaRepartidorGeoJSON);
+            const response = await rutasService.guardarRuta(puntosEntrega, rutasRepartidorGeoJSON, fechaReparto);
 
             res.status(201).json({ message: 'Ruta guardada exitosamente' });
         } catch (error) {

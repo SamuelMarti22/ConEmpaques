@@ -6,7 +6,7 @@ export class PuntoEntrega {
     contactoCliente: string;
     latitud: number;
     longitud: number;
-    cantidadProducto: number;
+    pesoProducto: number;
     descripcionProducto: string;
     estadoEntrega: "PENDIENTE" | "ENTREGADO" | "FALLIDO";
     fechaHoraEntrega?: Date;
@@ -18,7 +18,7 @@ export class PuntoEntrega {
         nombreCliente: string,
         latitud: number,
         longitud: number,
-        cantidadProducto: number,
+        pesoProducto: number,
         direccion: string = '',
         codigo: string = `P-${id}`,
         contactoCliente: string = 'Sin contacto',
@@ -35,7 +35,7 @@ export class PuntoEntrega {
         this.contactoCliente = contactoCliente;
         this.latitud = latitud;
         this.longitud = longitud;
-        this.cantidadProducto = cantidadProducto;
+        this.pesoProducto = pesoProducto;
         this.descripcionProducto = descripcionProducto;
         this.estadoEntrega = estadoEntrega;
         this.fechaHoraEntrega = fechaHoraEntrega;
@@ -53,11 +53,11 @@ export class PuntoEntrega {
     }
 
     get peso(): number {
-        return this.cantidadProducto;
+        return this.pesoProducto;
     }
 
     set peso(valor: number) {
-        this.cantidadProducto = valor;
+        this.pesoProducto = valor;
     }
 
     getId(): number {
@@ -130,20 +130,13 @@ export class PuntoEntrega {
     }
 
     getPeso(): number {
-        return this.cantidadProducto;
+        return this.pesoProducto;
     }
 
     setPeso(peso: number): void {
-        this.cantidadProducto = peso;
+        this.pesoProducto = peso;
     }
 
-    getCantidadProducto(): number {
-        return this.cantidadProducto;
-    }
-
-    setCantidadProducto(cantidadProducto: number): void {
-        this.cantidadProducto = cantidadProducto;
-    }
 
     getDescripcionProducto(): string {
         return this.descripcionProducto;

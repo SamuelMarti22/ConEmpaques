@@ -57,8 +57,8 @@ model Ruta {
   repartidorId   Int        @map("repartidor_id")
   fechaReparto   DateTime   @map("fecha_reparto")
   estadoRuta     EstadoRuta @map("estado_ruta")
-  horaInicioEntrega    String     @map("hora_inicio_entrega")
-  horaFinalizacionEntrega    String     @map("hora_finalizacion_entrega")
+  horaInicioEntrega    DateTime?     @map("hora_inicio_entrega")
+  horaFinalizacionEntrega    DateTime?     @map("hora_finalizacion_entrega")
   createdAt      DateTime   @default(now()) @map("created_at")
 
   repartidor Usuario @relation(fields: [repartidorId], references: [id])

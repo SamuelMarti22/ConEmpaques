@@ -8,6 +8,7 @@ import { URL_REPARTIDORES, obtenerMensajeErrorHttp } from '../estilosCompartidos
 import type { CapacidadRepartidor, PuntoEntregaFormateado } from './../../types/routing.types'
 import BotonGeneracionRutas from '../../components/planteacionRuta/botonGeneracionRutas'
 import {RutaRepartidorGeoJSON} from './../../classes/RutaRepartidorGeoJSON'
+import BotonGuardarRuta from '../../components/guardadoRuta/botonGuardarRuta.component'
 
 import './PlaneacionRutas.css';
 
@@ -22,7 +23,11 @@ export default function PlaneacionRutas() {
     const puntosEntregaRef = useRef<PuntosEntregaAtributos>(null);
     const [capacidadesRepartidores, setCapacidadesRepartidores] = useState<CapacidadRepartidor[]>([]);
     const [rutasGeneradas, setRutasGeneradas] = useState<RutaRepartidorGeoJSON[]>([]);
+    const [fechaReparto, setFechaReparto] = useState<Date>(new Date());
 
+    useEffect(() => {
+        setFechaReparto(new Date());
+    }, []);
 
     useEffect(() => {
         const cargarCapacidadesRepartidores = async (): Promise<void> => {
@@ -68,6 +73,10 @@ export default function PlaneacionRutas() {
         return puntosEntregaRef.current?.obtenerPuntosFormateadosBackend() || [];
     };
 
+    const obtenerPuntosActuales = (): PuntoEntrega[] => {
+        return puntosEntregaRef.current?.obtenerPuntosActuales() || [];
+    };
+
     return (
         <>
             <div className="vistaPlaneacion">
@@ -97,6 +106,16 @@ export default function PlaneacionRutas() {
                             )
                         );
                         setRutasGeneradas(rutasInstanciadas);
+                    }}
+                />
+
+                <BotonGuardarRuta
+                    obtenerPuntosActuales={obtenerPuntosActuales}
+                    rutaRepartidorGeoJSON={rutasGeneradas}
+                    fechaReparto={fechaReparto}
+                    onMensajeRutaGuardada={(mensaje) => {
+                        console.log('Rutas guardadas con éxito:', mensaje);
+                        alert('Rutas guardadas con éxito');
                     }}
                 />
             </div>

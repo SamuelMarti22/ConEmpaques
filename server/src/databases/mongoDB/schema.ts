@@ -5,6 +5,7 @@ import mongoose, { Schema, Document } from "mongoose";
 //////////////////////
 
 export interface IPuntoEntrega {
+  id: number;
   nombreCliente: string;
   codigo: string;
   contactoCliente: string;
@@ -12,7 +13,6 @@ export interface IPuntoEntrega {
   latitud: number;
   longitud: number;
   pesoProducto: number;
-  cantidadProducto: number;
   descripcionEntrega: string;
   estadoEntrega: "PENDIENTE" | "ENTREGADO" | "FALLIDO";
   fechaHoraEntrega?: Date;
@@ -38,8 +38,6 @@ export interface IPuntoEntregaMethods {
   setLatitud(valor: number): void;
   getLongitud(): number;
   setLongitud(valor: number): void;
-  getCantidadProducto(): number;
-  setCantidadProducto(valor: number): void;
   getDescripcionEntrega(): string;
   setDescripcionEntrega(valor: string): void;
   getEstadoEntrega(): "PENDIENTE" | "ENTREGADO" | "FALLIDO";
@@ -75,7 +73,6 @@ export const PuntoEntregaSchema = new Schema<IPuntoEntrega, mongoose.Model<IPunt
   contactoCliente: { type: String, required: true },
   latitud: { type: Number, required: true },
   longitud: { type: Number, required: true },
-  cantidadProducto: { type: Number, required: true },
   pesoProducto: { type: Number, required: true },
   descripcionEntrega: { type: String },
   direccion: { type: String, required: true },

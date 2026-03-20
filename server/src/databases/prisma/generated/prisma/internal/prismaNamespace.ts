@@ -673,7 +673,8 @@ export const RutaScalarFieldEnum = {
   repartidorId: 'repartidorId',
   fechaReparto: 'fechaReparto',
   estadoRuta: 'estadoRuta',
-  horaEntrega: 'horaEntrega',
+  horaInicioEntrega: 'horaInicioEntrega',
+  horaFinalizacionEntrega: 'horaFinalizacionEntrega',
   createdAt: 'createdAt'
 } as const
 
@@ -705,11 +706,12 @@ export const DisponibilidadOrderByRelevanceFieldEnum = {
 export type DisponibilidadOrderByRelevanceFieldEnum = (typeof DisponibilidadOrderByRelevanceFieldEnum)[keyof typeof DisponibilidadOrderByRelevanceFieldEnum]
 
 
-export const RutaOrderByRelevanceFieldEnum = {
-  horaEntrega: 'horaEntrega'
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
 } as const
 
-export type RutaOrderByRelevanceFieldEnum = (typeof RutaOrderByRelevanceFieldEnum)[keyof typeof RutaOrderByRelevanceFieldEnum]
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 

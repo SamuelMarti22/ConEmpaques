@@ -3,6 +3,10 @@ from dotenv import load_dotenv
 from app.services.optimization import OptimizationService
 from app.models.schema import OptimizacionRequest, OptimizacionResponse
 import os
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
 
 load_dotenv()
 
