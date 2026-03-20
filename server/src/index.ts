@@ -5,6 +5,7 @@ import { prisma } from "./databases/prisma/lib/prisma.js";
 import { horarioController } from "./modules/horarios/horario.controller.js";
 import { repartidorController } from "./modules/repartidores/repartidor.controller.js";
 import { routingController } from "./modules/routing/routing.controller.js";
+import { rutasController } from "./modules/rutas/rutas.controller.js";
 
 const app = express();
 app.use(express.json());
@@ -27,8 +28,11 @@ app.put("/api/repartidores/:id/horarios/:horarioId", horarioController.actualiza
 app.patch("/api/repartidores/:id/horarios/:horarioId", horarioController.actualizarHorario);
 app.delete("/api/repartidores/:id/horarios/:horarioId", horarioController.eliminarHorario);
 
-// Ruta para optimización de rutas
+// Rutas para optimización de rutas
 app.post("/api/routing/optimizar", routingController.getRutaOptima);
+
+// Rutas para CRUD rutas
+app.post("/api/rutas", rutasController.guardarRutas);
 
 const iniciar = async () => {
 	await prisma.$connect();

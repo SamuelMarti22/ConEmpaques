@@ -8,6 +8,7 @@ export interface IPuntoEntrega {
   nombreCliente: string;
   codigo: string;
   contactoCliente: string;
+  direccion: string;
   latitud: number;
   longitud: number;
   cantidadProducto: number;
@@ -75,6 +76,7 @@ export const PuntoEntregaSchema = new Schema<IPuntoEntrega, mongoose.Model<IPunt
   longitud: { type: Number, required: true },
   cantidadProducto: { type: Number, required: true },
   descripcionProducto: { type: String },
+  direccion: { type: String, required: true },
 
   estadoEntrega: {
     type: String,
