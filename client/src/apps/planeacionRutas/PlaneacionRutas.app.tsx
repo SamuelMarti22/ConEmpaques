@@ -9,6 +9,8 @@ import type { CapacidadRepartidor, PuntoEntregaFormateado } from './../../types/
 import BotonGeneracionRutas from '../../components/planteacionRuta/botonGeneracionRutas'
 import {RutaRepartidorGeoJSON} from './../../classes/RutaRepartidorGeoJSON'
 
+import './PlaneacionRutas.css';
+
 interface RepartidorDisponibleHoyResponse {
     id: number;
     capacidad: number;
