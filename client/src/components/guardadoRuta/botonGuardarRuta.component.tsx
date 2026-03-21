@@ -1,15 +1,48 @@
 import { useState } from "react";
 import type { PuntoEntregaFormateado, RutaRepartidorGeoJSON } from "../../types/routing.types";
 
+export interface RutaGuardadaUI {
+    rutaId: number;
+    repartidor: {
+        id: number;
+        nombre: string | null;
+        estado: 'disponible' | 'en ruta' | 'finalizado';
+        capacidad: number | null;
+    };
+    resumen: {
+        numeroPedidos: number;
+        cargaActualKg: number;
+        distanciaTotal: number;
+        tiempoEstimado: number | null;
+        horaInicioEstimada: string | null;
+        horaFinEstimada: string | null;
+    };
+    detalleParadas: {
+        orden: number;
+        puntoId: number;
+        direccion: string | null;
+        cliente: string | null;
+        estadoEntrega: 'Pendiente' | 'En camino' | 'Entregado';
+        tiempoEstimadoParada: number | null;
+    }[];
+}
+
+interface GuardarRutasResponse {
+    mensaje?: string;
+    message?: string;
+    rutasGuardadas?: RutaGuardadaUI[];
+}
+
 interface BotonGuardarRutaProps {
     obtenerPuntosActuales: () => PuntoEntregaFormateado[];
     rutaRepartidorGeoJSON: RutaRepartidorGeoJSON[];
     fechaReparto: Date;
     onMensajeRutaGuardada: (mensaje: string[]) => void;
+    onRutasGuardadas?: (rutas: RutaGuardadaUI[]) => void;
     onErrorRutaGuardada?: (error: string) => void;
 }
 
-export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGeoJSON,fechaReparto,onMensajeRutaGuardada, onErrorRutaGuardada}: BotonGuardarRutaProps) {
+export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGeoJSON,fechaReparto,onMensajeRutaGuardada, onRutasGuardadas, onErrorRutaGuardada}: BotonGuardarRutaProps) {
     const [cargando, setCargando] = useState(false);
 
     const guardarRutas = async () => {
@@ -32,7 +65,9 @@ export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGe
                 throw new Error(`Error ${respuesta.status}: ${errorText}`);
             }
             
-            const mensaje: string = await respuesta.json();
+            const payload = (await respuesta.json()) as GuardarRutasResponse;
+            const mensaje = payload.mensaje ?? payload.message ?? 'Rutas guardadas correctamente';
+            onRutasGuardadas?.(payload.rutasGuardadas ?? []);
             onMensajeRutaGuardada([mensaje]);
         } catch (error) {
             console.error('Error al guardar rutas:', error);

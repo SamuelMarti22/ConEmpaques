@@ -104,6 +104,8 @@ export const RutaScalarFieldEnum = {
   estadoRuta: 'estadoRuta',
   horaInicioEntrega: 'horaInicioEntrega',
   horaFinalizacionEntrega: 'horaFinalizacionEntrega',
+  distanciaTotal: 'distanciaTotal',
+  tiempoEstimado: 'tiempoEstimado',
   createdAt: 'createdAt'
 } as const
 

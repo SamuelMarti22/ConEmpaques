@@ -36,7 +36,9 @@ app.post("/api/routing/optimizar", routingController.getRutaOptima);
 
 
 // Rutas para CRUD rutas
+app.get("/api/rutas", rutasController.obtenerRutasGuardadas);
 app.post("/api/rutas/guardar", rutasController.guardarRutas);
+app.delete("/api/rutas/:rutaId", rutasController.eliminarRuta);
 
 // Alias para mantener compatibilidad entre frontend y backend
 app.use("/api/geocodificacion", geoCodificacionRutasController);

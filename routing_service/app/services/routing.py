@@ -77,8 +77,9 @@ class RoutingService:
 
             if paradas:
                 distancia = self.__calcular_distancia_ruta(paradas, puntos, matriz)
-                logger.info(f"Repartidor {repartidor.id}: {len(paradas)} paradas, distancia: {distancia}")
-                rutas.append(RutaRepartidor(repartidor_id=repartidor.id,ruta=paradas,distancia_total=distancia,tiempo_estimado=0.0, geometria=[]))
+                tiempo_estimado = self.__calcular_tiempo_estimado(distancia)
+                logger.info(f"Repartidor {repartidor.id}: {len(paradas)} paradas, distancia: {distancia}m, tiempo: {tiempo_estimado}s")
+                rutas.append(RutaRepartidor(repartidor_id=repartidor.id,ruta=paradas,distancia_total=distancia,tiempo_estimado=tiempo_estimado, geometria=[]))
             else:
                 logger.debug(f"Repartidor {repartidor.id}: sin paradas asignadas")
             
@@ -94,3 +95,10 @@ class RoutingService:
             distancia_total += matriz[orden[i]][orden[i + 1]]
         
         return distancia_total
+    
+    def __calcular_tiempo_estimado(self, distancia_metros: float) -> float:
+        # Velocidad promedio de entrega en ciudad: 40 km/h = 11.11 m/s
+        # Fórmula: tiempo (segundos) = distancia (metros) / velocidad (m/s)
+        velocidad_promedio_ms = 40 * 1000 / 3600  # 40 km/h en m/s
+        tiempo_estimado = distancia_metros / velocidad_promedio_ms if distancia_metros > 0 else 0
+        return tiempo_estimado

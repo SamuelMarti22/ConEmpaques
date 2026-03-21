@@ -29,11 +29,15 @@ export type AggregateRuta = {
 export type RutaAvgAggregateOutputType = {
   id: number | null
   repartidorId: number | null
+  distanciaTotal: number | null
+  tiempoEstimado: number | null
 }
 
 export type RutaSumAggregateOutputType = {
   id: number | null
   repartidorId: number | null
+  distanciaTotal: number | null
+  tiempoEstimado: number | null
 }
 
 export type RutaMinAggregateOutputType = {
@@ -43,6 +47,8 @@ export type RutaMinAggregateOutputType = {
   estadoRuta: $Enums.EstadoRuta | null
   horaInicioEntrega: Date | null
   horaFinalizacionEntrega: Date | null
+  distanciaTotal: number | null
+  tiempoEstimado: number | null
   createdAt: Date | null
 }
 
@@ -53,6 +59,8 @@ export type RutaMaxAggregateOutputType = {
   estadoRuta: $Enums.EstadoRuta | null
   horaInicioEntrega: Date | null
   horaFinalizacionEntrega: Date | null
+  distanciaTotal: number | null
+  tiempoEstimado: number | null
   createdAt: Date | null
 }
 
@@ -63,6 +71,8 @@ export type RutaCountAggregateOutputType = {
   estadoRuta: number
   horaInicioEntrega: number
   horaFinalizacionEntrega: number
+  distanciaTotal: number
+  tiempoEstimado: number
   createdAt: number
   _all: number
 }
@@ -71,11 +81,15 @@ export type RutaCountAggregateOutputType = {
 export type RutaAvgAggregateInputType = {
   id?: true
   repartidorId?: true
+  distanciaTotal?: true
+  tiempoEstimado?: true
 }
 
 export type RutaSumAggregateInputType = {
   id?: true
   repartidorId?: true
+  distanciaTotal?: true
+  tiempoEstimado?: true
 }
 
 export type RutaMinAggregateInputType = {
@@ -85,6 +99,8 @@ export type RutaMinAggregateInputType = {
   estadoRuta?: true
   horaInicioEntrega?: true
   horaFinalizacionEntrega?: true
+  distanciaTotal?: true
+  tiempoEstimado?: true
   createdAt?: true
 }
 
@@ -95,6 +111,8 @@ export type RutaMaxAggregateInputType = {
   estadoRuta?: true
   horaInicioEntrega?: true
   horaFinalizacionEntrega?: true
+  distanciaTotal?: true
+  tiempoEstimado?: true
   createdAt?: true
 }
 
@@ -105,6 +123,8 @@ export type RutaCountAggregateInputType = {
   estadoRuta?: true
   horaInicioEntrega?: true
   horaFinalizacionEntrega?: true
+  distanciaTotal?: true
+  tiempoEstimado?: true
   createdAt?: true
   _all?: true
 }
@@ -202,6 +222,8 @@ export type RutaGroupByOutputType = {
   estadoRuta: $Enums.EstadoRuta
   horaInicioEntrega: Date | null
   horaFinalizacionEntrega: Date | null
+  distanciaTotal: number | null
+  tiempoEstimado: number | null
   createdAt: Date
   _count: RutaCountAggregateOutputType | null
   _avg: RutaAvgAggregateOutputType | null
@@ -235,6 +257,8 @@ export type RutaWhereInput = {
   estadoRuta?: Prisma.EnumEstadoRutaFilter<"Ruta"> | $Enums.EstadoRuta
   horaInicioEntrega?: Prisma.DateTimeNullableFilter<"Ruta"> | Date | string | null
   horaFinalizacionEntrega?: Prisma.DateTimeNullableFilter<"Ruta"> | Date | string | null
+  distanciaTotal?: Prisma.FloatNullableFilter<"Ruta"> | number | null
+  tiempoEstimado?: Prisma.IntNullableFilter<"Ruta"> | number | null
   createdAt?: Prisma.DateTimeFilter<"Ruta"> | Date | string
   repartidor?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
 }
@@ -246,6 +270,8 @@ export type RutaOrderByWithRelationInput = {
   estadoRuta?: Prisma.SortOrder
   horaInicioEntrega?: Prisma.SortOrderInput | Prisma.SortOrder
   horaFinalizacionEntrega?: Prisma.SortOrderInput | Prisma.SortOrder
+  distanciaTotal?: Prisma.SortOrderInput | Prisma.SortOrder
+  tiempoEstimado?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   repartidor?: Prisma.UsuarioOrderByWithRelationInput
 }
@@ -260,6 +286,8 @@ export type RutaWhereUniqueInput = Prisma.AtLeast<{
   estadoRuta?: Prisma.EnumEstadoRutaFilter<"Ruta"> | $Enums.EstadoRuta
   horaInicioEntrega?: Prisma.DateTimeNullableFilter<"Ruta"> | Date | string | null
   horaFinalizacionEntrega?: Prisma.DateTimeNullableFilter<"Ruta"> | Date | string | null
+  distanciaTotal?: Prisma.FloatNullableFilter<"Ruta"> | number | null
+  tiempoEstimado?: Prisma.IntNullableFilter<"Ruta"> | number | null
   createdAt?: Prisma.DateTimeFilter<"Ruta"> | Date | string
   repartidor?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
 }, "id">
@@ -271,6 +299,8 @@ export type RutaOrderByWithAggregationInput = {
   estadoRuta?: Prisma.SortOrder
   horaInicioEntrega?: Prisma.SortOrderInput | Prisma.SortOrder
   horaFinalizacionEntrega?: Prisma.SortOrderInput | Prisma.SortOrder
+  distanciaTotal?: Prisma.SortOrderInput | Prisma.SortOrder
+  tiempoEstimado?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.RutaCountOrderByAggregateInput
   _avg?: Prisma.RutaAvgOrderByAggregateInput
@@ -289,6 +319,8 @@ export type RutaScalarWhereWithAggregatesInput = {
   estadoRuta?: Prisma.EnumEstadoRutaWithAggregatesFilter<"Ruta"> | $Enums.EstadoRuta
   horaInicioEntrega?: Prisma.DateTimeNullableWithAggregatesFilter<"Ruta"> | Date | string | null
   horaFinalizacionEntrega?: Prisma.DateTimeNullableWithAggregatesFilter<"Ruta"> | Date | string | null
+  distanciaTotal?: Prisma.FloatNullableWithAggregatesFilter<"Ruta"> | number | null
+  tiempoEstimado?: Prisma.IntNullableWithAggregatesFilter<"Ruta"> | number | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Ruta"> | Date | string
 }
 
@@ -297,6 +329,8 @@ export type RutaCreateInput = {
   estadoRuta: $Enums.EstadoRuta
   horaInicioEntrega?: Date | string | null
   horaFinalizacionEntrega?: Date | string | null
+  distanciaTotal?: number | null
+  tiempoEstimado?: number | null
   createdAt?: Date | string
   repartidor: Prisma.UsuarioCreateNestedOneWithoutRutasInput
 }
@@ -308,6 +342,8 @@ export type RutaUncheckedCreateInput = {
   estadoRuta: $Enums.EstadoRuta
   horaInicioEntrega?: Date | string | null
   horaFinalizacionEntrega?: Date | string | null
+  distanciaTotal?: number | null
+  tiempoEstimado?: number | null
   createdAt?: Date | string
 }
 
@@ -316,6 +352,8 @@ export type RutaUpdateInput = {
   estadoRuta?: Prisma.EnumEstadoRutaFieldUpdateOperationsInput | $Enums.EstadoRuta
   horaInicioEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   horaFinalizacionEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  distanciaTotal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  tiempoEstimado?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   repartidor?: Prisma.UsuarioUpdateOneRequiredWithoutRutasNestedInput
 }
@@ -327,6 +365,8 @@ export type RutaUncheckedUpdateInput = {
   estadoRuta?: Prisma.EnumEstadoRutaFieldUpdateOperationsInput | $Enums.EstadoRuta
   horaInicioEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   horaFinalizacionEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  distanciaTotal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  tiempoEstimado?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -337,6 +377,8 @@ export type RutaCreateManyInput = {
   estadoRuta: $Enums.EstadoRuta
   horaInicioEntrega?: Date | string | null
   horaFinalizacionEntrega?: Date | string | null
+  distanciaTotal?: number | null
+  tiempoEstimado?: number | null
   createdAt?: Date | string
 }
 
@@ -345,6 +387,8 @@ export type RutaUpdateManyMutationInput = {
   estadoRuta?: Prisma.EnumEstadoRutaFieldUpdateOperationsInput | $Enums.EstadoRuta
   horaInicioEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   horaFinalizacionEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  distanciaTotal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  tiempoEstimado?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -355,6 +399,8 @@ export type RutaUncheckedUpdateManyInput = {
   estadoRuta?: Prisma.EnumEstadoRutaFieldUpdateOperationsInput | $Enums.EstadoRuta
   horaInicioEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   horaFinalizacionEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  distanciaTotal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  tiempoEstimado?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -375,12 +421,16 @@ export type RutaCountOrderByAggregateInput = {
   estadoRuta?: Prisma.SortOrder
   horaInicioEntrega?: Prisma.SortOrder
   horaFinalizacionEntrega?: Prisma.SortOrder
+  distanciaTotal?: Prisma.SortOrder
+  tiempoEstimado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type RutaAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   repartidorId?: Prisma.SortOrder
+  distanciaTotal?: Prisma.SortOrder
+  tiempoEstimado?: Prisma.SortOrder
 }
 
 export type RutaMaxOrderByAggregateInput = {
@@ -390,6 +440,8 @@ export type RutaMaxOrderByAggregateInput = {
   estadoRuta?: Prisma.SortOrder
   horaInicioEntrega?: Prisma.SortOrder
   horaFinalizacionEntrega?: Prisma.SortOrder
+  distanciaTotal?: Prisma.SortOrder
+  tiempoEstimado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -400,12 +452,16 @@ export type RutaMinOrderByAggregateInput = {
   estadoRuta?: Prisma.SortOrder
   horaInicioEntrega?: Prisma.SortOrder
   horaFinalizacionEntrega?: Prisma.SortOrder
+  distanciaTotal?: Prisma.SortOrder
+  tiempoEstimado?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type RutaSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   repartidorId?: Prisma.SortOrder
+  distanciaTotal?: Prisma.SortOrder
+  tiempoEstimado?: Prisma.SortOrder
 }
 
 export type RutaCreateNestedManyWithoutRepartidorInput = {
@@ -458,11 +514,29 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }
 
+export type NullableFloatFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type RutaCreateWithoutRepartidorInput = {
   fechaReparto: Date | string
   estadoRuta: $Enums.EstadoRuta
   horaInicioEntrega?: Date | string | null
   horaFinalizacionEntrega?: Date | string | null
+  distanciaTotal?: number | null
+  tiempoEstimado?: number | null
   createdAt?: Date | string
 }
 
@@ -472,6 +546,8 @@ export type RutaUncheckedCreateWithoutRepartidorInput = {
   estadoRuta: $Enums.EstadoRuta
   horaInicioEntrega?: Date | string | null
   horaFinalizacionEntrega?: Date | string | null
+  distanciaTotal?: number | null
+  tiempoEstimado?: number | null
   createdAt?: Date | string
 }
 
@@ -511,6 +587,8 @@ export type RutaScalarWhereInput = {
   estadoRuta?: Prisma.EnumEstadoRutaFilter<"Ruta"> | $Enums.EstadoRuta
   horaInicioEntrega?: Prisma.DateTimeNullableFilter<"Ruta"> | Date | string | null
   horaFinalizacionEntrega?: Prisma.DateTimeNullableFilter<"Ruta"> | Date | string | null
+  distanciaTotal?: Prisma.FloatNullableFilter<"Ruta"> | number | null
+  tiempoEstimado?: Prisma.IntNullableFilter<"Ruta"> | number | null
   createdAt?: Prisma.DateTimeFilter<"Ruta"> | Date | string
 }
 
@@ -520,6 +598,8 @@ export type RutaCreateManyRepartidorInput = {
   estadoRuta: $Enums.EstadoRuta
   horaInicioEntrega?: Date | string | null
   horaFinalizacionEntrega?: Date | string | null
+  distanciaTotal?: number | null
+  tiempoEstimado?: number | null
   createdAt?: Date | string
 }
 
@@ -528,6 +608,8 @@ export type RutaUpdateWithoutRepartidorInput = {
   estadoRuta?: Prisma.EnumEstadoRutaFieldUpdateOperationsInput | $Enums.EstadoRuta
   horaInicioEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   horaFinalizacionEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  distanciaTotal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  tiempoEstimado?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -537,6 +619,8 @@ export type RutaUncheckedUpdateWithoutRepartidorInput = {
   estadoRuta?: Prisma.EnumEstadoRutaFieldUpdateOperationsInput | $Enums.EstadoRuta
   horaInicioEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   horaFinalizacionEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  distanciaTotal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  tiempoEstimado?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -546,6 +630,8 @@ export type RutaUncheckedUpdateManyWithoutRepartidorInput = {
   estadoRuta?: Prisma.EnumEstadoRutaFieldUpdateOperationsInput | $Enums.EstadoRuta
   horaInicioEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   horaFinalizacionEntrega?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  distanciaTotal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  tiempoEstimado?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -558,6 +644,8 @@ export type RutaSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   estadoRuta?: boolean
   horaInicioEntrega?: boolean
   horaFinalizacionEntrega?: boolean
+  distanciaTotal?: boolean
+  tiempoEstimado?: boolean
   createdAt?: boolean
   repartidor?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["ruta"]>
@@ -571,10 +659,12 @@ export type RutaSelectScalar = {
   estadoRuta?: boolean
   horaInicioEntrega?: boolean
   horaFinalizacionEntrega?: boolean
+  distanciaTotal?: boolean
+  tiempoEstimado?: boolean
   createdAt?: boolean
 }
 
-export type RutaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "repartidorId" | "fechaReparto" | "estadoRuta" | "horaInicioEntrega" | "horaFinalizacionEntrega" | "createdAt", ExtArgs["result"]["ruta"]>
+export type RutaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "repartidorId" | "fechaReparto" | "estadoRuta" | "horaInicioEntrega" | "horaFinalizacionEntrega" | "distanciaTotal" | "tiempoEstimado" | "createdAt", ExtArgs["result"]["ruta"]>
 export type RutaInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   repartidor?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }
@@ -591,6 +681,8 @@ export type $RutaPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     estadoRuta: $Enums.EstadoRuta
     horaInicioEntrega: Date | null
     horaFinalizacionEntrega: Date | null
+    distanciaTotal: number | null
+    tiempoEstimado: number | null
     createdAt: Date
   }, ExtArgs["result"]["ruta"]>
   composites: {}
@@ -968,6 +1060,8 @@ export interface RutaFieldRefs {
   readonly estadoRuta: Prisma.FieldRef<"Ruta", 'EstadoRuta'>
   readonly horaInicioEntrega: Prisma.FieldRef<"Ruta", 'DateTime'>
   readonly horaFinalizacionEntrega: Prisma.FieldRef<"Ruta", 'DateTime'>
+  readonly distanciaTotal: Prisma.FieldRef<"Ruta", 'Float'>
+  readonly tiempoEstimado: Prisma.FieldRef<"Ruta", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Ruta", 'DateTime'>
 }
     

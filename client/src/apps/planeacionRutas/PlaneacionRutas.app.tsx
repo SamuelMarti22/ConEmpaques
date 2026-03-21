@@ -9,7 +9,8 @@ import { URL_REPARTIDORES, obtenerMensajeErrorHttp } from '../estilosCompartidos
 import type { CapacidadRepartidor, PuntoEntregaFormateado } from './../../types/routing.types'
 import BotonGeneracionRutas from '../../components/planteacionRuta/botonGeneracionRutas'
 import {RutaRepartidorGeoJSON} from './../../classes/RutaRepartidorGeoJSON'
-import BotonGuardarRuta from '../../components/guardadoRuta/botonGuardarRuta.component'
+import BotonGuardarRuta, { type RutaGuardadaUI } from '../../components/guardadoRuta/botonGuardarRuta.component'
+import ResumenRutasGuardadas from './ResumenRutasGuardadas'
 
 import './PlaneacionRutas.css';
 
@@ -18,13 +19,18 @@ interface RepartidorDisponibleHoyResponse {
     capacidad: number;
 }
 
+type VistaLateralActiva = 'puntos' | 'rutas';
+
 export default function PlaneacionRutas() {
 
     const mapaRef = useRef<MapaInteractivoFunciones>(null);
     const puntosEntregaRef = useRef<PuntosEntregaAtributos>(null);
     const [capacidadesRepartidores, setCapacidadesRepartidores] = useState<CapacidadRepartidor[]>([]);
     const [rutasGeneradas, setRutasGeneradas] = useState<RutaRepartidorGeoJSON[]>([]);
+    const [rutasGuardadas, setRutasGuardadas] = useState<RutaGuardadaUI[]>([]);
+    const [eliminandoRutaId, setEliminandoRutaId] = useState<number | null>(null);
     const [fechaReparto, setFechaReparto] = useState<Date>(new Date());
+    const [vistaLateralActiva, setVistaLateralActiva] = useState<VistaLateralActiva>('puntos');
 
     useEffect(() => {
         setFechaReparto(new Date());
@@ -78,59 +84,154 @@ export default function PlaneacionRutas() {
         return puntosEntregaRef.current?.obtenerPuntosActuales() || [];
     };
 
+    const cargarRutasGuardadas = async (): Promise<void> => {
+        try {
+            const respuesta = await fetch('http://localhost:3000/api/rutas');
+
+            if (!respuesta.ok) {
+                throw new Error(`No se pudo consultar rutas guardadas (${respuesta.status})`);
+            }
+
+            const payload = (await respuesta.json()) as { rutasGuardadas?: RutaGuardadaUI[] };
+            setRutasGuardadas(payload.rutasGuardadas ?? []);
+        } catch (error) {
+            console.error('No se pudieron cargar las rutas guardadas', error);
+        }
+    };
+
+    useEffect(() => {
+        void cargarRutasGuardadas();
+    }, []);
+
+    const eliminarRutaGuardada = async (rutaId: number): Promise<void> => {
+        setEliminandoRutaId(rutaId);
+
+        try {
+            const respuesta = await fetch(`http://localhost:3000/api/rutas/${rutaId}`, {
+                method: 'DELETE',
+            });
+
+            if (!respuesta.ok) {
+                const errorText = await respuesta.text();
+                throw new Error(`Error ${respuesta.status}: ${errorText}`);
+            }
+
+            await cargarRutasGuardadas();
+
+            Swal.fire({
+                title: 'Ruta eliminada',
+                text: `La ruta ${rutaId} fue eliminada de la base de datos`,
+                icon: 'success',
+                confirmButtonText: 'Aceptar'
+            });
+        } catch (error) {
+            const mensajeError = error instanceof Error ? error.message : 'Error desconocido al eliminar la ruta';
+            Swal.fire({
+                title: '❌ Error',
+                text: mensajeError,
+                icon: 'error',
+                confirmButtonText: 'Aceptar'
+            });
+        } finally {
+            setEliminandoRutaId(null);
+        }
+    };
+
     return (
         <>
             <div className="vistaPlaneacion">
                 <div className="seccionMapaInteractivo">
                     <MapaInteractivo ref={mapaRef} />
                 </div>
-                <div className="seccionPuntos">
-                    <PuntosEntrega
-                        ref={puntosEntregaRef}
-                        onAgregarMarcadorMapa={agregarPunto}
-                        onEliminarMarcadorMapa={eliminarPunto}
-                        onVaciarMarcadoresMapa={vaciarPuntos}
-                    />
-                </div>
-                
-                <BotonGeneracionRutas
-                    obtenerPuntosFormateados={obtenerPuntosFormateadosBackend}
-                    capacidadesRepartidores={capacidadesRepartidores}
-                    onRutasGeneradas={(rutas) => {
-                        const rutasInstanciadas = rutas.map(ruta => 
-                            new RutaRepartidorGeoJSON(
-                                ruta.repartidor_id,
-                                ruta.ruta,
-                                ruta.distancia_total,
-                                ruta.tiempo_estimado,
-                                ruta.geometria
-                            )
-                        );
-                        setRutasGeneradas(rutasInstanciadas);
-                    }}
-                />
 
-                <BotonGuardarRuta
-                    obtenerPuntosActuales={obtenerPuntosActuales}
-                    rutaRepartidorGeoJSON={rutasGeneradas}
-                    fechaReparto={fechaReparto}
-                    onMensajeRutaGuardada={() => {
-                        Swal.fire({
-                            title: '¡Éxito!',
-                            text: "Rutas guardadas correctamente. ",
-                            icon: 'success',
-                            confirmButtonText: 'Aceptar'
-                        });
-                    }}
-                    onErrorRutaGuardada={(error) => {
-                        Swal.fire({
-                            title: '❌ Error',
-                            text: error,
-                            icon: 'error',
-                            confirmButtonText: 'Aceptar'
-                        });
-                    }}
-                />
+                <div className="columnaLateralPlaneacion">
+                    <div className="selectorVistaPlaneacion" role="tablist" aria-label="Cambiar vista lateral">
+                        <button
+                            type="button"
+                            className={`selectorVistaPlaneacion__boton ${vistaLateralActiva === 'puntos' ? 'selectorVistaPlaneacion__boton--activo' : ''}`}
+                            onClick={() => setVistaLateralActiva('puntos')}
+                        >
+                            Añadir puntos
+                        </button>
+                        <button
+                            type="button"
+                            className={`selectorVistaPlaneacion__boton ${vistaLateralActiva === 'rutas' ? 'selectorVistaPlaneacion__boton--activo' : ''}`}
+                            onClick={() => setVistaLateralActiva('rutas')}
+                        >
+                            Rutas asignadas
+                        </button>
+                    </div>
+
+                    {vistaLateralActiva === 'puntos' && (
+                        <>
+                            <div className="seccionPuntos">
+                                <PuntosEntrega
+                                    ref={puntosEntregaRef}
+                                    onAgregarMarcadorMapa={agregarPunto}
+                                    onEliminarMarcadorMapa={eliminarPunto}
+                                    onVaciarMarcadoresMapa={vaciarPuntos}
+                                />
+                            </div>
+
+                            <div className="accionesPlaneacionRutas">
+                                <BotonGeneracionRutas
+                                    obtenerPuntosFormateados={obtenerPuntosFormateadosBackend}
+                                    capacidadesRepartidores={capacidadesRepartidores}
+                                    onRutasGeneradas={(rutas) => {
+                                        const rutasInstanciadas = rutas.map(ruta => 
+                                            new RutaRepartidorGeoJSON(
+                                                ruta.repartidor_id,
+                                                ruta.ruta,
+                                                ruta.distancia_total,
+                                                ruta.tiempo_estimado,
+                                                ruta.geometria
+                                            )
+                                        );
+                                        setRutasGeneradas(rutasInstanciadas);
+                                    }}
+                                />
+
+                                <BotonGuardarRuta
+                                    obtenerPuntosActuales={obtenerPuntosActuales}
+                                    rutaRepartidorGeoJSON={rutasGeneradas}
+                                    fechaReparto={fechaReparto}
+                                    onRutasGuardadas={(nuevasRutasGuardadas) => {
+                                        setRutasGuardadas(nuevasRutasGuardadas);
+                                        setVistaLateralActiva('rutas');
+                                    }}
+                                    onMensajeRutaGuardada={(mensaje) => {
+                                        void cargarRutasGuardadas();
+                                        setVistaLateralActiva('rutas');
+                                        Swal.fire({
+                                            title: '¡Éxito!',
+                                            text: mensaje[0] ?? 'Rutas guardadas correctamente.',
+                                            icon: 'success',
+                                            confirmButtonText: 'Aceptar'
+                                        });
+                                    }}
+                                    onErrorRutaGuardada={(error) => {
+                                        Swal.fire({
+                                            title: '❌ Error',
+                                            text: error,
+                                            icon: 'error',
+                                            confirmButtonText: 'Aceptar'
+                                        });
+                                    }}
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    {vistaLateralActiva === 'rutas' && (
+                        <ResumenRutasGuardadas
+                            rutasGuardadas={rutasGuardadas}
+                            eliminandoRutaId={eliminandoRutaId}
+                            onEliminarRuta={(rutaId) => {
+                                void eliminarRutaGuardada(rutaId);
+                            }}
+                        />
+                    )}
+                </div>
             </div>
         </>
     )

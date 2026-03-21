@@ -115,4 +115,6 @@
     gap: 12px;
     font-size: 0.78rem;
     color: #6b7280;
+    flex-wrap: wrap;
+    align-items: center;
 }
