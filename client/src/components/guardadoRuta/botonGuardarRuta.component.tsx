@@ -6,9 +6,10 @@ interface BotonGuardarRutaProps {
     rutaRepartidorGeoJSON: RutaRepartidorGeoJSON[];
     fechaReparto: Date;
     onMensajeRutaGuardada: (mensaje: string[]) => void;
+    onErrorRutaGuardada?: (error: string) => void;
 }
 
-export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGeoJSON,fechaReparto,onMensajeRutaGuardada}: BotonGuardarRutaProps) {
+export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGeoJSON,fechaReparto,onMensajeRutaGuardada, onErrorRutaGuardada}: BotonGuardarRutaProps) {
     const [cargando, setCargando] = useState(false);
 
     const guardarRutas = async () => {
@@ -35,6 +36,8 @@ export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGe
             onMensajeRutaGuardada([mensaje]);
         } catch (error) {
             console.error('Error al guardar rutas:', error);
+            const mensajeError = error instanceof Error ? error.message : 'Error desconocido al guardar rutas';
+            onErrorRutaGuardada?.(mensajeError);
         } finally {
             setCargando(false);
         }

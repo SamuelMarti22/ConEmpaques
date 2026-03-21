@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import env from "./config/env.js";
 import { prisma } from "./databases/prisma/lib/prisma.js";
+import { connectMongo } from "./databases/mongoDB/conection.js";
 import { horarioController } from "./modules/horarios/horario.controller.js";
 import { repartidorController } from "./modules/repartidores/repartidor.controller.js";
 import { routingController } from "./modules/routing/routing.controller.js";
@@ -44,6 +45,7 @@ app.use("/api/geocoding", geoCodificacionRutasController);
 
 const iniciar = async () => {
 	await prisma.$connect();
+	await connectMongo();
 
 	const puerto = Number(env.PORT ?? 3000);
 	app.listen(puerto, () => {

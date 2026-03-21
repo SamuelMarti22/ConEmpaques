@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Swal from 'sweetalert2'
 import { PuntoEntrega } from '../../classes/PuntoEntrega'
 import type { MapaInteractivoFunciones } from '../../components/MapaInteractivo'
 import MapaInteractivo from '../../components/MapaInteractivo'
@@ -113,9 +114,21 @@ export default function PlaneacionRutas() {
                     obtenerPuntosActuales={obtenerPuntosActuales}
                     rutaRepartidorGeoJSON={rutasGeneradas}
                     fechaReparto={fechaReparto}
-                    onMensajeRutaGuardada={(mensaje) => {
-                        console.log('Rutas guardadas con éxito:', mensaje);
-                        alert('Rutas guardadas con éxito');
+                    onMensajeRutaGuardada={() => {
+                        Swal.fire({
+                            title: '¡Éxito!',
+                            text: "Rutas guardadas correctamente. ",
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    }}
+                    onErrorRutaGuardada={(error) => {
+                        Swal.fire({
+                            title: '❌ Error',
+                            text: error,
+                            icon: 'error',
+                            confirmButtonText: 'Aceptar'
+                        });
                     }}
                 />
             </div>
