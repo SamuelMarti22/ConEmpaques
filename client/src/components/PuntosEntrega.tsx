@@ -38,13 +38,17 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
 
     const agregarPunto = (datosNuevoPunto: DatosNuevoPunto) => {
         const idAutomatico = nextId.current;
+        const codigoGenerado = `P-${idAutomatico}`;
         const nuevoPunto = new PuntoEntrega(
             idAutomatico,
             datosNuevoPunto.cliente,
             datosNuevoPunto.latitud,
             datosNuevoPunto.longitud,
             datosNuevoPunto.peso,
-            datosNuevoPunto.direccion
+            datosNuevoPunto.direccion,
+            codigoGenerado,
+            datosNuevoPunto.celular,
+            datosNuevoPunto.descripcion ?? ''
         );
         setPuntosActuales(prev => [...prev, nuevoPunto]);
         onAgregarMarcadorMapa(nuevoPunto);
@@ -100,6 +104,10 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
                             </div>
                             <div className="puntosMapa__tarjeta__coords">
                                 <span>📍 Dirección: {punto.getDireccion() || 'Sin dirección'}</span>
+                                <span>☎️ Celular: {punto.getContactoCliente() || 'Sin celular'}</span>
+                                {punto.getDescripcionProducto() && (
+                                    <span>🗒️ Descripción: {punto.getDescripcionProducto()}</span>
+                                )}
                                 <span>⚖️ Peso: {punto.getPeso()} kg</span>
                             </div>
                             <button className="btn btn--eliminar btn--eliminar-uno" onClick={() => EliminarMarcadorMapa(index)}>🗑</button>

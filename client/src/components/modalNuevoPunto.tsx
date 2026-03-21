@@ -8,6 +8,8 @@ export interface DatosNuevoPunto {
     longitud: number;
     peso: number;
     direccion: string;
+    descripcion?: string;
+    celular: string;
     confianza: number;
     tipoResultado: string;
 }
@@ -21,6 +23,8 @@ interface ModalNuevoPuntoProps {
 export default function ModalNuevoPunto({ isOpen, onClose, onConfirm }: ModalNuevoPuntoProps) {
     const [clienteManual, setClienteManual] = useState('');
     const [peso, setPeso] = useState('');
+    const [celular, setCelular] = useState('');
+    const [descripcion, setDescripcion] = useState('');
     const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState<PuntoGeocodificado | null>(null);
     const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
     const [cargando, setCargando] = useState(false);
@@ -37,10 +41,16 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm }: ModalNue
 
         // Validaciones
         const cliente = clienteManual.trim() || ubicacionSeleccionada?.cliente || '';
+        const celularNormalizado = celular.trim();
         const pesoNum = parseFloat(peso);
 
         if (!cliente) {
             setErrorValidacion('El nombre del cliente es obligatorio');
+            return;
+        }
+
+        if (!celularNormalizado) {
+            setErrorValidacion('El número de celular es obligatorio');
             return;
         }
 
@@ -64,6 +74,8 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm }: ModalNue
                 longitud: ubicacionSeleccionada.longitud,
                 peso: pesoNum,
                 direccion: ubicacionSeleccionada.direccion,
+                celular: celularNormalizado,
+                descripcion: descripcion.trim() || undefined,
                 confianza: ubicacionSeleccionada.confianza,
                 tipoResultado: ubicacionSeleccionada.tipoResultado
             });
@@ -71,6 +83,8 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm }: ModalNue
             // Reset
             setClienteManual('');
             setPeso('');
+            setCelular('');
+            setDescripcion('');
             setUbicacionSeleccionada(null);
             setErrorValidacion(null);
             setCargando(false);
@@ -81,6 +95,8 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm }: ModalNue
     const handleCerrar = () => {
         setClienteManual('');
         setPeso('');
+        setCelular('');
+        setDescripcion('');
         setUbicacionSeleccionada(null);
         setErrorValidacion(null);
         onClose();
@@ -115,6 +131,36 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm }: ModalNue
                             placeholder="Ej: Empresa XYZ"
                             value={clienteManual}
                             onChange={(e) => setClienteManual(e.target.value)}
+                            className="modal-input"
+                            disabled={cargando}
+                        />
+                    </div>
+
+                    <div className="modal-seccion">
+                        <label className="modal-label" htmlFor="modal-celular">
+                            ☎️ Celular de contacto
+                        </label>
+                        <input
+                            id="modal-celular"
+                            type="text"
+                            placeholder="Ej: 300 123 4567"
+                            value={celular}
+                            onChange={(e) => setCelular(e.target.value)}
+                            className="modal-input"
+                            disabled={cargando}
+                        />
+                    </div>
+
+                    <div className="modal-seccion">
+                        <label className="modal-label" htmlFor="modal-descripcion">
+                            🗒️ Descripción
+                        </label>
+                        <input
+                            id="modal-descripcion"
+                            type="text"
+                            placeholder="Ej: Empresa XYZ"
+                            value={descripcion}
+                            onChange={(e) => setDescripcion(e.target.value)}
                             className="modal-input"
                             disabled={cargando}
                         />

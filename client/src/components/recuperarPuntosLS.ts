@@ -23,14 +23,14 @@ export function recuperarPuntosGuardados(): PuntoEntrega[] {
             const nombreCliente = String(punto.nombreCliente ?? punto.cliente ?? 'Cliente');
             const latitud = Number(punto.latitud ?? 0);
             const longitud = Number(punto.longitud ?? 0);
-            const cantidadProducto = Number(punto.cantidadProducto ?? punto.peso ?? 0);
+            const pesoProducto = Number(punto.pesoProducto ?? 0);
 
             return new PuntoEntrega(
                 id,
                 nombreCliente,
                 latitud,
                 longitud,
-                cantidadProducto,
+                pesoProducto,
                 String(punto.direccion ?? ''),
                 String(punto.codigo ?? `P-${id}`),
                 String(punto.contactoCliente ?? 'Sin contacto'),
