@@ -19,12 +19,12 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
 
     const [puntosActuales, setPuntosActuales] = useState<PuntoEntrega[]>(() => recuperarPuntosGuardados());
     const [isOpenModal, setIsOpenModal] = useState(false);
+    const [indiceEdicion, setIndiceEdicion] = useState<number | null>(null);
     const nextId = useRef(1); //Variable para asignar IDs automáticos a los puntos, ya que el backend no los genera al ser solo un mock
 
     useEffect(() => {
         puntosActuales.forEach((punto) => onAgregarMarcadorMapa(punto));
         // Se ejecuta solo al montar para rehidratar marcadores desde localStorage.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -37,6 +37,33 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
     }, [puntosActuales]);
 
     const agregarPunto = (datosNuevoPunto: DatosNuevoPunto) => {
+        if (indiceEdicion !== null) {
+            const puntoOriginal = puntosActuales[indiceEdicion];
+            if (!puntoOriginal) return;
+
+            const puntoActualizado = new PuntoEntrega(
+                puntoOriginal.getId(),
+                datosNuevoPunto.cliente,
+                datosNuevoPunto.latitud,
+                datosNuevoPunto.longitud,
+                datosNuevoPunto.peso,
+                datosNuevoPunto.direccion,
+                puntoOriginal.getCodigo(),
+                datosNuevoPunto.celular,
+                datosNuevoPunto.descripcion ?? '',
+                puntoOriginal.getEstadoEntrega(),
+                puntoOriginal.getFechaHoraEntrega(),
+                puntoOriginal.getFirmaUrl(),
+                puntoOriginal.getMotivoFallido()
+            );
+
+            setPuntosActuales(prev => prev.map((punto, index) => index === indiceEdicion ? puntoActualizado : punto));
+            onEliminarMarcadorMapa(puntoOriginal.getId());
+            onAgregarMarcadorMapa(puntoActualizado);
+            setIndiceEdicion(null);
+            return;
+        }
+
         const idAutomatico = nextId.current;
         const codigoGenerado = `P-${idAutomatico}`;
         const nuevoPunto = new PuntoEntrega(
@@ -54,6 +81,11 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
         onAgregarMarcadorMapa(nuevoPunto);
         nextId.current++;
     };
+
+    const editarPunto = (index: number) => {
+        setIndiceEdicion(index);
+        setIsOpenModal(true);
+    };
     const EliminarMarcadorMapa = (index: number) => {
         const punto = puntosActuales[index];
         if (!punto) return;
@@ -64,7 +96,25 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
     const vaciarListaPuntos = () => {
         setPuntosActuales([]);
         onVaciarMarcadoresMapa();
+        setIndiceEdicion(null);
     };
+
+    const datosInicialesEdicion = indiceEdicion !== null ? (() => {
+        const punto = puntosActuales[indiceEdicion];
+        if (!punto) return undefined;
+
+        return {
+            cliente: punto.getCliente(),
+            latitud: punto.getLatitud(),
+            longitud: punto.getLongitud(),
+            peso: punto.getPeso(),
+            direccion: punto.getDireccion(),
+            descripcion: punto.getDescripcionProducto(),
+            celular: punto.getContactoCliente(),
+            confianza: 1,
+            tipoResultado: 'manual'
+        };
+    })() : undefined;
     
     useImperativeHandle(ref, () => ({
         obtenerPuntosActuales: () => puntosActuales,
@@ -77,8 +127,13 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
         <>
             <ModalNuevoPunto
                 isOpen={isOpenModal}
-                onClose={() => setIsOpenModal(false)}
+                onClose={() => {
+                    setIsOpenModal(false);
+                    setIndiceEdicion(null);
+                }}
                 onConfirm={agregarPunto}
+                modo={indiceEdicion !== null ? 'editar' : 'crear'}
+                datosIniciales={datosInicialesEdicion}
             />
             <div className="puntosMapa">
                 <div className="puntosMapa__header">
@@ -87,7 +142,10 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
                 </div>
 
                 <div className="puntosMapa__acciones">
-                    <button className="btn btn--agregar" onClick={() => setIsOpenModal(true)}>+ Agregar punto</button>
+                    <button className="btn btn--agregar" onClick={() => {
+                        setIndiceEdicion(null);
+                        setIsOpenModal(true);
+                    }}>+ Agregar punto</button>
                     <button className="btn btn--eliminar" onClick={vaciarListaPuntos}>🗑 Eliminar todos</button>
                 </div>
 
@@ -110,7 +168,10 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
                                 )}
                                 <span>⚖️ Peso: {punto.getPeso()} kg</span>
                             </div>
-                            <button className="btn btn--eliminar btn--eliminar-uno" onClick={() => EliminarMarcadorMapa(index)}>🗑</button>
+                            <div className="puntosMapa__tarjeta__acciones">
+                                <button className="btn btn--editar-uno" onClick={() => editarPunto(index)}>Editar</button>
+                                <button className="btn btn--eliminar btn--eliminar-uno" onClick={() => EliminarMarcadorMapa(index)}>🗑</button>
+                            </div>
                         </div>
                     ))
                 )}

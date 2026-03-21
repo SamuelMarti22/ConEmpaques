@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import InputGeoCodificacion, { type PuntoGeocodificado } from './geoCodificacion/inputGeoCodificacion';
 import './modalNuevoPunto.css';
 
@@ -10,17 +10,19 @@ export interface DatosNuevoPunto {
     direccion: string;
     descripcion?: string;
     celular: string;
-    confianza: number;
-    tipoResultado: string;
+    confianza?: number;
+    tipoResultado?: string;
 }
 
 interface ModalNuevoPuntoProps {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: (datos: DatosNuevoPunto) => void;
+    modo?: 'crear' | 'editar';
+    datosIniciales?: DatosNuevoPunto;
 }
 
-export default function ModalNuevoPunto({ isOpen, onClose, onConfirm }: ModalNuevoPuntoProps) {
+export default function ModalNuevoPunto({ isOpen, onClose, onConfirm, modo = 'crear', datosIniciales }: ModalNuevoPuntoProps) {
     const [clienteManual, setClienteManual] = useState('');
     const [peso, setPeso] = useState('');
     const [celular, setCelular] = useState('');
@@ -30,6 +32,33 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm }: ModalNue
     const [cargando, setCargando] = useState(false);
 
     const inputClienteRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        if (modo === 'editar' && datosIniciales) {
+            setClienteManual(datosIniciales.cliente);
+            setPeso(String(datosIniciales.peso));
+            setCelular(datosIniciales.celular);
+            setDescripcion(datosIniciales.descripcion ?? '');
+            setUbicacionSeleccionada({
+                cliente: datosIniciales.cliente,
+                direccion: datosIniciales.direccion,
+                latitud: datosIniciales.latitud,
+                longitud: datosIniciales.longitud,
+                confianza: datosIniciales.confianza ?? 1,
+                tipoResultado: datosIniciales.tipoResultado ?? 'manual'
+            });
+            return;
+        }
+
+        setClienteManual('');
+        setPeso('');
+        setCelular('');
+        setDescripcion('');
+        setUbicacionSeleccionada(null);
+        setErrorValidacion(null);
+    }, [isOpen, modo, datosIniciales]);
 
     const handleSeleccionarUbicacion = (data: PuntoGeocodificado) => {
         setUbicacionSeleccionada(data);
@@ -108,7 +137,7 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm }: ModalNue
         <div className="modal-backdrop">
             <div className="modal-container">
                 <div className="modal-header">
-                    <h2 className="modal-titulo">📍 Nuevo Punto de Entrega</h2>
+                    <h2 className="modal-titulo">{modo === 'editar' ? '✏️ Editar Punto de Entrega' : '📍 Nuevo Punto de Entrega'}</h2>
                     <button
                         className="modal-cerrar"
                         onClick={handleCerrar}
@@ -212,7 +241,7 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm }: ModalNue
                         onClick={handleConfirmar}
                         disabled={cargando || !ubicacionSeleccionada}
                     >
-                        {cargando ? '⏳ Agregando...' : '✓ Agregar Punto'}
+                        {cargando ? (modo === 'editar' ? '⏳ Guardando...' : '⏳ Agregando...') : (modo === 'editar' ? '✓ Guardar cambios' : '✓ Agregar Punto')}
                     </button>
                 </div>
             </div>

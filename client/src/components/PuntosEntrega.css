@@ -87,6 +87,22 @@
     border-radius: 6px;
 }
 
+.puntosMapa__tarjeta__acciones {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn--editar-uno {
+    flex: unset;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    background-color: #dbeafe;
+    color: #1d4ed8;
+    border: 1px solid #93c5fd;
+    border-radius: 6px;
+}
+
 .puntosMapa__tarjeta__titulo {
     display: flex;
     align-items: center;
