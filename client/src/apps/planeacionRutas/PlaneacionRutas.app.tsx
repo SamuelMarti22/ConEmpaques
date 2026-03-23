@@ -29,6 +29,7 @@ export default function PlaneacionRutas() {
     const [rutasGeneradas, setRutasGeneradas] = useState<RutaRepartidorGeoJSON[]>([]);
     const [rutasGuardadas, setRutasGuardadas] = useState<RutaGuardadaUI[]>([]);
     const [eliminandoRutaId, setEliminandoRutaId] = useState<number | null>(null);
+    const [rutaGuardadaSeleccionadaId, setRutaGuardadaSeleccionadaId] = useState<number | null>(null);
     const [fechaReparto, setFechaReparto] = useState<Date>(new Date());
     const [vistaLateralActiva, setVistaLateralActiva] = useState<VistaLateralActiva>('puntos');
 
@@ -64,6 +65,50 @@ export default function PlaneacionRutas() {
         console.log('✅ Rutas generadas:', rutasGeneradas[0]?.getGeometria());
     }, [rutasGeneradas]);
 
+    useEffect(() => {
+        if (vistaLateralActiva === 'puntos') {
+            const rutasParaPintar = rutasGeneradas.map((ruta) => ruta.getGeometria());
+            if (rutasParaPintar.length === 0) {
+                mapaRef.current?.limpiarRutas();
+                mapaRef.current?.limpiarPuntosEntrega();
+                return;
+            }
+
+            mapaRef.current?.pintarRutasGeoJSON(rutasParaPintar);
+            mapaRef.current?.limpiarPuntosEntrega();
+            return;
+        }
+
+        const rutasGuardadasConGeometria = rutasGuardadas.filter((ruta) => {
+            const coordenadas = ruta.geometria?.geometry?.coordinates;
+            return Array.isArray(coordenadas) && coordenadas.length > 0;
+        });
+
+        const rutasGuardadasParaPintar = rutaGuardadaSeleccionadaId === null
+            ? rutasGuardadasConGeometria.map((ruta) => ruta.geometria)
+            : rutasGuardadasConGeometria
+                .filter((ruta) => ruta.rutaId === rutaGuardadaSeleccionadaId)
+                .map((ruta) => ruta.geometria);
+
+        if (rutasGuardadasParaPintar.length === 0) {
+            mapaRef.current?.limpiarRutas();
+            mapaRef.current?.limpiarPuntosEntrega();
+            return;
+        }
+
+        mapaRef.current?.pintarRutasGeoJSON(rutasGuardadasParaPintar);
+
+        // Mostrar puntos de entrega asociados
+        const puntosAMostrar = rutaGuardadaSeleccionadaId === null
+            ? rutasGuardadasConGeometria.flatMap((ruta) => ruta.detalleParadas)
+            : rutasGuardadasConGeometria
+                .filter((ruta) => ruta.rutaId === rutaGuardadaSeleccionadaId)
+                .flatMap((ruta) => ruta.detalleParadas);
+
+        mapaRef.current?.limpiarPuntosEntrega();
+        mapaRef.current?.pintarPuntosEntrega(puntosAMostrar);
+    }, [vistaLateralActiva, rutasGeneradas, rutasGuardadas, rutaGuardadaSeleccionadaId]);
+
     const agregarPunto = (punto: PuntoEntrega) => {
         mapaRef.current?.agregarPunto(punto);
     };
@@ -93,7 +138,12 @@ export default function PlaneacionRutas() {
             }
 
             const payload = (await respuesta.json()) as { rutasGuardadas?: RutaGuardadaUI[] };
-            setRutasGuardadas(payload.rutasGuardadas ?? []);
+            const rutas = payload.rutasGuardadas ?? [];
+            setRutasGuardadas(rutas);
+
+            if (rutaGuardadaSeleccionadaId !== null && !rutas.some((ruta) => ruta.rutaId === rutaGuardadaSeleccionadaId)) {
+                setRutaGuardadaSeleccionadaId(null);
+            }
         } catch (error) {
             console.error('No se pudieron cargar las rutas guardadas', error);
         }
@@ -117,6 +167,9 @@ export default function PlaneacionRutas() {
             }
 
             await cargarRutasGuardadas();
+            if (rutaGuardadaSeleccionadaId === rutaId) {
+                setRutaGuardadaSeleccionadaId(null);
+            }
 
             Swal.fire({
                 title: 'Ruta eliminada',
@@ -197,6 +250,7 @@ export default function PlaneacionRutas() {
                                     fechaReparto={fechaReparto}
                                     onRutasGuardadas={(nuevasRutasGuardadas) => {
                                         setRutasGuardadas(nuevasRutasGuardadas);
+                                        setRutaGuardadaSeleccionadaId(nuevasRutasGuardadas[0]?.rutaId ?? null);
                                         setVistaLateralActiva('rutas');
                                     }}
                                     onMensajeRutaGuardada={(mensaje) => {
@@ -226,6 +280,12 @@ export default function PlaneacionRutas() {
                         <ResumenRutasGuardadas
                             rutasGuardadas={rutasGuardadas}
                             eliminandoRutaId={eliminandoRutaId}
+                            rutaSeleccionadaId={rutaGuardadaSeleccionadaId}
+                            onSeleccionarRuta={(rutaId) => {
+                                setRutaGuardadaSeleccionadaId((rutaSeleccionadaActual) =>
+                                    rutaSeleccionadaActual === rutaId ? null : rutaId,
+                                );
+                            }}
                             onEliminarRuta={(rutaId) => {
                                 void eliminarRutaGuardada(rutaId);
                             }}

@@ -12,6 +12,16 @@ interface DetalleParadaResumen {
     cliente: string | null;
     estadoEntrega: 'Pendiente' | 'En camino' | 'Entregado';
     tiempoEstimadoParada: number | null;
+    latitud: number;
+    longitud: number;
+}
+
+interface GeometriaRutaResumen {
+    type: 'Feature';
+    geometry: {
+        type: 'LineString';
+        coordinates: number[][];
+    };
 }
 
 export interface RutaGuardadaResumen {
@@ -31,6 +41,7 @@ export interface RutaGuardadaResumen {
         horaFinEstimada: string | null;
     };
     detalleParadas: DetalleParadaResumen[];
+    geometria: GeometriaRutaResumen;
 }
 
 function mapearEstadoRepartidor(estadoRuta: string): EstadoRepartidorResumen {
@@ -102,7 +113,8 @@ export class RutasService {
                 // Guardar la ruta de entrega en MongoDB
                 const rutaEntrega = await RutaEntregaModel.create({
                     rutaId: rutaCreada.id,
-                    puntosEntrega: puntosTransformados
+                    puntosEntrega: puntosTransformados,
+                    geometria: ruta.geometria?.geometry?.coordinates ?? [],
                 });
                 console.log("RutaEntrega guardada en MongoDB:", rutaEntrega);
 
@@ -156,8 +168,17 @@ export class RutasService {
                             cliente: punto?.nombreCliente ?? null,
                             estadoEntrega: 'Pendiente',
                             tiempoEstimadoParada: null,
+                            latitud: punto?.latitud ?? 0,
+                            longitud: punto?.longitud ?? 0,
                         };
                     }),
+                    geometria: {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: ruta.geometria?.geometry?.coordinates ?? [],
+                        },
+                    },
                 });
             }
 
@@ -250,7 +271,16 @@ export class RutasService {
                     cliente: punto.nombreCliente ?? null,
                     estadoEntrega: punto.estadoEntrega === 'ENTREGADO' ? 'Entregado' : 'Pendiente',
                     tiempoEstimadoParada: null,
+                    latitud: punto.latitud,
+                    longitud: punto.longitud,
                 })),
+                geometria: {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: Array.isArray(rutaMongo?.geometria) ? rutaMongo.geometria : [],
+                    },
+                },
             };
         });
     }

@@ -23,6 +23,7 @@ export interface IPuntoEntrega {
 export interface IRutaEntrega extends Document {
   rutaId: number; // FK de MySQL
   puntosEntrega: (IPuntoEntrega & IPuntoEntregaMethods)[];
+  geometria: number[][];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -101,6 +102,10 @@ export const RutaEntregaSchema = new Schema<IRutaEntrega, mongoose.Model<IRutaEn
     },
 
     puntosEntrega: [PuntoEntregaSchema],
+    geometria: {
+      type: [[Number]],
+      default: [],
+    },
   },
   {
     timestamps: true,

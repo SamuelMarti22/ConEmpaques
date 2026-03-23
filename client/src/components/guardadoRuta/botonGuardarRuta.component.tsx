@@ -24,7 +24,16 @@ export interface RutaGuardadaUI {
         cliente: string | null;
         estadoEntrega: 'Pendiente' | 'En camino' | 'Entregado';
         tiempoEstimadoParada: number | null;
+        latitud: number;
+        longitud: number;
     }[];
+    geometria: {
+        type: 'Feature';
+        geometry: {
+            type: 'LineString';
+            coordinates: number[][];
+        };
+    };
 }
 
 interface GuardarRutasResponse {

@@ -4,6 +4,8 @@ interface ResumenRutasGuardadasProps {
   rutasGuardadas: RutaGuardadaUI[];
   onEliminarRuta: (rutaId: number) => void;
   eliminandoRutaId: number | null;
+  rutaSeleccionadaId: number | null;
+  onSeleccionarRuta: (rutaId: number) => void;
 }
 
 function formatearTiempo(segundos: number | null): string {
@@ -47,6 +49,8 @@ export default function ResumenRutasGuardadas({
   rutasGuardadas,
   onEliminarRuta,
   eliminandoRutaId,
+  rutaSeleccionadaId,
+  onSeleccionarRuta,
 }: ResumenRutasGuardadasProps) {
   return (
     <section className="panelRutasGuardadas">
@@ -57,7 +61,11 @@ export default function ResumenRutasGuardadas({
       )}
 
       {rutasGuardadas.map((ruta) => (
-        <article key={ruta.rutaId} className="rutaGuardadaCard">
+        <article
+          key={ruta.rutaId}
+          className={`rutaGuardadaCard ${rutaSeleccionadaId === ruta.rutaId ? 'rutaGuardadaCard--seleccionada' : ''}`}
+          onClick={() => onSeleccionarRuta(ruta.rutaId)}
+        >
           <div className="rutaGuardadaCard__encabezado">
             <div className="rutaGuardadaCard__encabezadoTop">
               <strong className="rutaGuardadaCard__titulo">Ruta #{ruta.rutaId}</strong>
@@ -65,7 +73,10 @@ export default function ResumenRutasGuardadas({
                 type="button"
                 className="rutaGuardadaCard__btnEliminar"
                 disabled={eliminandoRutaId === ruta.rutaId}
-                onClick={() => onEliminarRuta(ruta.rutaId)}
+                onClick={(evento) => {
+                  evento.stopPropagation();
+                  onEliminarRuta(ruta.rutaId);
+                }}
               >
                 {eliminandoRutaId === ruta.rutaId ? 'Eliminando...' : 'Eliminar ruta'}
               </button>

@@ -102,6 +102,12 @@
   border-radius: 12px;
   padding: 12px;
   margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.rutaGuardadaCard--seleccionada {
+  border-color: #2563eb;
+  background: #eff6ff;
 }
 
 .rutaGuardadaCard__encabezado {
