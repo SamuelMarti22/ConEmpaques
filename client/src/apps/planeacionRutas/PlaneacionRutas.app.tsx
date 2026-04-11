@@ -11,6 +11,7 @@ import BotonGeneracionRutas from '../../components/planteacionRuta/botonGeneraci
 import {RutaRepartidorGeoJSON} from './../../classes/RutaRepartidorGeoJSON'
 import BotonGuardarRuta, { type RutaGuardadaUI } from '../../components/guardadoRuta/botonGuardarRuta.component'
 import ResumenRutasGuardadas from './ResumenRutasGuardadas'
+import { visualizarRutasEnMapa } from '../../components/visualizacionRutasMapa.auxiliar'
 
 import './PlaneacionRutas.css';
 
@@ -79,34 +80,11 @@ export default function PlaneacionRutas() {
             return;
         }
 
-        const rutasGuardadasConGeometria = rutasGuardadas.filter((ruta) => {
-            const coordenadas = ruta.geometria?.geometry?.coordinates;
-            return Array.isArray(coordenadas) && coordenadas.length > 0;
+        visualizarRutasEnMapa({
+            mapa: mapaRef.current,
+            rutasGuardadas,
+            rutaSeleccionadaId: rutaGuardadaSeleccionadaId,
         });
-
-        const rutasGuardadasParaPintar = rutaGuardadaSeleccionadaId === null
-            ? rutasGuardadasConGeometria.map((ruta) => ruta.geometria)
-            : rutasGuardadasConGeometria
-                .filter((ruta) => ruta.rutaId === rutaGuardadaSeleccionadaId)
-                .map((ruta) => ruta.geometria);
-
-        if (rutasGuardadasParaPintar.length === 0) {
-            mapaRef.current?.limpiarRutas();
-            mapaRef.current?.limpiarPuntosEntrega();
-            return;
-        }
-
-        mapaRef.current?.pintarRutasGeoJSON(rutasGuardadasParaPintar);
-
-        // Mostrar puntos de entrega asociados
-        const puntosAMostrar = rutaGuardadaSeleccionadaId === null
-            ? rutasGuardadasConGeometria.flatMap((ruta) => ruta.detalleParadas)
-            : rutasGuardadasConGeometria
-                .filter((ruta) => ruta.rutaId === rutaGuardadaSeleccionadaId)
-                .flatMap((ruta) => ruta.detalleParadas);
-
-        mapaRef.current?.limpiarPuntosEntrega();
-        mapaRef.current?.pintarPuntosEntrega(puntosAMostrar);
     }, [vistaLateralActiva, rutasGeneradas, rutasGuardadas, rutaGuardadaSeleccionadaId]);
 
     const agregarPunto = (punto: PuntoEntrega) => {
@@ -193,7 +171,7 @@ export default function PlaneacionRutas() {
     return (
         <>
             <div className="vistaPlaneacion">
-                <div className="seccionMapaInteractivo">
+                <div className="seccionMapaInteractivo mapaInteractivo__panel">
                     <MapaInteractivo ref={mapaRef} />
                 </div>
 

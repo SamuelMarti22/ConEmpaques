@@ -1,6 +1,7 @@
 import './App.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import PlaneacionRutas from './planeacionRutas/PlaneacionRutas.app';
+import EntregasApp from './entregas/Entregas.app';
 import RepartidoresApp from './repartidores/Repartidores.app';
 import Header from '../components/Header';
 import type { Vista } from '../components/Header';
@@ -11,7 +12,7 @@ function renderVista(vista: Vista) {
     case 'agregar':
       return <PlaneacionRutas />;
     case 'entregas':
-      return <div>Vista de Entregas (próximamente)</div>;
+      return <EntregasApp />;
     case 'dashboard':
       return <div>Dashboard (próximamente)</div>;
     case 'repartidores':
