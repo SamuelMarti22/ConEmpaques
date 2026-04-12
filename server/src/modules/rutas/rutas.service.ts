@@ -94,7 +94,7 @@ export class RutasService {
                     data: {
                         repartidorId: ruta.repartidor_id,
                         fechaReparto: fechaRepartoNormalizada,
-                        estadoRuta: 'PENDIENTE',
+                        estadoRuta: 'EN_PROCESO',
                         horaInicioEntrega: null,
                         horaFinalizacionEntrega: null,
                         distanciaTotal: ruta.distancia_total,

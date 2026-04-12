@@ -87,6 +87,7 @@ function formatearHora(horas: number, minutos: number): string {
 async function consultarRepartidoresDisponibles(
   diaSemana: number,
   hora: string | null,
+  fechaFiltro?: Date,
 ): Promise<RepartidorDisponibleHoy[]> {
   const filtroHorario = hora === null
     ? {
@@ -104,12 +105,40 @@ async function consultarRepartidoresDisponibles(
         },
       };
 
+  // Filtro de rutas: si hay fecha, solo excluir rutas en esa fecha; si no hay fecha, excluir cualquier ruta activa
+  const filtroRutas = fechaFiltro
+    ? {
+        none: {
+          AND: [
+            {
+              estadoRuta: {
+                in: [...ESTADOS_ENTREGA_ACTIVA],
+              },
+            },
+            {
+              fechaReparto: {
+                gte: new Date(fechaFiltro.getFullYear(), fechaFiltro.getMonth(), fechaFiltro.getDate(), 0, 0, 0),
+                lt: new Date(fechaFiltro.getFullYear(), fechaFiltro.getMonth(), fechaFiltro.getDate() + 1, 0, 0, 0),
+              },
+            },
+          ],
+        },
+      }
+    : {
+        none: {
+          estadoRuta: {
+            in: [...ESTADOS_ENTREGA_ACTIVA],
+          },
+        },
+      };
+
   const repartidoresDisponibles = await prisma.usuario.findMany({
     where: {
       rol: Role.REPARTIDOR,
       disponibilidades: {
         some: filtroHorario,
       },
+      rutas: filtroRutas,
     },
     orderBy: {
       id: "asc",
@@ -131,7 +160,7 @@ async function consultarRepartidoresDisponibles(
 async function listarDisponiblesPorFecha(fecha: Date): Promise<RepartidorDisponibleHoy[]> {
   const diaSemana = fecha.getDay();
 
-  return consultarRepartidoresDisponibles(diaSemana, null);
+  return consultarRepartidoresDisponibles(diaSemana, null, fecha);
 }
 
 async function obtenerPorId(repartidorId: number) {
