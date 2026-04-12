@@ -1,17 +1,22 @@
 .vistaPlaneacion {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(1, 1fr);
-  gap: 8px;
-  width: 100vw;
+  grid-template-rows: 1fr;
+  gap: 12px;
+  width: 100%;
   height: 100%;
+  min-height: 0;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .seccionMapaInteractivo {
   grid-column: span 4 / span 4;
-  width: 95%;
-  height: 95%;
-  margin: 20px;
+  grid-row: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
   border-radius: 20px;
   border: 2px solid #d1d5db;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -19,16 +24,183 @@
   box-sizing: border-box;
 }
 
-.seccionPuntos {
+.columnaLateralPlaneacion {
   grid-column-start: 5;
+  grid-row: 1;
   width: 100%;
-  height: 95%;
-  margin-top: 20px;
+  margin: 0;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.selectorVistaPlaneacion {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.selectorVistaPlaneacion__boton {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2937;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.selectorVistaPlaneacion__boton--activo {
+  background: #eff6ff;
+  border-color: #60a5fa;
+  color: #1d4ed8;
+}
+
+.seccionPuntos {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: auto;
   border-radius: 20px;
   border: 2px solid #d1d5db;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  overflow: auto;
   box-sizing: border-box;
+}
+
+.accionesPlaneacionRutas {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.panelRutasGuardadas {
+  flex: 1;
+  min-height: 0;
+  border: 2px solid #d1d5db;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.panelRutasGuardadas__vacio {
+  margin: 0;
+  color: #4b5563;
+}
+
+.panelRutasGuardadas h3 {
+  margin: 0 0 10px 0;
+}
+
+.rutaGuardadaCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.rutaGuardadaCard--seleccionada {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.rutaGuardadaCard__encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.rutaGuardadaCard__encabezadoTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rutaGuardadaCard__titulo {
+  font-size: 1rem;
+}
+
+.rutaGuardadaCard__repartidorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rutaGuardadaCard__repartidorNombre {
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.rutaGuardadaCard__estadoBadge {
+  font-size: 0.85rem;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #f9fafb;
+}
+
+.rutaGuardadaCard__resumenRapido {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.rutaGuardadaCard__btnEliminar {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.rutaGuardadaCard__btnEliminar:hover:not(:disabled) {
+  background: #f9fafb;
+}
+
+.rutaGuardadaCard__btnEliminar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rutaGuardadaCard__bloque h4 {
+  margin: 8px 0 6px 0;
+  font-size: 0.95rem;
+}
+
+.rutaGuardadaCard__bloque p {
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+.rutaGuardadaCard__listaParadas {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.rutaGuardadaCard__listaParadas li {
+  margin-bottom: 8px;
+}
+
+.rutaGuardadaCard__paradaLinea {
+  font-size: 0.9rem;
+}
+
+.rutaGuardadaCard__paradaEstado {
+  font-size: 0.82rem;
+  color: #4b5563;
 }
 
 /* 📱 Tablet y móvil: secciones apiladas */
@@ -37,22 +209,41 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto;
     height: auto;
-    width: 100vw;
+    width: 100%;
+    padding: 12px;
+    overflow: visible;
   }
 
   .seccionMapaInteractivo {
     grid-column: 1;
-    width: 90%;
+    grid-row: auto;
+    width: 100%;
     height: 400px;
-    margin: 12px auto;
+    margin: 0;
+  }
+
+  .columnaLateralPlaneacion {
+    grid-column: 1;
+    grid-row: auto;
+    width: 100%;
+    margin: 0;
+    height: auto;
+  }
+
+  .selectorVistaPlaneacion {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .seccionPuntos {
-    grid-column: 1;
-    width: 90%;
+    width: 100%;
     height: auto;
     min-height: 200px;
-    margin: 0 auto 12px auto;
-    margin-top: 0;
+    margin: 0;
+  }
+
+  .panelRutasGuardadas {
+    height: auto;
+    min-height: 200px;
   }
 }

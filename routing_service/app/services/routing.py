@@ -2,9 +2,32 @@ from platform import node
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 from app.models.schema import PuntoEntrega, CapacidadRepartidor, RutaRepartidor, OptimizacionResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 class RoutingService:
     def resolver_rutas(self, matriz: list[list[float]], puntos_entrega: list[PuntoEntrega], repartidores: list[CapacidadRepartidor] ) -> OptimizacionResponse:
+        logger.info(f"Iniciando optimización con {len(puntos_entrega)} puntos y {len(repartidores)} repartidores")
+        logger.info(f"Capacidades: {[r.capacidad for r in repartidores]}")
+        logger.info(f"Pesos de puntos: {[p.peso for p in puntos_entrega]}")
+        
+        # Validaciones
+        capacidad_total = sum(r.capacidad for r in repartidores)
+        peso_total = sum(p.peso for p in puntos_entrega)
+        logger.info(f"Capacidad total disponible: {capacidad_total}, Peso total a repartir: {peso_total}")
+        
+        if peso_total > capacidad_total:
+            logger.error(f"ERROR: No hay suficiente capacidad. Necesitas {peso_total} pero solo tienes {capacidad_total}")
+            return OptimizacionResponse(rutas=[])
+            
+        if not puntos_entrega:
+            logger.warning("No hay puntos de entrega")
+            return OptimizacionResponse(rutas=[])
+            
+        if not repartidores:
+            logger.warning("No hay repartidores")
+            return OptimizacionResponse(rutas=[])
           
         gerente = pywrapcp.RoutingIndexManager(len(matriz),len(repartidores),  0 )
         modelo = pywrapcp.RoutingModel(gerente)
@@ -28,14 +51,20 @@ class RoutingService:
     
         parametros = pywrapcp.DefaultRoutingSearchParameters()
         parametros.first_solution_strategy = (routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+        parametros.local_search_metaheuristic = (routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
+        parametros.time_limit.seconds = 30
 
         solucion = modelo.SolveWithParameters(parametros)
-    
-        rutas = self.__extraer_rutas(solucion,modelo,gerente,repartidores,puntos_entrega) if solucion else []
-    
-        return rutas
+        
+        logger.info(f"Status de solucion: {solucion}")
+        if solucion:
+            logger.info("Solución encontrada")
+            return self.__extraer_rutas(solucion,modelo,gerente,repartidores,puntos_entrega, matriz)
+        else:
+            logger.warning("NO se encontró solución")
+            return OptimizacionResponse(rutas=[])
 
-    def __extraer_rutas(self,solucion,modelo,gerente,repartidores: list[CapacidadRepartidor],puntos: list[PuntoEntrega]) -> OptimizacionResponse:
+    def __extraer_rutas(self,solucion,modelo,gerente,repartidores: list[CapacidadRepartidor],puntos: list[PuntoEntrega],matriz: list[list[float]]) -> OptimizacionResponse:
         rutas = []
         for i, repartidor in enumerate(repartidores):
             paradas = []
@@ -47,6 +76,29 @@ class RoutingService:
                 index = solucion.Value(modelo.NextVar(index))
 
             if paradas:
-                    rutas.append(RutaRepartidor(repartidor_id=repartidor.id,ruta=paradas,distancia_total=solucion.ObjectiveValue(),tiempo_estimado=0.0, geometria=[]))
+                distancia = self.__calcular_distancia_ruta(paradas, puntos, matriz)
+                tiempo_estimado = self.__calcular_tiempo_estimado(distancia)
+                logger.info(f"Repartidor {repartidor.id}: {len(paradas)} paradas, distancia: {distancia}m, tiempo: {tiempo_estimado}s")
+                rutas.append(RutaRepartidor(repartidor_id=repartidor.id,ruta=paradas,distancia_total=distancia,tiempo_estimado=tiempo_estimado, geometria=[]))
+            else:
+                logger.debug(f"Repartidor {repartidor.id}: sin paradas asignadas")
             
+        logger.info(f"Total de rutas generadas: {len(rutas)}")
         return OptimizacionResponse(rutas=rutas)
+    
+    def __calcular_distancia_ruta(self,paradas: list[int],puntos: list[PuntoEntrega],matriz: list[list[float]]) -> float:
+        indice_por_id = {p.id: i + 1 for i, p in enumerate(puntos)}
+        orden = [0] + [indice_por_id[id] for id in paradas]
+        
+        distancia_total = 0
+        for i in range(len(orden) - 1):
+            distancia_total += matriz[orden[i]][orden[i + 1]]
+        
+        return distancia_total
+    
+    def __calcular_tiempo_estimado(self, distancia_metros: float) -> float:
+        # Velocidad promedio de entrega en ciudad: 40 km/h = 11.11 m/s
+        # Fórmula: tiempo (segundos) = distancia (metros) / velocidad (m/s)
+        velocidad_promedio_ms = 40 * 1000 / 3600  # 40 km/h en m/s
+        tiempo_estimado = distancia_metros / velocidad_promedio_ms if distancia_metros > 0 else 0
+        return tiempo_estimado

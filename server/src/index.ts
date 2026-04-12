@@ -2,9 +2,13 @@ import cors from "cors";
 import express from "express";
 import env from "./config/env.js";
 import { prisma } from "./databases/prisma/lib/prisma.js";
+import { connectMongo } from "./databases/mongoDB/conection.js";
 import { horarioController } from "./modules/horarios/horario.controller.js";
 import { repartidorController } from "./modules/repartidores/repartidor.controller.js";
 import { routingController } from "./modules/routing/routing.controller.js";
+import { rutasController } from "./modules/rutas/rutas.controller.js";
+import geoCodificacionRutasController from "./modules/geoCodificacion/geoCodificacion.controller.js";
+
 
 const app = express();
 app.use(express.json());
@@ -12,6 +16,8 @@ app.use(cors());
 
 // Rutas repartidor
 app.get("/api/repartidores", repartidorController.obtenerTodos);
+app.get("/api/repartidores/disponibles-hoy", repartidorController.obtenerDisponiblesHoy);
+app.post("/api/repartidores/:id/validar-recepcion-ruta", horarioController.validarRecepcionRuta);
 app.get("/api/repartidores/:id", repartidorController.obtenerPorId);
 app.post("/api/repartidores", repartidorController.crear);
 app.put("/api/repartidores/:id", repartidorController.actualizar);
@@ -25,14 +31,23 @@ app.put("/api/repartidores/:id/horarios/:horarioId", horarioController.actualiza
 app.patch("/api/repartidores/:id/horarios/:horarioId", horarioController.actualizarHorario);
 app.delete("/api/repartidores/:id/horarios/:horarioId", horarioController.eliminarHorario);
 
-// Validación operativa de recepción de rutas (sin asignar)
-app.post("/api/repartidores/:id/validar-recepcion-ruta", horarioController.validarRecepcionRuta);
-
-// Ruta para optimización de rutas
+// Rutas para optimización de rutas
 app.post("/api/routing/optimizar", routingController.getRutaOptima);
+
+
+// Rutas para CRUD rutas
+app.get("/api/rutas", rutasController.obtenerRutasGuardadas);
+app.post("/api/rutas/guardar", rutasController.guardarRutas);
+app.delete("/api/rutas/:rutaId", rutasController.eliminarRuta);
+
+// Alias para mantener compatibilidad entre frontend y backend
+app.use("/api/geocodificacion", geoCodificacionRutasController);
+app.use("/api/geocoding", geoCodificacionRutasController);
+
 
 const iniciar = async () => {
 	await prisma.$connect();
+	await connectMongo();
 
 	const puerto = Number(env.PORT ?? 3000);
 	app.listen(puerto, () => {

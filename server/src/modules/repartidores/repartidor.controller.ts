@@ -48,6 +48,15 @@ async function obtenerTodos(_request: Request, response: Response): Promise<Resp
   }
 }
 
+async function obtenerDisponiblesHoy(_request: Request, response: Response): Promise<Response> {
+  try {
+    const repartidoresDisponibles = await repartidorService.listarDisponiblesHoy();
+    return response.status(200).json(repartidoresDisponibles);
+  } catch (error) {
+    return manejarErrorController(error, response);
+  }
+}
+
 async function obtenerPorId(request: Request, response: Response): Promise<Response | void> {
   const repartidorId = validarIdRequest(request, response);
   if (repartidorId === null) {
@@ -126,6 +135,7 @@ async function eliminar(request: Request, response: Response): Promise<Response 
 
 export const repartidorController = {
   obtenerTodos,
+  obtenerDisponiblesHoy,
   obtenerPorId,
   crear,
   actualizar,

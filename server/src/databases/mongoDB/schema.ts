@@ -5,13 +5,15 @@ import mongoose, { Schema, Document } from "mongoose";
 //////////////////////
 
 export interface IPuntoEntrega {
+  id: number;
   nombreCliente: string;
   codigo: string;
   contactoCliente: string;
+  direccion: string;
   latitud: number;
   longitud: number;
-  cantidadProducto: number;
-  descripcionProducto: string;
+  pesoProducto: number;
+  descripcionEntrega: string;
   estadoEntrega: "PENDIENTE" | "ENTREGADO" | "FALLIDO";
   fechaHoraEntrega?: Date;
   firmaUrl?: string;
@@ -21,6 +23,7 @@ export interface IPuntoEntrega {
 export interface IRutaEntrega extends Document {
   rutaId: number; // FK de MySQL
   puntosEntrega: (IPuntoEntrega & IPuntoEntregaMethods)[];
+  geometria: number[][];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,10 +39,8 @@ export interface IPuntoEntregaMethods {
   setLatitud(valor: number): void;
   getLongitud(): number;
   setLongitud(valor: number): void;
-  getCantidadProducto(): number;
-  setCantidadProducto(valor: number): void;
-  getDescripcionProducto(): string;
-  setDescripcionProducto(valor: string): void;
+  getDescripcionEntrega(): string;
+  setDescripcionEntrega(valor: string): void;
   getEstadoEntrega(): "PENDIENTE" | "ENTREGADO" | "FALLIDO";
   setEstadoEntrega(valor: "PENDIENTE" | "ENTREGADO" | "FALLIDO"): void;
   getFechaHoraEntrega(): Date | undefined;
@@ -73,8 +74,9 @@ export const PuntoEntregaSchema = new Schema<IPuntoEntrega, mongoose.Model<IPunt
   contactoCliente: { type: String, required: true },
   latitud: { type: Number, required: true },
   longitud: { type: Number, required: true },
-  cantidadProducto: { type: Number, required: true },
-  descripcionProducto: { type: String },
+  pesoProducto: { type: Number, required: true },
+  descripcionEntrega: { type: String },
+  direccion: { type: String, required: true },
 
   estadoEntrega: {
     type: String,
@@ -100,6 +102,10 @@ export const RutaEntregaSchema = new Schema<IRutaEntrega, mongoose.Model<IRutaEn
     },
 
     puntosEntrega: [PuntoEntregaSchema],
+    geometria: {
+      type: [[Number]],
+      default: [],
+    },
   },
   {
     timestamps: true,

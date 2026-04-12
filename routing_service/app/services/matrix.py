@@ -25,7 +25,7 @@ class MatrixService:
         
         url_osrm = f"{self.url_osrm}/table/v1/driving/{coordenadas_OSRM}?annotations=distance"
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.get(url_osrm)
             response.raise_for_status()
             data = response.json()
@@ -38,7 +38,7 @@ class MatrixService:
         
         url_osrm = f"{self.url_osrm}/table/v1/driving/{coordenadas_OSRM}"
         
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.get(url_osrm)
             data = response.json()
         

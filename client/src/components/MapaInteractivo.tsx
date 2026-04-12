@@ -1,25 +1,109 @@
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { PuntoEntrega } from '../classes/PuntoEntrega';
 
 const env = import.meta.env
 const MAPBOX_TOKEN = env.MAPBOX_TOKEN as string;
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
 const coordenadasMedellin: [number, number] = [-75.5636, 6.2442];
+const FUENTE_RUTAS_ID = 'rutas-geojson-source';
+const CAPA_RUTAS_ID = 'rutas-geojson-layer';
+const COLORES_RUTAS = ['#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#0891b2', '#ca8a04'];
+
+type GeometriaRuta = {
+    type: 'Feature';
+    geometry: {
+        type: 'LineString';
+        coordinates: number[][];
+    };
+};
+
+type PuntoEntregaSimple = {
+    puntoId: number;
+    cliente: string | null;
+    direccion: string | null;
+    latitud: number;
+    longitud: number;
+    estadoEntrega: 'Pendiente' | 'En camino' | 'Entregado';
+};
 
 //Funciones que expone a otros componentes, para modificar sus propios marcadores
 export interface MapaInteractivoFunciones {
-    agregarPunto: (cliente: string, latitud: number, longitud: number) => void;
-    eliminarPunto: (index: number) => void;
+    agregarPunto: (punto: PuntoEntrega) => void;
+    eliminarPunto: (id: number) => void;
     vaciarPuntos: () => void;
+    pintarRutasGeoJSON: (rutas: GeometriaRuta[]) => void;
+    limpiarRutas: () => void;
+    resaltarRutaPorIndice: (indiceRuta: number | null) => void;
+    pintarPuntosEntrega: (puntos: PuntoEntregaSimple[]) => void;
+    limpiarPuntosEntrega: () => void;
 }
 
 const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
     const contenedorMapa = useRef<HTMLDivElement>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
-    const marcadoresRef = useRef<mapboxgl.Marker[]>([]);
+    const marcadoresRef = useRef<Map<number, mapboxgl.Marker>>(new Map());
+    const marcadoresPuntosEntregaRef = useRef<Map<number, mapboxgl.Marker>>(new Map());
+    const rutasRef = useRef<GeometriaRuta[]>([]);
+    const indiceRutaResaltadaRef = useRef<number | null>(null);
+
+    const construirFeatureCollection = (
+        rutas: GeometriaRuta[],
+        indiceRutaSeleccionada: number | null,
+    ): GeoJSON.FeatureCollection => {
+        const featuresTotales: GeoJSON.Feature[] = rutas.map((ruta, indiceOriginal) => ({
+            type: 'Feature',
+            geometry: ruta.geometry as unknown as GeoJSON.Geometry,
+            properties: {
+                color: COLORES_RUTAS[indiceOriginal % COLORES_RUTAS.length],
+                indiceRuta: indiceOriginal,
+            },
+        }));
+
+        const features = indiceRutaSeleccionada === null
+            ? featuresTotales
+            : featuresTotales.filter((feature) => {
+                const propiedades = feature.properties as { indiceRuta?: number } | null;
+                return propiedades?.indiceRuta === indiceRutaSeleccionada;
+            });
+
+        return {
+            type: 'FeatureCollection',
+            features,
+        };
+    };
+
+    const actualizarCapaRutas = (rutas: GeometriaRuta[]) => {
+        const mapa = mapRef.current;
+        if (!mapa || !mapa.isStyleLoaded()) return;
+
+        const featureCollection = construirFeatureCollection(rutas, indiceRutaResaltadaRef.current);
+
+        const sourceExistente = mapa.getSource(FUENTE_RUTAS_ID) as mapboxgl.GeoJSONSource | undefined;
+        if (sourceExistente) {
+            sourceExistente.setData(featureCollection);
+            return;
+        }
+
+        mapa.addSource(FUENTE_RUTAS_ID, {
+            type: 'geojson',
+            data: featureCollection,
+        });
+
+        mapa.addLayer({
+            id: CAPA_RUTAS_ID,
+            type: 'line',
+            source: FUENTE_RUTAS_ID,
+            paint: {
+                'line-color': ['coalesce', ['get', 'color'], '#2563eb'],
+                'line-width': 4,
+                'line-opacity': 0.9,
+            },
+        });
+    };
 
     useEffect(() => {
         if (!contenedorMapa.current) return;
@@ -31,28 +115,75 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
             zoom: 12.5
         });
 
+        mapRef.current.on('load', () => {
+            actualizarCapaRutas(rutasRef.current);
+        });
+
         return () => { mapRef.current?.remove(); };
     }, []);
 
     useImperativeHandle(ref, () => ({
-        agregarPunto: (cliente: string, latitud: number, longitud: number) => {
+        agregarPunto: (punto: PuntoEntrega) => {
             if (!mapRef.current) return;
             const marker = new mapboxgl.Marker()
-                .setLngLat([longitud, latitud])
-                .setPopup(new mapboxgl.Popup().setText(cliente))
+                .setLngLat([punto.getLongitud(), punto.getLatitud()])
+                .setPopup(new mapboxgl.Popup().setText(punto.getCliente()))
                 .addTo(mapRef.current);
-            marcadoresRef.current.push(marker);
+            marcadoresRef.current.set(punto.getId(), marker);
         },
-        eliminarPunto: (index: number) => {
-            const marker = marcadoresRef.current[index];
+        eliminarPunto: (id: number) => {
+            const marker = marcadoresRef.current.get(id);
             if (!marker) return;
             marker.remove();
-            marcadoresRef.current.splice(index, 1);
+            marcadoresRef.current.delete(id);
         },
         vaciarPuntos: () => {
-            marcadoresRef.current.forEach(marcador => marcador.remove());
-            marcadoresRef.current = [];
-        }
+            marcadoresRef.current.forEach(marker => marker.remove());
+            marcadoresRef.current.clear();
+        },
+        pintarRutasGeoJSON: (rutas: GeometriaRuta[]) => {
+            rutasRef.current = rutas.filter(
+                (ruta) =>
+                    !!ruta &&
+                    ruta.type === 'Feature' &&
+                    ruta.geometry?.type === 'LineString' &&
+                    Array.isArray(ruta.geometry.coordinates) &&
+                    ruta.geometry.coordinates.length > 0,
+            );
+            actualizarCapaRutas(rutasRef.current);
+        },
+        limpiarRutas: () => {
+            rutasRef.current = [];
+            indiceRutaResaltadaRef.current = null;
+            actualizarCapaRutas([]);
+        },
+        resaltarRutaPorIndice: (indiceRuta: number | null) => {
+            indiceRutaResaltadaRef.current = indiceRuta;
+            actualizarCapaRutas(rutasRef.current);
+        },
+        pintarPuntosEntrega: (puntos: PuntoEntregaSimple[]) => {
+            if (!mapRef.current) return;
+            
+            // Limpiar marcadores anteriores
+            marcadoresPuntosEntregaRef.current.forEach(marker => marker.remove());
+            marcadoresPuntosEntregaRef.current.clear();
+            
+            // Crear nuevo marcador para cada punto
+            puntos.forEach((punto, indice) => {
+                const popup = new mapboxgl.Popup().setText(punto.cliente || 'Sin nombre');
+                
+                const marker = new mapboxgl.Marker()
+                    .setLngLat([punto.longitud, punto.latitud])
+                    .setPopup(popup)
+                    .addTo(mapRef.current!);
+                
+                marcadoresPuntosEntregaRef.current.set(indice, marker);
+            });
+        },
+        limpiarPuntosEntrega: () => {
+            marcadoresPuntosEntregaRef.current.forEach(marker => marker.remove());
+            marcadoresPuntosEntregaRef.current.clear();
+        },
     }));
 
     return <div ref={contenedorMapa} style={{ width: '100%', height: '100%' }} />;
