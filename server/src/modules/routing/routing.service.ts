@@ -23,15 +23,32 @@ export class RoutingService {
                 body: JSON.stringify(requestBody)
             })
 
+            const data = await response.json() as { rutas?: RutaRepartidor[], detail?: { error: string, razon: string } };
+            
+            // Manejo de errores HTTP
+            if (!response.ok) {
+                const detalle = data.detail;
+                if (detalle) {
+                    throw new Error(`${detalle.error}: ${detalle.razon}`);
+                }
+                throw new Error(`Error ${response.status} en el servidor de routing`);
+            }
 
-            const data = await response.json() as { rutas: RutaRepartidor[] };
             if (!data.rutas || !Array.isArray(data.rutas)) {
                 throw new Error(`Respuesta inválida de servidor de routing: ${JSON.stringify(data)}`);
+            }
+
+            if (data.rutas.length === 0) {
+                throw new Error("No se pudieron generar rutas. Verifica que la capacidad total de los repartidores sea suficiente para todos los puntos de entrega.");
             }
 
             return data.rutas;
         }
         catch (error) {
+            // Re-lanzar con el mensaje original si es un error conocido
+            if (error instanceof Error) {
+                throw error;
+            }
             throw new Error("No fue posible encontrar una ruta optima para esta combinación de puntos de entrega y capacidades de repartidores.");
         }
     }

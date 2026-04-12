@@ -13,21 +13,25 @@ class RoutingService:
         logger.info(f"Pesos de puntos: {[p.peso for p in puntos_entrega]}")
         
         # Validaciones
+        if not puntos_entrega:
+            logger.warning("No hay puntos de entrega")
+            raise ValueError("No se proporcionaron puntos de entrega. Por favor, añade al menos un punto de entrega.")
+            
+        if not repartidores:
+            logger.warning("No hay repartidores")
+            raise ValueError("No hay repartidores disponibles. Por favor, asegúrate de que hay repartidores disponibles hoy.")
+        
         capacidad_total = sum(r.capacidad for r in repartidores)
         peso_total = sum(p.peso for p in puntos_entrega)
         logger.info(f"Capacidad total disponible: {capacidad_total}, Peso total a repartir: {peso_total}")
         
         if peso_total > capacidad_total:
             logger.error(f"ERROR: No hay suficiente capacidad. Necesitas {peso_total} pero solo tienes {capacidad_total}")
-            return OptimizacionResponse(rutas=[])
-            
-        if not puntos_entrega:
-            logger.warning("No hay puntos de entrega")
-            return OptimizacionResponse(rutas=[])
-            
-        if not repartidores:
-            logger.warning("No hay repartidores")
-            return OptimizacionResponse(rutas=[])
+            raise ValueError(
+                f"Capacidad insuficiente: El peso total de los puntos ({peso_total} unidades) "
+                f"supera la capacidad total de los repartidores ({capacidad_total} unidades). "
+                f"Necesitas {peso_total - capacidad_total} unidades adicionales."
+            )
           
         gerente = pywrapcp.RoutingIndexManager(len(matriz),len(repartidores),  0 )
         modelo = pywrapcp.RoutingModel(gerente)
