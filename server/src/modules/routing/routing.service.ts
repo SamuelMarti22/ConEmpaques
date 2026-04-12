@@ -8,10 +8,15 @@ export class RoutingService {
 
     async getRutaOptima(puntosEntrega: PuntoEntrega[], capacidadesRepartidores: CapacidadRepartidor[]): Promise<RutaRepartidor[]> {
 
+        const capacidadesRepartidoresRouting = capacidadesRepartidores.map((repartidor) => ({
+            idRepartidor: repartidor.id,
+            capacidadRepartidor: repartidor.capacidad,
+        }));
+
         const requestBody = {
             deposito: this.deposito,
             puntos_entrega: puntosEntrega,
-            capacidades_repartidores: capacidadesRepartidores
+            capacidades_repartidores: capacidadesRepartidoresRouting
         }
 
         try {

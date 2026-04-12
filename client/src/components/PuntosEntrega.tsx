@@ -8,6 +8,7 @@ interface PuntosEntregaProps {
     onAgregarMarcadorMapa: (punto: PuntoEntrega) => void;
     onEliminarMarcadorMapa: (id: number) => void;
     onVaciarMarcadoresMapa: () => void;
+    storageKey?: string;
 }
 
 export interface PuntosEntregaAtributos {
@@ -15,17 +16,22 @@ export interface PuntosEntregaAtributos {
     obtenerPuntosFormateadosBackend: () => { id: number; latitud: number; longitud: number, peso: number }[];
 }
 
-const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ onAgregarMarcadorMapa, onEliminarMarcadorMapa, onVaciarMarcadoresMapa }, ref) => {
+const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ onAgregarMarcadorMapa, onEliminarMarcadorMapa, onVaciarMarcadoresMapa, storageKey = STORAGE_KEY_PUNTOS }, ref) => {
 
-    const [puntosActuales, setPuntosActuales] = useState<PuntoEntrega[]>(() => recuperarPuntosGuardados());
+    const [puntosActuales, setPuntosActuales] = useState<PuntoEntrega[]>(() => recuperarPuntosGuardados(storageKey));
     const [isOpenModal, setIsOpenModal] = useState(false);
     const [indiceEdicion, setIndiceEdicion] = useState<number | null>(null);
     const nextId = useRef(1); //Variable para asignar IDs automáticos a los puntos, ya que el backend no los genera al ser solo un mock
+    const omitirPersistenciaRef = useRef(true);
 
     useEffect(() => {
-        puntosActuales.forEach((punto) => onAgregarMarcadorMapa(punto));
-        // Se ejecuta solo al montar para rehidratar marcadores desde localStorage.
-    }, []);
+        omitirPersistenciaRef.current = true;
+        const puntosGuardados = recuperarPuntosGuardados(storageKey);
+        setPuntosActuales(puntosGuardados);
+        onVaciarMarcadoresMapa();
+        puntosGuardados.forEach((punto) => onAgregarMarcadorMapa(punto));
+        setIndiceEdicion(null);
+    }, [onAgregarMarcadorMapa, onVaciarMarcadoresMapa, storageKey]);
 
     useEffect(() => {
         const maxId = puntosActuales.reduce((maximo, punto) => Math.max(maximo, punto.getId()), 0);
@@ -33,8 +39,13 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
     }, [puntosActuales]);
 
     useEffect(() => {
-        window.localStorage.setItem(STORAGE_KEY_PUNTOS, JSON.stringify(puntosActuales));
-    }, [puntosActuales]);
+        if (omitirPersistenciaRef.current) {
+            omitirPersistenciaRef.current = false;
+            return;
+        }
+
+        window.localStorage.setItem(storageKey, JSON.stringify(puntosActuales));
+    }, [puntosActuales, storageKey]);
 
     const agregarPunto = (datosNuevoPunto: DatosNuevoPunto) => {
         if (indiceEdicion !== null) {

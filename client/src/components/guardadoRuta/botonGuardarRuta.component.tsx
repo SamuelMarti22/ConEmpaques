@@ -3,6 +3,7 @@ import type { PuntoEntregaFormateado, RutaRepartidorGeoJSON } from "../../types/
 
 export interface RutaGuardadaUI {
     rutaId: number;
+    fechaReparto?: string | null;
     repartidor: {
         id: number;
         nombre: string | null;
@@ -59,9 +60,6 @@ export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGe
         const puntosEntrega = obtenerPuntosActuales();
         const rutasRepartidorGeoJSON = rutaRepartidorGeoJSON;
 
-        console.log('Puntos de entrega al backend:', puntosEntrega);
-        console.log('Rutas de repartidores a enviar al backend:', rutasRepartidorGeoJSON);
-        console.log('Fecha de reparto a enviar al backend:', fechaReparto);
         try {
             const respuesta = await fetch('http://localhost:3000/api/rutas/guardar', {
                 method: 'POST',

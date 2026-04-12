@@ -9,6 +9,7 @@ import {
 import {
   validarCuerpoActualizarRequest,
   validarCuerpoCrearRequest,
+  validarQueryDisponibilidadRequest,
   validarIdRequest,
 } from "./repartidor.request.js";
 
@@ -48,9 +49,27 @@ async function obtenerTodos(_request: Request, response: Response): Promise<Resp
   }
 }
 
-async function obtenerDisponiblesHoy(_request: Request, response: Response): Promise<Response> {
+async function obtenerDisponibles(request: Request, response: Response): Promise<Response | void> {
+  const datosConsulta = validarQueryDisponibilidadRequest(request, response);
+  if (!datosConsulta) {
+    return;
+  }
+
   try {
-    const repartidoresDisponibles = await repartidorService.listarDisponiblesHoy();
+    const repartidoresDisponibles = await repartidorService.listarDisponiblesPorFecha(datosConsulta.fecha);
+    return response.status(200).json(repartidoresDisponibles);
+  } catch (error) {
+    return manejarErrorController(error, response);
+  }
+}
+async function obtenerDisponiblesPorFecha(request: Request, response: Response): Promise<Response | void> {
+  const datosConsulta = validarQueryDisponibilidadRequest(request, response);
+  if (!datosConsulta) {
+    return;
+  }
+
+  try {
+    const repartidoresDisponibles = await repartidorService.listarDisponiblesPorFecha(datosConsulta.fecha);
     return response.status(200).json(repartidoresDisponibles);
   } catch (error) {
     return manejarErrorController(error, response);
@@ -135,7 +154,7 @@ async function eliminar(request: Request, response: Response): Promise<Response 
 
 export const repartidorController = {
   obtenerTodos,
-  obtenerDisponiblesHoy,
+  obtenerDisponibles,
   obtenerPorId,
   crear,
   actualizar,
