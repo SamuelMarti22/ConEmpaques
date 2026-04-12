@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import MapaInteractivo, { type MapaInteractivoFunciones } from '../../components/MapaInteractivo';
 import type { RutaGuardadaUI } from '../../components/guardadoRuta/botonGuardarRuta.component';
 import {
+    filtrarRutasPorFecha,
     obtenerRutasActivasParaMapa,
     visualizarRutasEnMapa,
 } from '../../components/visualizacionRutasMapa.auxiliar';
@@ -34,7 +35,8 @@ export default function EntregasApp() {
     const [cargandoInicial, setCargandoInicial] = useState<boolean>(false);
     const [ultimaActualizacion, setUltimaActualizacion] = useState<Date | null>(null);
 
-    const rutasActivas = useMemo(() => obtenerRutasActivasParaMapa(rutasGuardadas), [rutasGuardadas]);
+    const rutasDelDiaActual = useMemo(() => filtrarRutasPorFecha(rutasGuardadas, new Date()), [rutasGuardadas]);
+    const rutasActivas = useMemo(() => obtenerRutasActivasParaMapa(rutasDelDiaActual), [rutasDelDiaActual]);
 
     useEffect(() => {
         let vistaMontada = true;
@@ -107,7 +109,7 @@ export default function EntregasApp() {
 
             <aside className="vistaEntregas__panel">
                 <header className="vistaEntregas__encabezadoPanel">
-                    <h3>Rutas activas</h3>
+                    <h3>Rutas activas de hoy</h3>
                     <button
                         type="button"
                         className="vistaEntregas__botonFiltro"
@@ -130,7 +132,7 @@ export default function EntregasApp() {
                 {cargandoInicial && <p className="vistaEntregas__mensaje">Cargando rutas...</p>}
 
                 {!cargandoInicial && rutasActivas.length === 0 && (
-                    <p className="vistaEntregas__mensaje">No hay rutas activas para mostrar.</p>
+                    <p className="vistaEntregas__mensaje">No hay rutas activas para hoy.</p>
                 )}
 
                 {!cargandoInicial && rutasActivas.map((ruta) => {

@@ -84,31 +84,31 @@ function formatearHora(horas: number, minutos: number): string {
   return `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
 }
 
-async function listarDisponiblesHoy(fechaHora: Date = new Date()): Promise<RepartidorDisponibleHoy[]> {
-  const diaSemana = fechaHora.getDay();
-  const hora = formatearHora(fechaHora.getHours(), fechaHora.getMinutes());
+async function consultarRepartidoresDisponibles(
+  diaSemana: number,
+  hora: string | null,
+): Promise<RepartidorDisponibleHoy[]> {
+  const filtroHorario = hora === null
+    ? {
+        diaSemana,
+        activo: true,
+      }
+    : {
+        diaSemana,
+        activo: true,
+        horaInicio: {
+          lte: hora,
+        },
+        horaFin: {
+          gt: hora,
+        },
+      };
 
   const repartidoresDisponibles = await prisma.usuario.findMany({
     where: {
       rol: Role.REPARTIDOR,
       disponibilidades: {
-        some: {
-          diaSemana,
-          activo: true,
-          horaInicio: {
-            lte: hora,
-          },
-          horaFin: {
-            gt: hora,
-          },
-        },
-      },
-      rutas: {
-        none: {
-          estadoRuta: {
-            in: [...ESTADOS_ENTREGA_ACTIVA],
-          },
-        },
+        some: filtroHorario,
       },
     },
     orderBy: {
@@ -121,11 +121,17 @@ async function listarDisponiblesHoy(fechaHora: Date = new Date()): Promise<Repar
   });
 
   return repartidoresDisponibles
-    .filter((repartidor) => typeof repartidor.capacidadVehiculo === "number" && repartidor.capacidadVehiculo > 0)
+    .filter((repartidor) => typeof repartidor.capacidadVehiculo === "number")
     .map((repartidor) => ({
       id: repartidor.id,
       capacidad: repartidor.capacidadVehiculo,
     }));
+}
+
+async function listarDisponiblesPorFecha(fecha: Date): Promise<RepartidorDisponibleHoy[]> {
+  const diaSemana = fecha.getDay();
+
+  return consultarRepartidoresDisponibles(diaSemana, null);
 }
 
 async function obtenerPorId(repartidorId: number) {
@@ -218,7 +224,7 @@ async function eliminar(repartidorId: number) {
 
 export const repartidorService = {
   listar,
-  listarDisponiblesHoy,
+  listarDisponiblesPorFecha,
   obtenerPorId,
   crear,
   actualizar,

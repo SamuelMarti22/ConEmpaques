@@ -26,6 +26,7 @@ interface GeometriaRutaResumen {
 
 export interface RutaGuardadaResumen {
     rutaId: number;
+    fechaReparto: string;
     repartidor: {
         id: number;
         nombre: string | null;
@@ -80,9 +81,6 @@ export class RutasService {
         const puntosEntregaDiccionario = this.construirDiccionarioPuntosEntrega(puntosEntrega);
         const rutasGuardadas: RutaGuardadaResumen[] = [];
 
-        console.log("Que llego al service", puntosEntregaDiccionario, rutasRepartidorGeoJSON, fechaReparto);
-        console.log("Longitud de rutasRepartidorGeoJSON:", rutasRepartidorGeoJSON.length);
-
         try {
             while (rutasRepartidorGeoJSON.length != 0) {
                 const ruta = rutasRepartidorGeoJSON.pop();
@@ -108,15 +106,12 @@ export class RutasService {
                 const puntosTransformados = ruta.ruta.map(punto =>
                     this.construirPuntosEntrega(puntosEntregaDiccionario[punto]!)
                 );
-                console.log("Puntos transformados:", puntosTransformados);
-
                 // Guardar la ruta de entrega en MongoDB
                 const rutaEntrega = await RutaEntregaModel.create({
                     rutaId: rutaCreada.id,
                     puntosEntrega: puntosTransformados,
                     geometria: ruta.geometria?.geometry?.coordinates ?? [],
                 });
-                console.log("RutaEntrega guardada en MongoDB:", rutaEntrega);
 
                 const repartidor = await prisma.usuario.findUnique({
                     where: {
@@ -145,6 +140,7 @@ export class RutasService {
 
                 rutasGuardadas.push({
                     rutaId: rutaCreada.id,
+                    fechaReparto: rutaCreada.fechaReparto.toISOString(),
                     repartidor: {
                         id: ruta.repartidor_id,
                         nombre: repartidor?.nombre ?? null,
@@ -250,6 +246,7 @@ export class RutasService {
 
             return {
                 rutaId: ruta.id,
+                fechaReparto: ruta.fechaReparto.toISOString(),
                 repartidor: {
                     id: ruta.repartidorId,
                     nombre: ruta.repartidor?.nombre ?? null,

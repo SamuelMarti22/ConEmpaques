@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Swal from 'sweetalert2'
 import { PuntoEntrega } from '../../classes/PuntoEntrega'
 import type { MapaInteractivoFunciones } from '../../components/MapaInteractivo'
@@ -11,13 +11,58 @@ import BotonGeneracionRutas from '../../components/planteacionRuta/botonGeneraci
 import {RutaRepartidorGeoJSON} from './../../classes/RutaRepartidorGeoJSON'
 import BotonGuardarRuta, { type RutaGuardadaUI } from '../../components/guardadoRuta/botonGuardarRuta.component'
 import ResumenRutasGuardadas from './ResumenRutasGuardadas'
-import { visualizarRutasEnMapa } from '../../components/visualizacionRutasMapa.auxiliar'
+import { filtrarRutasPorFecha, visualizarRutasEnMapa } from '../../components/visualizacionRutasMapa.auxiliar'
 
 import './PlaneacionRutas.css';
 
-interface RepartidorDisponibleHoyResponse {
+interface RepartidorParaAsignacionResponse {
     id: number;
-    capacidad: number;
+    capacidadVehiculo: number;
+}
+
+interface HorarioRepartidorResponse {
+    diaSemana: number;
+    activo: boolean;
+}
+
+const DIAS_SELECCIONABLES = 7;
+
+function agregarDias(fechaBase: Date, dias: number): Date {
+    const fecha = new Date(fechaBase);
+    fecha.setDate(fecha.getDate() + dias);
+    fecha.setHours(12, 0, 0, 0);
+    return fecha;
+}
+
+function normalizarFechaMediodiaLocal(fechaBase: Date): Date {
+    const fecha = new Date(fechaBase);
+    fecha.setHours(12, 0, 0, 0);
+    return fecha;
+}
+
+function formatearValorFecha(fecha: Date): string {
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
+function fechaDesdeValor(valor: string): Date {
+    const [anio, mes, dia] = valor.split('-').map(Number);
+    return new Date(anio, mes - 1, dia, 12, 0, 0, 0);
+}
+
+function obtenerOpcionesSieteDiasConHoy(): Date[] {
+    const hoy = new Date();
+    return Array.from({ length: DIAS_SELECCIONABLES }, (_valor, indice) => agregarDias(hoy, indice));
+}
+
+function formatearEtiquetaFecha(fecha: Date): string {
+    return fecha.toLocaleDateString('es-CO', {
+        weekday: 'long',
+        day: '2-digit',
+        month: '2-digit',
+    });
 }
 
 type VistaLateralActiva = 'puntos' | 'rutas';
@@ -31,40 +76,65 @@ export default function PlaneacionRutas() {
     const [rutasGuardadas, setRutasGuardadas] = useState<RutaGuardadaUI[]>([]);
     const [eliminandoRutaId, setEliminandoRutaId] = useState<number | null>(null);
     const [rutaGuardadaSeleccionadaId, setRutaGuardadaSeleccionadaId] = useState<number | null>(null);
-    const [fechaReparto, setFechaReparto] = useState<Date>(new Date());
+    const [fechaReparto, setFechaReparto] = useState<Date>(() => normalizarFechaMediodiaLocal(new Date()));
     const [vistaLateralActiva, setVistaLateralActiva] = useState<VistaLateralActiva>('puntos');
-
-    useEffect(() => {
-        setFechaReparto(new Date());
-    }, []);
+    const opcionesSemana = useMemo(() => obtenerOpcionesSieteDiasConHoy(), []);
+    const storageKeyPuntosPorFecha = useMemo(
+        () => `conempaques:puntos-entrega:${formatearValorFecha(fechaReparto)}`,
+        [fechaReparto],
+    );
+    const rutasGuardadasFiltradas = useMemo(
+        () => filtrarRutasPorFecha(rutasGuardadas, fechaReparto),
+        [rutasGuardadas, fechaReparto],
+    );
 
     useEffect(() => {
         const cargarCapacidadesRepartidores = async (): Promise<void> => {
             try {
-                const response = await fetch(`${URL_REPARTIDORES}/disponibles-hoy`);
+                const diaSemanaSeleccionado = fechaReparto.getDay();
 
-                if (!response.ok) {
-                    throw new Error(await obtenerMensajeErrorHttp(response));
+                const responseRepartidores = await fetch(URL_REPARTIDORES);
+                if (!responseRepartidores.ok) {
+                    throw new Error(await obtenerMensajeErrorHttp(responseRepartidores));
                 }
 
-                const repartidoresDisponibles = (await response.json()) as RepartidorDisponibleHoyResponse[];
-                const capacidadesFormateadas = repartidoresDisponibles.map((repartidor) => ({
-                    id: repartidor.id,
-                    capacidad: repartidor.capacidad,
-                }));
+                const repartidores = (await responseRepartidores.json()) as RepartidorParaAsignacionResponse[];
+                const repIds = repartidores.map((repartidor) => repartidor.id);
+
+                const horariosPorRepartidor = await Promise.all(
+                    repIds.map(async (repartidorId) => {
+                        const responseHorarios = await fetch(`${URL_REPARTIDORES}/${repartidorId}/horarios`);
+
+                        if (!responseHorarios.ok) {
+                            throw new Error(await obtenerMensajeErrorHttp(responseHorarios));
+                        }
+
+                        const horarios = (await responseHorarios.json()) as HorarioRepartidorResponse[];
+                        return { repartidorId, horarios };
+                    }),
+                );
+
+                const repartidoresDisponibles = repartidores.filter((repartidor) => {
+                    const horarios = horariosPorRepartidor.find((item) => item.repartidorId === repartidor.id)?.horarios ?? [];
+                    return horarios.some((horario) => horario.activo && horario.diaSemana === diaSemanaSeleccionado);
+                });
+
+                const capacidadesFormateadas = repartidoresDisponibles
+                    .filter((repartidor) => typeof repartidor.capacidadVehiculo === 'number')
+                    .map((repartidor) => ({
+                        id: repartidor.id,
+                        capacidad: repartidor.capacidadVehiculo,
+                    }));
+
                 setCapacidadesRepartidores(capacidadesFormateadas);
             } catch (errorOperacion) {
-                console.error('No se pudo obtener la lista de repartidores disponibles de hoy', errorOperacion);
+                console.error('No se pudo obtener la lista de repartidores disponibles para la fecha seleccionada', errorOperacion);
                 setCapacidadesRepartidores([]);
             }
         };
 
         void cargarCapacidadesRepartidores();
-    }, []);
-
-    useEffect(() => {
-        console.log('✅ Rutas generadas:', rutasGeneradas[0]?.getGeometria());
-    }, [rutasGeneradas]);
+    }, [fechaReparto]);
 
     useEffect(() => {
         if (vistaLateralActiva === 'puntos') {
@@ -82,10 +152,21 @@ export default function PlaneacionRutas() {
 
         visualizarRutasEnMapa({
             mapa: mapaRef.current,
-            rutasGuardadas,
+            rutasGuardadas: rutasGuardadasFiltradas,
             rutaSeleccionadaId: rutaGuardadaSeleccionadaId,
         });
-    }, [vistaLateralActiva, rutasGeneradas, rutasGuardadas, rutaGuardadaSeleccionadaId]);
+    }, [vistaLateralActiva, rutasGeneradas, rutasGuardadasFiltradas, rutaGuardadaSeleccionadaId]);
+
+    useEffect(() => {
+        if (rutaGuardadaSeleccionadaId === null) {
+            return;
+        }
+
+        const existeRutaSeleccionada = rutasGuardadasFiltradas.some((ruta) => ruta.rutaId === rutaGuardadaSeleccionadaId);
+        if (!existeRutaSeleccionada) {
+            setRutaGuardadaSeleccionadaId(null);
+        }
+    }, [rutaGuardadaSeleccionadaId, rutasGuardadasFiltradas]);
 
     const agregarPunto = (punto: PuntoEntrega) => {
         mapaRef.current?.agregarPunto(punto);
@@ -193,10 +274,36 @@ export default function PlaneacionRutas() {
                         </button>
                     </div>
 
+                    <div className="selectorFechaPlaneacion">
+                        <label className="selectorFechaPlaneacion__label" htmlFor="fechaReparto">
+                            Día de reparto
+                        </label>
+                        <select
+                            id="fechaReparto"
+                            className="selectorFechaPlaneacion__select"
+                            value={formatearValorFecha(fechaReparto)}
+                            onChange={(evento) => {
+                                const nuevaFecha = fechaDesdeValor(evento.target.value);
+                                setFechaReparto(nuevaFecha);
+                                setRutasGeneradas([]);
+                            }}
+                        >
+                            {opcionesSemana.map((fecha) => (
+                                <option key={formatearValorFecha(fecha)} value={formatearValorFecha(fecha)}>
+                                    {formatearEtiquetaFecha(fecha)}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="selectorFechaPlaneacion__ayuda">
+                            Se consultan 7 días corridos contando hoy.
+                        </p>
+                    </div>
+
                     {vistaLateralActiva === 'puntos' && (
                         <>
                             <div className="seccionPuntos">
                                 <PuntosEntrega
+                                    storageKey={storageKeyPuntosPorFecha}
                                     ref={puntosEntregaRef}
                                     onAgregarMarcadorMapa={agregarPunto}
                                     onEliminarMarcadorMapa={eliminarPunto}
@@ -256,7 +363,7 @@ export default function PlaneacionRutas() {
 
                     {vistaLateralActiva === 'rutas' && (
                         <ResumenRutasGuardadas
-                            rutasGuardadas={rutasGuardadas}
+                            rutasGuardadas={rutasGuardadasFiltradas}
                             eliminandoRutaId={eliminandoRutaId}
                             rutaSeleccionadaId={rutaGuardadaSeleccionadaId}
                             onSeleccionarRuta={(rutaId) => {

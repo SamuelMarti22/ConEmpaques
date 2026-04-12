@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Swal from "sweetalert2";
 import type { PuntoEntregaFormateado, CapacidadRepartidor, RutaRepartidorGeoJSON } from "../../types/routing.types";
 
 interface BotonGeneracionRutasProps {
@@ -11,10 +12,39 @@ export default function BotonGeneracionRutas({obtenerPuntosFormateados,capacidad
     const [cargando, setCargando] = useState(false);
 
     const generarRutas = async () => {
-        setCargando(true);
         const puntosEntrega = obtenerPuntosFormateados();
-        console.log('Puntos de entrega al backend:', puntosEntrega);
-        console.log('Capacidades de repartidores a enviar al backend:', capacidadesRepartidores);
+
+        if (puntosEntrega.length === 0) {
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Sin puntos de entrega',
+                text: 'Debes registrar al menos un punto para generar rutas.',
+            });
+            return;
+        }
+
+        if (capacidadesRepartidores.length === 0) {
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Sin repartidores disponibles',
+                text: 'No hay repartidores disponibles para el día seleccionado.',
+            });
+            return;
+        }
+
+        const pesoTotal = puntosEntrega.reduce((acumulado, punto) => acumulado + punto.peso, 0);
+        const capacidadTotal = capacidadesRepartidores.reduce((acumulado, repartidor) => acumulado + repartidor.capacidad, 0);
+
+        if (capacidadTotal < pesoTotal) {
+            await Swal.fire({
+                icon: 'error',
+                title: 'Capacidad insuficiente',
+                text: `La capacidad disponible (${capacidadTotal}) es menor al peso total a repartir (${pesoTotal}).`,
+            });
+            return;
+        }
+
+        setCargando(true);
         try {
             const respuesta = await fetch('http://localhost:3000/api/routing/optimizar', {
                 method: 'POST',

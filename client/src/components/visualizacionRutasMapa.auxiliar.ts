@@ -13,6 +13,49 @@ function esGeometriaValida(ruta: RutaGuardadaUI): boolean {
     return Array.isArray(coordenadas) && coordenadas.length > 0;
 }
 
+function obtenerClaveFechaLocal(fecha: Date): string {
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
+function parsearFechaFuente(fechaFuente: string): Date | null {
+    const coincidenciaFechaSimple = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fechaFuente.trim());
+    if (coincidenciaFechaSimple) {
+        const anio = Number(coincidenciaFechaSimple[1]);
+        const mes = Number(coincidenciaFechaSimple[2]);
+        const dia = Number(coincidenciaFechaSimple[3]);
+        const fechaLocal = new Date(anio, mes - 1, dia, 12, 0, 0, 0);
+        return Number.isNaN(fechaLocal.getTime()) ? null : fechaLocal;
+    }
+
+    const fecha = new Date(fechaFuente);
+    return Number.isNaN(fecha.getTime()) ? null : fecha;
+}
+
+function obtenerFechaRuta(ruta: RutaGuardadaUI): Date | null {
+    const fechaFuente = ruta.fechaReparto ?? ruta.resumen.horaInicioEstimada;
+    if (!fechaFuente) {
+        return null;
+    }
+
+    return parsearFechaFuente(fechaFuente);
+}
+
+export function filtrarRutasPorFecha(rutas: RutaGuardadaUI[], fechaObjetivo: Date): RutaGuardadaUI[] {
+    const claveObjetivo = obtenerClaveFechaLocal(fechaObjetivo);
+
+    return rutas.filter((ruta) => {
+        const fechaRuta = obtenerFechaRuta(ruta);
+        if (!fechaRuta) {
+            return false;
+        }
+
+        return obtenerClaveFechaLocal(fechaRuta) === claveObjetivo;
+    });
+}
+
 export function filtrarRutasConGeometria(rutas: RutaGuardadaUI[]): RutaGuardadaUI[] {
     return rutas.filter(esGeometriaValida);
 }

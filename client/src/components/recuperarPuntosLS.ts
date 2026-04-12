@@ -2,12 +2,12 @@ import { PuntoEntrega } from '../classes/PuntoEntrega';
 
 export const STORAGE_KEY_PUNTOS = 'conempaques:puntos-entrega';
 
-export function recuperarPuntosGuardados(): PuntoEntrega[] {
+export function recuperarPuntosGuardados(storageKey: string = STORAGE_KEY_PUNTOS): PuntoEntrega[] {
     if (typeof window === 'undefined') {
         return [];
     }
 
-    const raw = window.localStorage.getItem(STORAGE_KEY_PUNTOS);
+    const raw = window.localStorage.getItem(storageKey);
     if (!raw) {
         return [];
     }
