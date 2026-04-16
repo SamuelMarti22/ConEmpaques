@@ -49,6 +49,23 @@ Además, si quieres ver la base de datos de manera visual, puedes entrar al gest
 ```
 npx prisma studio --config ./src/config/prisma.config.ts
 ```
+**8. En la carpeta de routing_service cree un entorno virtual con el siguiente comando**
+
+```
+python -m venv routing-env
+```
+
+**9. En la carpeta de routing_service active el entorno virtual**
+
+```
+Mac/Linux: source routing-env/bin/activate
+Windows: routing-env\Scripts\activate
+```
+**10. En la carpeta de routing_service ejecutar el servicio con el siguiente comando:**
+
+```
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
 
 ---
 
