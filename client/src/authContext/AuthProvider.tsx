@@ -42,7 +42,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 		localStorage.removeItem(STORAGE_USUARIO_KEY);
 	}, []);
 
-	const login = useCallback(async (email: string, password: string) => {
+	const loginLogistico = useCallback(async (email: string, password: string) => {
 		setCargando(true);
 		setError(null);
 
@@ -56,7 +56,37 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 			const nuevoUsuario: Usuario = {
 				id: 1,
 				nombre: email.split("@")[0] || "usuario",
-				rol: email.toLowerCase().includes("log") ? "logistico" : "repartidor",
+				rol: email.toLowerCase().includes("log") ? "logistico" : "cliente",
+			};
+
+			setToken(nuevoToken);
+			setUsuario(nuevoUsuario);
+
+			localStorage.setItem(STORAGE_TOKEN_KEY, nuevoToken);
+			localStorage.setItem(STORAGE_USUARIO_KEY, JSON.stringify(nuevoUsuario));
+		} catch (errorLogin) {
+			const mensaje = errorLogin instanceof Error ? errorLogin.message : "No se pudo iniciar sesión";
+			setError(mensaje);
+			throw errorLogin;
+		} finally {
+			setCargando(false);
+		}
+	}, []);
+
+	const loginCliente = useCallback(async (codigoEntrega: string) => {
+		setCargando(true);
+		setError(null);
+
+		try {
+			if (codigoEntrega.trim().length === 0) {
+				throw new Error("Debes enviar un código de entrega válido");
+			}
+
+			const nuevoToken = `demo-token-cliente-${Date.now()}`;
+			const nuevoUsuario: Usuario = {
+				id: 0,
+				nombre: `Cliente ${codigoEntrega}`,
+				rol: "cliente",
 			};
 
 			setToken(nuevoToken);
@@ -80,10 +110,11 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 			isAuthenticated: Boolean(token && usuario),
 			cargando,
 			error,
-			login,
+			loginLogistico,
+			loginCliente,
 			logout,
 		}),
-		[usuario, token, cargando, error, login, logout],
+		[usuario, token, cargando, error, loginLogistico, loginCliente, logout],
 	);
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

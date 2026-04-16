@@ -2,8 +2,8 @@ import { createContext, useContext } from "react";
 
 export interface Usuario {
     id: number;
-    nombre: string;
-    rol: 'logistico' | 'repartidor';
+    nombre?: string;
+    rol: 'logistico' | 'cliente';
 }
 
 export interface AuthContextValue {
@@ -12,7 +12,8 @@ export interface AuthContextValue {
     isAuthenticated: boolean;
     cargando: boolean;
     error: string | null;
-    login: (email: string, password: string) => Promise<void>;
+    loginLogistico: (email: string, password: string) => Promise<void>;
+    loginCliente: (codigoEntrega: string) => Promise<void>;
     logout: () => void;
 }
 
@@ -22,7 +23,10 @@ const defaultAuthContextValue: AuthContextValue = {
     isAuthenticated: false,
     cargando: false,
     error: null,
-    async login() {
+    async loginLogistico() {
+        throw new Error("AuthProvider no configurado");
+    },
+    async loginCliente() {
         throw new Error("AuthProvider no configurado");
     },
     logout() {

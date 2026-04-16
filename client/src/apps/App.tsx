@@ -1,35 +1,50 @@
-import './App.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
-import PlaneacionRutas from './planeacionRutas/PlaneacionRutas.app';
-import RepartidoresApp from './repartidores/Repartidores.app';
-import Header from '../components/Header';
-import type { Vista } from '../components/Header';
-import { useState } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { useAuth } from '../authContext/AuthContext';
+import ProtectedRoute from '../authContext/ProtectedRoutes';
+import './App.css';
+import LoginPage from './login/LoginPage';
+import VisionLogisticoApp from './visionLogistico/VisionLogistico.app';
+import VisionCliente from './visionClientes/VisionCliente.app';
 
-function renderVista(vista: Vista) {
-  switch (vista) {
-    case 'agregar':
-      return <PlaneacionRutas />;
-    case 'entregas':
-      return <div>Vista de Entregas (próximamente)</div>;
-    case 'dashboard':
-      return <div>Dashboard (próximamente)</div>;
-    case 'repartidores':
-      return <RepartidoresApp />;
+function AppRoutes() {
+  const { isAuthenticated, cargando, usuario } = useAuth();
+
+  if (cargando) {
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>Cargando...</div>;
   }
-}
-
-function App() {
-  const [vistaActiva, setVistaActiva] = useState<Vista>('agregar');
 
   return (
-    <>
-      <Header vistaActiva={vistaActiva} onCambiarVista={setVistaActiva} />
-      <div id="vistaActual">
-        {renderVista(vistaActiva)}
-      </div>
-    </>
-  )
+    <Routes>
+      <Route path="/" element={isAuthenticated ? <Navigate to={usuario?.rol === 'logistico' ? '/logis' : '/client'} /> : <Navigate to="/login" />} />
+      
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/logis" /> : <LoginPage />} />
+      
+      <Route
+        path="/logis"
+        element={
+          <ProtectedRoute allowedRoles={['logistico']}>
+            <VisionLogisticoApp />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/client"
+        element={
+            <VisionCliente />
+        }
+      />
+      
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
 }
 
-export default App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  );
+}
