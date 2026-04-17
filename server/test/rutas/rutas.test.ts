@@ -20,8 +20,22 @@ async function cargarControllerConMocks() {
   const listarRutasGuardadasMock = vi.fn();
   const guardarRutaMock = vi.fn();
   const eliminarRutaMock = vi.fn();
+  class RepartidorYaAsignadoErrorMock extends Error {
+    constructor(repartidorId: number) {
+      super(`El repartidor ${repartidorId} ya tiene una ruta asignada para la fecha seleccionada`);
+      this.name = "RepartidorYaAsignadoError";
+    }
+  }
+  class RepartidorDuplicadoEnLoteErrorMock extends Error {
+    constructor(repartidorId: number) {
+      super(`El repartidor ${repartidorId} aparece repetido en la misma generación de rutas`);
+      this.name = "RepartidorDuplicadoEnLoteError";
+    }
+  }
 
   vi.doMock("../../src/modules/rutas/rutas.service", () => ({
+    RepartidorDuplicadoEnLoteError: RepartidorDuplicadoEnLoteErrorMock,
+    RepartidorYaAsignadoError: RepartidorYaAsignadoErrorMock,
     rutasService: {
       listarRutasGuardadas: listarRutasGuardadasMock,
       guardarRuta: guardarRutaMock,
@@ -149,7 +163,7 @@ describe("Rutas", () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.payload).toEqual({
-        error: "Faltan datos necesarios: puntosEntrega, rutasRepartidorGeoJSON o fechaReparto",
+        error: "Faltan datos necesarios: puntosEntrega, rutasRepartidorGeoJSON, fechaReparto u horaInicioRecorrido",
       });
     });
 
@@ -161,6 +175,7 @@ describe("Rutas", () => {
           puntosEntrega: [puntoEntregaMock],
           rutasRepartidorGeoJSON: [rutaGeoJSONMock],
           fechaReparto: "fecha-invalida",
+          horaInicioRecorrido: "08:00",
         },
       } as Request;
       const res = crearRespuesta();
@@ -169,6 +184,121 @@ describe("Rutas", () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.payload).toEqual({ error: "fechaReparto es inválida" });
+    });
+
+    // Este bloque cubre ramas de normalización de fecha con tipos y formatos inválidos.
+    it.each([
+      { fechaReparto: 12345, caso: "valor no string/date" },
+      { fechaReparto: "   ", caso: "string vacío" },
+      { fechaReparto: new Date("fecha-invalida"), caso: "Date inválido" },
+    ])("retorna 400 cuando fechaReparto es $caso", async ({ fechaReparto }) => {
+      const { rutasController } = await cargarControllerConMocks();
+      const req = {
+        body: {
+          puntosEntrega: [puntoEntregaMock],
+          rutasRepartidorGeoJSON: [rutaGeoJSONMock],
+          fechaReparto,
+          horaInicioRecorrido: "08:00",
+        },
+      } as Request;
+      const res = crearRespuesta();
+
+      await rutasController.guardarRutas(req, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.payload).toEqual({ error: "fechaReparto es inválida" });
+    });
+
+    it("retorna 400 cuando rutasRepartidorGeoJSON está vacío", async () => {
+      const { rutasController } = await cargarControllerConMocks();
+      const req = {
+        body: {
+          puntosEntrega: [puntoEntregaMock],
+          rutasRepartidorGeoJSON: [],
+          fechaReparto: "2026-04-16",
+          horaInicioRecorrido: "08:00",
+        },
+      } as Request;
+      const res = crearRespuesta();
+
+      await rutasController.guardarRutas(req, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.payload).toEqual({ error: "Debe enviar al menos una ruta para guardar" });
+    });
+
+    it("retorna 400 cuando rutas no tienen repartidor asignado", async () => {
+      const { rutasController } = await cargarControllerConMocks();
+      const req = {
+        body: {
+          puntosEntrega: [puntoEntregaMock],
+          rutasRepartidorGeoJSON: [{ ...rutaGeoJSONMock, repartidor_id: 0 }],
+          fechaReparto: "2026-04-16",
+          horaInicioRecorrido: "08:00",
+        },
+      } as Request;
+      const res = crearRespuesta();
+
+      await rutasController.guardarRutas(req, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.payload).toEqual({ error: "Las rutas generadas no tienen repartidor asignado" });
+    });
+
+    it("retorna 400 cuando rutas incluyen elementos no objeto", async () => {
+      const { rutasController } = await cargarControllerConMocks();
+      const req = {
+        body: {
+          puntosEntrega: [puntoEntregaMock],
+          rutasRepartidorGeoJSON: [null],
+          fechaReparto: "2026-04-16",
+          horaInicioRecorrido: "08:00",
+        },
+      } as unknown as Request;
+      const res = crearRespuesta();
+
+      await rutasController.guardarRutas(req, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.payload).toEqual({ error: "Las rutas generadas no tienen repartidor asignado" });
+    });
+
+    it("retorna 400 cuando horaInicioRecorrido tiene formato inválido", async () => {
+      const { rutasController } = await cargarControllerConMocks();
+      const req = {
+        body: {
+          puntosEntrega: [puntoEntregaMock],
+          rutasRepartidorGeoJSON: [rutaGeoJSONMock],
+          fechaReparto: "2026-04-16",
+          horaInicioRecorrido: "8:99",
+        },
+      } as Request;
+      const res = crearRespuesta();
+
+      await rutasController.guardarRutas(req, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.payload).toEqual({ error: "horaInicioRecorrido debe tener formato HH:mm" });
+    });
+
+    it("acepta fechaReparto como Date válido en el body", async () => {
+      const { rutasController, guardarRutaMock } = await cargarControllerConMocks();
+      guardarRutaMock.mockResolvedValue([{ rutaId: 99 }]);
+
+      const req = {
+        body: {
+          puntosEntrega: [puntoEntregaMock],
+          rutasRepartidorGeoJSON: [rutaGeoJSONMock],
+          fechaReparto: new Date("2026-04-16T00:00:00.000Z"),
+          horaInicioRecorrido: "08:00",
+        },
+      } as Request;
+      const res = crearRespuesta();
+
+      await rutasController.guardarRutas(req, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(guardarRutaMock).toHaveBeenCalled();
     });
 
     // Camino feliz de guardado: el controller debe responder 201 y devolver rutas guardadas.
@@ -180,6 +310,7 @@ describe("Rutas", () => {
           puntosEntrega: [puntoEntregaMock],
           rutasRepartidorGeoJSON: [rutaGeoJSONMock],
           fechaReparto: "2026-04-16T10:00:00.000Z",
+          horaInicioRecorrido: "08:00",
         },
       } as Request;
       const res = crearRespuesta();
@@ -200,6 +331,7 @@ describe("Rutas", () => {
           puntosEntrega: [puntoEntregaMock],
           rutasRepartidorGeoJSON: [rutaGeoJSONMock],
           fechaReparto: "2026-04-16T10:00:00.000Z",
+          horaInicioRecorrido: "08:00",
         },
       } as Request;
       const res = crearRespuesta();
@@ -220,6 +352,27 @@ describe("Rutas", () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.payload).toEqual({ error: "El parámetro rutaId debe ser un entero positivo" });
+    });
+
+    it("retorna 409 cuando el repartidor ya tiene ruta asignada", async () => {
+      const { rutasController, guardarRutaMock } = await cargarControllerConMocks();
+      guardarRutaMock.mockRejectedValue({
+        message: "El repartidor 1 ya tiene una ruta asignada para la fecha seleccionada",
+      });
+      const req = {
+        body: {
+          puntosEntrega: [puntoEntregaMock],
+          rutasRepartidorGeoJSON: [rutaGeoJSONMock],
+          fechaReparto: "2026-04-16T10:00:00.000Z",
+          horaInicioRecorrido: "08:00",
+        },
+      } as Request;
+      const res = crearRespuesta();
+
+      await rutasController.guardarRutas(req, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.payload).toEqual({ error: "El repartidor 1 ya tiene una ruta asignada para la fecha seleccionada" });
     });
 
     // Camino feliz de eliminación: confirma parseo de id y delegación correcta al service.
@@ -257,14 +410,15 @@ describe("Rutas", () => {
     it("lanza error cuando fechaReparto es inválida", async () => {
       const { rutasService } = await cargarRutasServiceConMocks();
 
-      await expect(rutasService.guardarRuta([puntoEntregaMock], [rutaGeoJSONMock], "fecha-invalida")).rejects.toThrow(
-        "fechaReparto es inválida",
-      );
+      await expect(
+        rutasService.guardarRuta([puntoEntregaMock], [rutaGeoJSONMock], "fecha-invalida", "08:00"),
+      ).rejects.toThrow("fechaReparto es inválida");
     });
 
     // Verifica flujo completo de guardado (MySQL + Mongo) y construcción del resumen de salida.
     it("guarda rutas y devuelve resumen", async () => {
       const { rutasService, prismaMock, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.findMany.mockResolvedValue([]);
       prismaMock.ruta.create.mockResolvedValue({
         id: 101,
         fechaReparto: new Date("2026-04-16T10:00:00.000Z"),
@@ -281,11 +435,92 @@ describe("Rutas", () => {
         [puntoEntregaMock],
         [{ ...rutaGeoJSONMock, tiempo_estimado: 120 }],
         new Date("2026-04-16T10:00:00.000Z"),
+        "08:00",
       );
 
       expect(prismaMock.ruta.create).toHaveBeenCalled();
       expect(rutaEntregaModelMock.create).toHaveBeenCalled();
       expect(salida[0].rutaId).toBe(101);
+    });
+
+    it("lanza error cuando el repartidor aparece repetido en el mismo lote", async () => {
+      const { rutasService, prismaMock, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.findMany.mockResolvedValue([]);
+      prismaMock.ruta.create.mockResolvedValue({
+        id: 201,
+        fechaReparto: new Date("2026-04-18T12:00:00.000Z"),
+        estadoRuta: "EN_PROCESO",
+      });
+      rutaEntregaModelMock.create.mockResolvedValue({});
+      prismaMock.usuario.findUnique.mockResolvedValue({
+        id: 1,
+        nombre: "Ana",
+        capacidadVehiculo: 20,
+      });
+
+      await expect(
+        rutasService.guardarRuta(
+          [puntoEntregaMock],
+          [rutaGeoJSONMock, { ...rutaGeoJSONMock, ruta: [1] }],
+          new Date("2026-04-18T12:00:00.000Z"),
+          "08:00",
+        ),
+      ).rejects.toThrow("El repartidor 1 aparece repetido en la misma generación de rutas");
+
+      expect(prismaMock.ruta.create).toHaveBeenCalledTimes(1);
+    });
+
+    it("lanza error cuando ya existe una ruta activa del repartidor para esa fecha", async () => {
+      const { rutasService, prismaMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.findMany.mockResolvedValue([
+        {
+          id: 900,
+          fechaReparto: new Date("2026-04-18T12:00:00.000Z"),
+          horaInicioEntrega: new Date("2026-04-18T13:00:00.000Z"),
+          horaFinalizacionEntrega: new Date("2026-04-18T13:30:00.000Z"),
+        },
+      ]);
+
+      await expect(
+        rutasService.guardarRuta([puntoEntregaMock], [rutaGeoJSONMock], new Date("2026-04-18T12:00:00.000Z"), "08:00"),
+      ).rejects.toThrow("El repartidor 1 ya tiene una ruta asignada para la fecha seleccionada");
+
+      expect(prismaMock.ruta.create).not.toHaveBeenCalled();
+    });
+
+    it("continúa cuando una ruta activa no tiene horaInicioEntrega", async () => {
+      const { rutasService, prismaMock, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.findMany.mockResolvedValue([
+        {
+          id: 901,
+          fechaReparto: new Date("2026-04-18T12:00:00.000Z"),
+          horaInicioEntrega: null,
+          horaFinalizacionEntrega: null,
+        },
+      ]);
+      prismaMock.ruta.create.mockResolvedValue({
+        id: 301,
+        fechaReparto: new Date("2026-04-18T12:00:00.000Z"),
+        estadoRuta: "PENDIENTE",
+        horaInicioEntrega: new Date("2026-04-18T08:00:00.000Z"),
+        horaFinalizacionEntrega: null,
+      });
+      rutaEntregaModelMock.create.mockResolvedValue({});
+      prismaMock.usuario.findUnique.mockResolvedValue({
+        id: 1,
+        nombre: "Ana",
+        capacidadVehiculo: 20,
+      });
+
+      const salida = await rutasService.guardarRuta(
+        [puntoEntregaMock],
+        [{ ...rutaGeoJSONMock, tiempo_estimado: 0 }],
+        new Date("2026-04-18T12:00:00.000Z"),
+        "08:00",
+      );
+
+      expect(prismaMock.ruta.create).toHaveBeenCalled();
+      expect(salida[0].resumen.horaFinEstimada).toBeNull();
     });
 
     // Si no hay filas afectadas en MySQL, la ruta no existe y se debe lanzar error.
@@ -360,6 +595,55 @@ describe("Rutas", () => {
 
       expect(salida).toHaveLength(1);
       expect(salida[0].repartidor.estado).toBe("en ruta");
+    });
+
+    it("listarRutasGuardadas mapea estado finalizado y geometría no array", async () => {
+      const { rutasService, prismaMock, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.findMany.mockResolvedValue([
+        {
+          id: 23,
+          repartidorId: 2,
+          fechaReparto: new Date("2026-04-17T12:00:00.000Z"),
+          estadoRuta: "ENTREGADA",
+          distanciaTotal: 20,
+          tiempoEstimado: 300,
+          horaInicioEntrega: new Date("2026-04-17T08:00:00.000Z"),
+          horaFinalizacionEntrega: null,
+          repartidor: {
+            id: 2,
+            nombre: "Luis",
+            capacidadVehiculo: 25,
+          },
+        },
+      ]);
+      rutaEntregaModelMock.find.mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          {
+            rutaId: 23,
+            puntosEntrega: [
+              {
+                id: 1,
+                direccion: "Calle 10",
+                nombreCliente: "Cliente A",
+                estadoEntrega: "PENDIENTE",
+                latitud: 6.24,
+                longitud: -75.57,
+                pesoProducto: Number.NaN,
+              },
+            ],
+            geometria: "no-array",
+          },
+        ]),
+      });
+
+      const salida = await rutasService.listarRutasGuardadas();
+
+      expect(salida).toHaveLength(1);
+      expect(salida[0].repartidor.estado).toBe("finalizado");
+      expect(salida[0].geometria.geometry.coordinates).toEqual([]);
+      expect(salida[0].resumen.cargaActualKg).toBe(0);
+      expect(salida[0].detalleParadas[0].estadoEntrega).toBe("Pendiente");
+      expect(salida[0].resumen.horaFinEstimada).not.toBeNull();
     });
 
     // Helper interno: normaliza un punto y fija estado inicial PENDIENTE.

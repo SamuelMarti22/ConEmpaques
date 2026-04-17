@@ -189,8 +189,75 @@ describe("Routing", () => {
           [{ id: 1, capacidad: 25 }],
         ),
       ).rejects.toThrow(
-        "No fue posible encontrar una ruta optima para esta combinación de puntos de entrega y capacidades de repartidores.",
+        "No fue posible conectar con el microservicio de optimización",
       );
+    });
+
+    it("propaga detalle cuando el microservicio responde error HTTP con JSON", async () => {
+      const routingService = await cargarRoutingService();
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 422,
+        text: vi.fn().mockResolvedValue(JSON.stringify({ detail: "OSRM reportó trayectos no alcanzables" })),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(
+        routingService.getRutaOptima(
+          [{ id: 10, latitud: 6.24, longitud: -75.57, peso: 3 }],
+          [{ id: 1, capacidad: 25 }],
+        ),
+      ).rejects.toThrow("El servicio de optimización respondió con error 422. OSRM reportó trayectos no alcanzables");
+    });
+
+    it("propaga texto crudo cuando el microservicio responde error HTTP no JSON", async () => {
+      const routingService = await cargarRoutingService();
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: vi.fn().mockResolvedValue("Error interno de optimización"),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(
+        routingService.getRutaOptima(
+          [{ id: 10, latitud: 6.24, longitud: -75.57, peso: 3 }],
+          [{ id: 1, capacidad: 25 }],
+        ),
+      ).rejects.toThrow("El servicio de optimización respondió con error 500. Error interno de optimización");
+    });
+
+    it("construye mensaje base cuando el microservicio responde error HTTP sin cuerpo", async () => {
+      const routingService = await cargarRoutingService();
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        text: vi.fn().mockResolvedValue(""),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(
+        routingService.getRutaOptima(
+          [{ id: 10, latitud: 6.24, longitud: -75.57, peso: 3 }],
+          [{ id: 1, capacidad: 25 }],
+        ),
+      ).rejects.toThrow("El servicio de optimización respondió con error 503.");
+    });
+
+    it("retorna error genérico cuando la respuesta HTTP falla y no existe text()", async () => {
+      const routingService = await cargarRoutingService();
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(
+        routingService.getRutaOptima(
+          [{ id: 10, latitud: 6.24, longitud: -75.57, peso: 3 }],
+          [{ id: 1, capacidad: 25 }],
+        ),
+      ).rejects.toThrow("El servicio de optimización respondió con error 500.");
     });
   });
 

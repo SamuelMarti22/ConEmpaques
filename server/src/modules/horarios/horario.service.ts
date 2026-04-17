@@ -232,6 +232,17 @@ function formatearHora(horas: number, minutos: number): string {
   return `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
 }
 
+function obtenerClaveFechaLocal(fecha: Date | null | undefined): string {
+  if (!(fecha instanceof Date) || Number.isNaN(fecha.getTime())) {
+    return "";
+  }
+
+  const anio = String(fecha.getFullYear());
+  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+  const dia = String(fecha.getDate()).padStart(2, "0");
+  return `${anio}-${mes}-${dia}`;
+}
+
 async function validarRecepcionRuta(
   repartidorId: number,
   fechaHora: Date,
@@ -284,7 +295,10 @@ async function validarRecepcionRuta(
     };
   }
 
-  const rutaActiva = await prisma.ruta.findFirst({
+  const claveFechaEvaluada = obtenerClaveFechaLocal(fechaHora);
+
+  // Buscar rutas activas y filtrar por misma fecha exacta (UTC) para evitar arrastres de otras semanas.
+  const rutasActivasMismaFecha = await prisma.ruta.findMany({
     where: {
       repartidorId,
       estadoRuta: {
@@ -293,13 +307,34 @@ async function validarRecepcionRuta(
     },
     select: {
       id: true,
+      fechaReparto: true,
+      horaInicioEntrega: true,
+      horaFinalizacionEntrega: true,
     },
   });
 
-  if (rutaActiva) {
+  const existeConflictoHorario = rutasActivasMismaFecha.some((rutaActiva) => {
+    const fechaReferenciaRuta = rutaActiva.horaInicioEntrega ?? rutaActiva.fechaReparto;
+
+    if (obtenerClaveFechaLocal(fechaReferenciaRuta) !== claveFechaEvaluada) {
+      return false;
+    }
+
+    const inicioExistente = rutaActiva.horaInicioEntrega;
+
+    if (!inicioExistente) {
+      return false;
+    }
+
+    const finExistente: Date = rutaActiva.horaFinalizacionEntrega ?? inicioExistente;
+
+    return inicioExistente <= fechaHora && fechaHora < finExistente;
+  });
+
+  if (existeConflictoHorario) {
     return {
       puedeRecibirRuta: false,
-      mensaje: "El repartidor ya tiene una ruta asignada",
+      mensaje: "El repartidor ya tiene una ruta asignada para esa fecha y hora",
       fechaHoraEvaluada: fechaHora.toISOString(),
       repartidor: null,
       horarioActivo,

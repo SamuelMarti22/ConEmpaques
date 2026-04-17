@@ -19,6 +19,7 @@ export interface DatosValidarRecepcionRutaRequest {
 }
 
 const PATRON_HORA_24H = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const PATRON_FECHA_LOCAL = /^\d{4}-\d{2}-\d{2}$/;
 
 function obtenerHorarioIdDesdeParams(request: Request): number {
   return Number(request.params.horarioId);
@@ -155,9 +156,32 @@ export function validarCuerpoValidarRecepcionRutaRequest(
   request: Request,
   response: Response,
 ): DatosValidarRecepcionRutaRequest | null {
-  const { fechaHora } = request.body as {
+  const { fechaHora, fecha, hora } = request.body as {
     fechaHora?: unknown;
+    fecha?: unknown;
+    hora?: unknown;
   };
+
+  if (fecha !== undefined || hora !== undefined) {
+    if (typeof fecha !== "string" || !PATRON_FECHA_LOCAL.test(fecha.trim())) {
+      response.status(400).json({ mensaje: "fecha debe tener formato YYYY-MM-DD" });
+      return null;
+    }
+
+    const horaValidada = validarHora(hora);
+    if (!horaValidada) {
+      response.status(400).json({ mensaje: "hora debe tener formato HH:mm" });
+      return null;
+    }
+
+    const fechaHoraLocal = new Date(`${fecha.trim()}T${horaValidada}:00`);
+    if (Number.isNaN(fechaHoraLocal.getTime())) {
+      response.status(400).json({ mensaje: "fecha u hora no tienen un formato válido" });
+      return null;
+    }
+
+    return { fechaHora: fechaHoraLocal };
+  }
 
   if (fechaHora === undefined || fechaHora === null) {
     return { fechaHora: new Date() };

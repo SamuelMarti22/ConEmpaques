@@ -11,6 +11,8 @@ class RoutingService:
         logger.info(f"Iniciando optimización con {len(puntos_entrega)} puntos y {len(repartidores)} repartidores")
         logger.info(f"Capacidades: {[r.capacidad for r in repartidores]}")
         logger.info(f"Pesos de puntos: {[p.peso for p in puntos_entrega]}")
+
+        self.__validar_matriz(matriz, len(puntos_entrega))
         
         # Validaciones
         capacidad_total = sum(r.capacidad for r in repartidores)
@@ -63,6 +65,33 @@ class RoutingService:
         else:
             logger.warning("NO se encontró solución")
             return OptimizacionResponse(rutas=[])
+
+    def __validar_matriz(self, matriz: list[list[float]], cantidad_puntos: int) -> None:
+        tamano_esperado = cantidad_puntos + 1  # +1 por depósito en índice 0
+
+        if not matriz or len(matriz) != tamano_esperado:
+            raise ValueError("No se pudo construir una matriz de distancias válida para los puntos seleccionados.")
+
+        for fila in matriz:
+            if len(fila) != tamano_esperado:
+                raise ValueError("La matriz de distancias tiene un tamaño inconsistente para los puntos seleccionados.")
+
+        nodos_sin_conexion = []
+        for nodo in range(1, tamano_esperado):
+            fila = matriz[nodo]
+            conexiones_validas = [distancia for indice, distancia in enumerate(fila) if indice != nodo and distancia is not None]
+            if len(conexiones_validas) == 0:
+                nodos_sin_conexion.append(nodo)
+
+        if nodos_sin_conexion:
+            raise ValueError(
+                "Hay puntos de entrega sin conexión vial en el mapa. Verifica direcciones y vuelve a intentar."
+            )
+
+        if any(matriz[origen][destino] is None for origen in range(tamano_esperado) for destino in range(tamano_esperado) if origen != destino):
+            raise ValueError(
+                "OSRM reportó trayectos no alcanzables entre algunos puntos. Ajusta los puntos de entrega e intenta de nuevo."
+            )
 
     def __extraer_rutas(self,solucion,modelo,gerente,repartidores: list[CapacidadRepartidor],puntos: list[PuntoEntrega],matriz: list[list[float]]) -> OptimizacionResponse:
         rutas = []

@@ -2,6 +2,10 @@ import type { IPuntoEntrega } from '../../databases/mongoDB/schema';
 import { RutaRepartidorGeoJSON } from '../../types/routing.types';
 import { prisma } from "../../databases/prisma/lib/prisma.js";
 import { RutaEntregaModel } from '../../databases/mongoDB/models/rutaEntrega.model.js';
+import { EstadoRuta } from '../../databases/prisma/generated/prisma/enums.js';
+
+const ESTADOS_RUTA_ASIGNADA = [EstadoRuta.PENDIENTE, EstadoRuta.EN_PROCESO] as const;
+const BLOQUEOS_GUARDADO_RUTA = new Set<string>();
 
 type EstadoRepartidorResumen = 'disponible' | 'en ruta' | 'finalizado';
 
@@ -57,12 +61,91 @@ function mapearEstadoRepartidor(estadoRuta: string): EstadoRepartidorResumen {
     return 'disponible';
 }
 
+function formatearFechaHoraLocal(fecha: Date | null | undefined): string | null {
+    if (!(fecha instanceof Date) || Number.isNaN(fecha.getTime())) {
+        return null;
+    }
+
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const horas = String(fecha.getHours()).padStart(2, '0');
+    const minutos = String(fecha.getMinutes()).padStart(2, '0');
+    const segundos = String(fecha.getSeconds()).padStart(2, '0');
+
+    return `${anio}-${mes}-${dia}T${horas}:${minutos}:${segundos}`;
+}
+
 function calcularHoraFinEstimada(fechaInicio: Date, tiempoEstimadoSegundos: number | null): string | null {
     if (tiempoEstimadoSegundos === null || tiempoEstimadoSegundos <= 0) {
         return null;
     }
 
-    return new Date(fechaInicio.getTime() + tiempoEstimadoSegundos * 1000).toISOString();
+    return formatearFechaHoraLocal(new Date(fechaInicio.getTime() + tiempoEstimadoSegundos * 1000));
+}
+
+function combinarFechaYHora(fechaBase: Date, horaHHMM: string): Date {
+    const [horas, minutos] = horaHHMM.split(':').map(Number);
+    return new Date(
+        fechaBase.getFullYear(),
+        fechaBase.getMonth(),
+        fechaBase.getDate(),
+        horas,
+        minutos,
+        0,
+        0,
+    );
+}
+
+function obtenerInicioDiaLocal(fechaBase: Date): Date {
+    return new Date(
+        fechaBase.getFullYear(),
+        fechaBase.getMonth(),
+        fechaBase.getDate(),
+        0,
+        0,
+        0,
+        0,
+    );
+}
+
+function obtenerClaveFechaLocal(fecha: Date | null | undefined): string {
+    if (!(fecha instanceof Date) || Number.isNaN(fecha.getTime())) {
+        return '';
+    }
+
+    const anio = String(fecha.getFullYear());
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
+function formatearFechaLocal(fecha: Date): string {
+    // `fechaReparto` se persiste como DATE; usar UTC evita desfases por zona horaria.
+    const anio = fecha.getUTCFullYear();
+    const mes = String(fecha.getUTCMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getUTCDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
+function obtenerClaveBloqueoGuardado(repartidorId: number, fechaClave: string, hora: string): string {
+    return `${repartidorId}|${fechaClave}|${hora}`;
+}
+
+export class RepartidorYaAsignadoError extends Error {
+    constructor(repartidorId: number, detalle?: string) {
+        const sufijo = detalle ? ` (${detalle})` : '';
+        super(`El repartidor ${repartidorId} ya tiene una ruta asignada para la fecha seleccionada${sufijo}`);
+        this.name = 'RepartidorYaAsignadoError';
+    }
+}
+
+export class RepartidorDuplicadoEnLoteError extends Error {
+    constructor(repartidorId: number, detalle?: string) {
+        const sufijo = detalle ? ` (${detalle})` : '';
+        super(`El repartidor ${repartidorId} aparece repetido en la misma generación de rutas${sufijo}`);
+        this.name = 'RepartidorDuplicadoEnLoteError';
+    }
 }
 
 
@@ -71,6 +154,7 @@ export class RutasService {
         puntosEntrega: IPuntoEntrega[],
         rutasRepartidorGeoJSON: RutaRepartidorGeoJSON[],
         fechaReparto: Date | string,
+        horaInicioRecorrido: string,
     ): Promise<RutaGuardadaResumen[]> {
 
         const fechaRepartoNormalizada = new Date(fechaReparto);
@@ -78,8 +162,13 @@ export class RutasService {
             throw new Error('fechaReparto es inválida');
         }
 
+        const horaInicioEntrega = combinarFechaYHora(fechaRepartoNormalizada, horaInicioRecorrido);
+        const fechaRepartoPersistencia = obtenerInicioDiaLocal(horaInicioEntrega);
+        const claveFechaReparto = obtenerClaveFechaLocal(horaInicioEntrega);
+
         const puntosEntregaDiccionario = this.construirDiccionarioPuntosEntrega(puntosEntrega);
         const rutasGuardadas: RutaGuardadaResumen[] = [];
+        const repartidoresAsignadosEnLote = new Set<number>();
 
         try {
             for (const ruta of rutasRepartidorGeoJSON) {
@@ -87,16 +176,90 @@ export class RutasService {
                     continue;
                 }
 
+                if (repartidoresAsignadosEnLote.has(ruta.repartidor_id)) {
+                    throw new RepartidorDuplicadoEnLoteError(
+                        ruta.repartidor_id,
+                        `fecha=${claveFechaReparto} hora=${horaInicioRecorrido}`,
+                    );
+                }
+
+                const claveBloqueo = obtenerClaveBloqueoGuardado(
+                    ruta.repartidor_id,
+                    claveFechaReparto,
+                    horaInicioRecorrido,
+                );
+
+                if (BLOQUEOS_GUARDADO_RUTA.has(claveBloqueo)) {
+                    throw new RepartidorYaAsignadoError(
+                        ruta.repartidor_id,
+                        `asignación en proceso fecha=${claveFechaReparto} hora=${horaInicioRecorrido}`,
+                    );
+                }
+
+                BLOQUEOS_GUARDADO_RUTA.add(claveBloqueo);
+
+                try {
+
+                const tiempoEstimadoPersistencia =
+                    ruta.tiempo_estimado > 0 ? Math.round(ruta.tiempo_estimado) : null;
+                const duracionSegundos = tiempoEstimadoPersistencia ?? 0;
+                const horaFinalizacionEntrega = new Date(horaInicioEntrega.getTime() + duracionSegundos * 1000);
+
+                if (Number.isNaN(horaInicioEntrega.getTime()) || Number.isNaN(horaFinalizacionEntrega.getTime())) {
+                    throw new Error('No se pudo calcular horaInicioEntrega/horaFinalizacionEntrega para la ruta');
+                }
+
+                const rutasActivasMismaFecha = await prisma.ruta.findMany({
+                    where: {
+                        repartidorId: ruta.repartidor_id,
+                        estadoRuta: {
+                            in: [...ESTADOS_RUTA_ASIGNADA],
+                        },
+                    },
+                    select: {
+                        id: true,
+                        fechaReparto: true,
+                        horaInicioEntrega: true,
+                        horaFinalizacionEntrega: true,
+                    },
+                });
+
+                const nuevaHoraFin = horaFinalizacionEntrega;
+                const existeConflictoHorario = rutasActivasMismaFecha.some((rutaActiva) => {
+                    const fechaReferenciaRuta = rutaActiva.horaInicioEntrega ?? rutaActiva.fechaReparto;
+
+                    if (obtenerClaveFechaLocal(fechaReferenciaRuta) !== claveFechaReparto) {
+                        return false;
+                    }
+
+                    const inicioExistente = rutaActiva.horaInicioEntrega;
+                    if (!inicioExistente) {
+                        return false;
+                    }
+
+                    const finExistente: Date = rutaActiva.horaFinalizacionEntrega ?? inicioExistente;
+
+                    return inicioExistente < nuevaHoraFin && horaInicioEntrega < finExistente;
+                });
+
+                if (existeConflictoHorario) {
+                    throw new RepartidorYaAsignadoError(
+                        ruta.repartidor_id,
+                        `fecha=${claveFechaReparto} hora=${horaInicioRecorrido}`,
+                    );
+                }
+
                 // Guardar la ruta en MySQL usando Prisma
+
                 const rutaCreada = await prisma.ruta.create({
                     data: {
                         repartidorId: ruta.repartidor_id,
-                        fechaReparto: fechaRepartoNormalizada,
-                        estadoRuta: 'EN_PROCESO',
-                        horaInicioEntrega: null,
-                        horaFinalizacionEntrega: null,
+                        fechaReparto: fechaRepartoPersistencia,
+                        estadoRuta: EstadoRuta.PENDIENTE,
+                        horaInicioEntrega,
+                        horaFinalizacionEntrega,
                         distanciaTotal: ruta.distancia_total,
-                        tiempoEstimado: ruta.tiempo_estimado > 0 ? Math.round(ruta.tiempo_estimado) : null,
+                        tiempoEstimado: tiempoEstimadoPersistencia,
                     }
                 });
 
@@ -138,7 +301,7 @@ export class RutasService {
 
                 rutasGuardadas.push({
                     rutaId: rutaCreada.id,
-                    fechaReparto: rutaCreada.fechaReparto.toISOString(),
+                    fechaReparto: formatearFechaLocal(rutaCreada.fechaReparto),
                     repartidor: {
                         id: ruta.repartidor_id,
                         nombre: repartidor?.nombre ?? null,
@@ -150,8 +313,10 @@ export class RutasService {
                         cargaActualKg,
                         distanciaTotal: ruta.distancia_total,
                         tiempoEstimado,
-                        horaInicioEstimada: fechaRepartoNormalizada.toISOString(),
-                        horaFinEstimada: calcularHoraFinEstimada(fechaRepartoNormalizada, tiempoEstimado),
+                        horaInicioEstimada: formatearFechaHoraLocal(rutaCreada.horaInicioEntrega),
+                        horaFinEstimada:
+                            formatearFechaHoraLocal(rutaCreada.horaFinalizacionEntrega) ??
+                            calcularHoraFinEstimada(horaInicioEntrega, tiempoEstimado),
                     },
                     detalleParadas: ruta.ruta.map((puntoId, indiceParada) => {
                         const punto = puntosEntregaDiccionario[puntoId];
@@ -174,6 +339,11 @@ export class RutasService {
                         },
                     },
                 });
+
+                repartidoresAsignadosEnLote.add(ruta.repartidor_id);
+                } finally {
+                    BLOQUEOS_GUARDADO_RUTA.delete(claveBloqueo);
+                }
             }
 
             return rutasGuardadas;
@@ -244,7 +414,7 @@ export class RutasService {
 
             return {
                 rutaId: ruta.id,
-                fechaReparto: ruta.fechaReparto.toISOString(),
+                fechaReparto: formatearFechaLocal(ruta.fechaReparto),
                 repartidor: {
                     id: ruta.repartidorId,
                     nombre: ruta.repartidor?.nombre ?? null,
@@ -256,8 +426,12 @@ export class RutasService {
                     cargaActualKg,
                     distanciaTotal: ruta.distanciaTotal ?? 0,
                     tiempoEstimado: ruta.tiempoEstimado ?? null,
-                    horaInicioEstimada: ruta.fechaReparto.toISOString(),
-                    horaFinEstimada: calcularHoraFinEstimada(ruta.fechaReparto, ruta.tiempoEstimado),
+                    horaInicioEstimada: formatearFechaHoraLocal(ruta.horaInicioEntrega),
+                    horaFinEstimada:
+                        formatearFechaHoraLocal(ruta.horaFinalizacionEntrega) ??
+                        (ruta.horaInicioEntrega
+                            ? calcularHoraFinEstimada(ruta.horaInicioEntrega, ruta.tiempoEstimado)
+                            : null),
                 },
                 detalleParadas: puntos.map((punto, indiceParada) => ({
                     orden: indiceParada + 1,

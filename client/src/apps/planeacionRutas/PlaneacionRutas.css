@@ -103,6 +103,24 @@
   justify-content: flex-end;
 }
 
+.accionesRutasAsignadas {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.accionesRutasAsignadas__boton {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2937;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.accionesRutasAsignadas__boton:hover {
+  background: #f9fafb;
+}
+
 .panelRutasGuardadas {
   flex: 1;
   min-height: 0;

@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 from app.services.optimization import OptimizationService
 from app.models.schema import OptimizacionRequest, OptimizacionResponse
@@ -18,4 +18,13 @@ def health():
 
 @app.post("/optimizar", response_model=OptimizacionResponse)
 async def optimizar(request: OptimizacionRequest):
-    return await OptimizationService().optimizar(request)
+    try:
+        return await OptimizationService().optimizar(request)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        logging.exception("Error interno durante la optimización de rutas")
+        raise HTTPException(
+            status_code=500,
+            detail="Error interno en el microservicio de optimización. Revisa conectividad de OSRM y datos de entrada.",
+        ) from exc

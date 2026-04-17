@@ -45,6 +45,26 @@ function nombreParada(
   return parada.cliente?.trim() || `Parada ${indiceParada + 1}`;
 }
 
+function formatearFechaHora(valor: string | null): string {
+  if (!valor) {
+    return 'No calculado';
+  }
+
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) {
+    return valor;
+  }
+
+  return fecha.toLocaleString('es-CO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
 export default function ResumenRutasGuardadas({
   rutasGuardadas,
   onEliminarRuta,
@@ -91,6 +111,9 @@ export default function ResumenRutasGuardadas({
               <span>📦 {ruta.resumen.numeroPedidos} pedidos</span>
               <span>⏱ {formatearTiempo(ruta.resumen.tiempoEstimado)}</span>
               <span>🚚 Capacidad: {formatearCargaCapacidad(ruta.resumen.cargaActualKg, ruta.repartidor.capacidad)}</span>
+              <span>🗓 {ruta.fechaReparto ?? 'Sin fecha'}</span>
+              <span>▶ {formatearFechaHora(ruta.resumen.horaInicioEstimada)}</span>
+              <span>■ {formatearFechaHora(ruta.resumen.horaFinEstimada)}</span>
             </div>
           </div>
 

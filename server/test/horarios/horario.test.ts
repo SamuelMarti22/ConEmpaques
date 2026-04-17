@@ -16,7 +16,7 @@ vi.mock("../../src/databases/prisma/lib/prisma.js", () => ({
       deleteMany: vi.fn(),
     },
     ruta: {
-      findFirst: vi.fn(),
+      findMany: vi.fn(),
     },
   },
 }));
@@ -35,7 +35,7 @@ type PrismaMock = {
     deleteMany: ReturnType<typeof vi.fn>;
   };
   ruta: {
-    findFirst: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
   };
 };
 
@@ -123,11 +123,35 @@ describe("Horarios", () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.payload.length).toBe(1);
     });
+
+    it("retorna 500 con detalle cuando ocurre error inesperado no-Error", async () => {
+      prismaMock.usuario.findFirst.mockRejectedValue("fallo inesperado");
+
+      const res = await ejecutar("obtenerHorarios", {
+        params: { id: "1" },
+      });
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.payload).toEqual({
+        mensaje: "Error interno del servidor",
+        detalle: "Error desconocido",
+      });
+    });
   });
 
   // Creación de horario:
   // valida campos de entrada, reglas de negocio (rango y solapamiento) y éxito.
   describe("Crear horario", () => {
+    it("retorna 400 cuando id de repartidor es inválido", async () => {
+      const res = await ejecutar("crearHorario", {
+        params: { id: "abc" },
+        body: crearHorarioBodyMock(),
+      });
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.payload.mensaje).toBe("El parámetro id debe ser un número entero positivo");
+    });
+
     it.each([
       { body: crearHorarioBodyMock({ diaSemana: 7 }), mensaje: "diaSemana debe ser un entero entre 0 y 6" },
       { body: crearHorarioBodyMock({ horaInicio: "8:00" }), mensaje: "horaInicio debe tener formato HH:mm" },
@@ -186,10 +210,20 @@ describe("Horarios", () => {
   // Actualización de horario:
   // valida ids/body, controla existencia, evita solapamientos y confirma actualización.
   describe("Actualizar horario", () => {
+    it("retorna 400 cuando id de repartidor es inválido", async () => {
+      const res = await ejecutar("actualizarHorario", {
+        params: { id: "abc", horarioId: "10" },
+        body: { horaInicio: "09:00" },
+      });
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.payload.mensaje).toBe("El parámetro id debe ser un número entero positivo");
+    });
+
     it("retorna 400 cuando horarioId es inválido", async () => {
       const res = await ejecutar("actualizarHorario", {
         params: { id: "1", horarioId: "0" },
-        body: { activo: false },
+        body: { horaInicio: "09:00" },
       });
 
       expect(res.status).toHaveBeenCalledWith(400);
@@ -226,7 +260,7 @@ describe("Horarios", () => {
 
       const res = await ejecutar("actualizarHorario", {
         params: { id: "1", horarioId: "10" },
-        body: { activo: false },
+        body: { horaInicio: "10:00" },
       });
 
       expect(res.status).toHaveBeenCalledWith(404);
@@ -250,23 +284,32 @@ describe("Horarios", () => {
 
     it("retorna 200 cuando actualiza correctamente", async () => {
       prismaMock.usuario.findFirst.mockResolvedValue({ id: 1, rol: Role.REPARTIDOR });
-      prismaMock.disponibilidad.findFirst.mockResolvedValue(crearHorarioDbMock());
-      prismaMock.disponibilidad.update.mockResolvedValue(crearHorarioDbMock({ activo: false }));
+      prismaMock.disponibilidad.findFirst.mockResolvedValueOnce(crearHorarioDbMock()).mockResolvedValueOnce(null);
+      prismaMock.disponibilidad.update.mockResolvedValue(crearHorarioDbMock({ horaInicio: "10:00" }));
 
       const res = await ejecutar("actualizarHorario", {
         params: { id: "1", horarioId: "10" },
-        body: { activo: false },
+        body: { horaInicio: "10:00" },
       });
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.payload.mensaje).toBe("Horario actualizado correctamente");
-      expect(res.payload.data.activo).toBe(false);
+      expect(res.payload.data.horaInicio).toBe("10:00");
     });
   });
 
   // Eliminación de horario:
   // valida horarioId, reporta no encontrado y confirma borrado exitoso.
   describe("Eliminar horario", () => {
+    it("retorna 400 cuando id de repartidor es inválido", async () => {
+      const res = await ejecutar("eliminarHorario", {
+        params: { id: "abc", horarioId: "10" },
+      });
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.payload.mensaje).toBe("El parámetro id debe ser un número entero positivo");
+    });
+
     it("retorna 400 cuando horarioId es inválido", async () => {
       const res = await ejecutar("eliminarHorario", {
         params: { id: "1", horarioId: "abc" },
@@ -304,6 +347,16 @@ describe("Horarios", () => {
   // Validación de recepción de ruta:
   // valida fechaHora y cubre los tres estados de negocio (sin horario, ocupado, disponible).
   describe("Validar recepción de ruta", () => {
+    it("retorna 400 cuando id de repartidor es inválido", async () => {
+      const res = await ejecutar("validarRecepcionRuta", {
+        params: { id: "abc" },
+        body: { fechaHora: "2026-04-16T10:00:00.000Z" },
+      });
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.payload.mensaje).toBe("El parámetro id debe ser un número entero positivo");
+    });
+
     it.each([
       {
         body: { fechaHora: 123 },
@@ -314,6 +367,30 @@ describe("Horarios", () => {
         mensaje: "fechaHora no tiene un formato de fecha válido",
       },
     ])("retorna 400 cuando fechaHora es inválida", async ({ body, mensaje }) => {
+      const res = await ejecutar("validarRecepcionRuta", {
+        params: { id: "1" },
+        body,
+      });
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.payload.mensaje).toBe(mensaje);
+    });
+
+    // Cubre validaciones de formato `fecha` + `hora` en el request de validación.
+    it.each([
+      {
+        body: { fecha: "16-04-2026", hora: "10:00" },
+        mensaje: "fecha debe tener formato YYYY-MM-DD",
+      },
+      {
+        body: { fecha: "2026-04-16", hora: "8:00" },
+        mensaje: "hora debe tener formato HH:mm",
+      },
+      {
+        body: { fecha: "2026-13-16", hora: "10:00" },
+        mensaje: "fecha u hora no tienen un formato válido",
+      },
+    ])("retorna 400 cuando se usa fecha/hora con formato inválido", async ({ body, mensaje }) => {
       const res = await ejecutar("validarRecepcionRuta", {
         params: { id: "1" },
         body,
@@ -347,6 +424,41 @@ describe("Horarios", () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.payload.puedeRecibirRuta).toBe(false);
       expect(res.payload.horarioActivo).toBeNull();
+      expect(res.payload.mensaje).toBe("El repartidor no tiene un horario activo para la fecha y hora evaluadas");
+    });
+
+    // Verifica la nueva ruta de entrada { fecha, hora } sin usar fechaHora ISO.
+    it("retorna 200 cuando se envía fecha + hora válidas", async () => {
+      prismaMock.usuario.findFirst.mockResolvedValue({ id: 1, capacidadVehiculo: 20 });
+      prismaMock.disponibilidad.findFirst.mockResolvedValue({
+        id: 55,
+        diaSemana: 4,
+        horaInicio: "08:00",
+        horaFin: "12:00",
+      });
+      prismaMock.ruta.findMany.mockResolvedValue([]);
+
+      const res = await ejecutar("validarRecepcionRuta", {
+        params: { id: "1" },
+        body: { fecha: "2026-04-16", hora: "10:00" },
+      });
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.payload.puedeRecibirRuta).toBe(true);
+    });
+
+    // Si no llega fechaHora/fecha/hora, request debe usar `new Date()` como fallback.
+    it("retorna 200 cuando no se envía fechaHora y usa la fecha actual", async () => {
+      prismaMock.usuario.findFirst.mockResolvedValue({ id: 1, capacidadVehiculo: 20 });
+      prismaMock.disponibilidad.findFirst.mockResolvedValue(null);
+
+      const res = await ejecutar("validarRecepcionRuta", {
+        params: { id: "1" },
+        body: {},
+      });
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.payload.puedeRecibirRuta).toBe(false);
     });
 
     it("retorna 200 y no puede recibir cuando ya tiene ruta asignada", async () => {
@@ -357,7 +469,13 @@ describe("Horarios", () => {
         horaInicio: "08:00",
         horaFin: "12:00",
       });
-      prismaMock.ruta.findFirst.mockResolvedValue({ id: 777 });
+      prismaMock.ruta.findMany.mockResolvedValue([
+        {
+          id: 777,
+          horaInicioEntrega: new Date("2026-04-16T09:00:00.000Z"),
+          horaFinalizacionEntrega: new Date("2026-04-16T11:00:00.000Z"),
+        },
+      ]);
 
       const res = await ejecutar("validarRecepcionRuta", {
         params: { id: "1" },
@@ -366,7 +484,7 @@ describe("Horarios", () => {
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.payload.puedeRecibirRuta).toBe(false);
-      expect(res.payload.mensaje).toBe("El repartidor ya tiene una ruta asignada");
+      expect(res.payload.mensaje).toBe("El repartidor ya tiene una ruta asignada para esa fecha y hora");
     });
 
     it("retorna 200 y puede recibir cuando cumple condiciones", async () => {
@@ -377,7 +495,7 @@ describe("Horarios", () => {
         horaInicio: "08:00",
         horaFin: "12:00",
       });
-      prismaMock.ruta.findFirst.mockResolvedValue(null);
+      prismaMock.ruta.findMany.mockResolvedValue([]);
 
       const res = await ejecutar("validarRecepcionRuta", {
         params: { id: "1" },
@@ -388,6 +506,33 @@ describe("Horarios", () => {
       expect(res.payload.puedeRecibirRuta).toBe(true);
       expect(res.payload.repartidor.id).toBe(1);
       expect(res.payload.repartidor.capacidad).toBe(20);
+    });
+
+    it("retorna 200 y puede recibir cuando la ruta existe en sabado anterior", async () => {
+      prismaMock.usuario.findFirst.mockResolvedValue({ id: 1, capacidadVehiculo: 20 });
+      prismaMock.disponibilidad.findFirst.mockResolvedValue({
+        id: 55,
+        diaSemana: 6,
+        horaInicio: "08:00",
+        horaFin: "12:00",
+      });
+      prismaMock.ruta.findMany.mockResolvedValue([
+        {
+          id: 999,
+          fechaReparto: new Date("2026-04-11T12:00:00.000Z"),
+          horaInicioEntrega: new Date("2026-04-11T09:00:00.000Z"),
+          horaFinalizacionEntrega: new Date("2026-04-11T11:00:00.000Z"),
+        },
+      ]);
+
+      const res = await ejecutar("validarRecepcionRuta", {
+        params: { id: "1" },
+        body: { fechaHora: "2026-04-18T10:00:00.000Z" },
+      });
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.payload.puedeRecibirRuta).toBe(true);
+      expect(res.payload.repartidor.id).toBe(1);
     });
   });
 });

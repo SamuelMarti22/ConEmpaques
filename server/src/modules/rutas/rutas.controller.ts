@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { rutasService } from './rutas.service';
+import { RepartidorDuplicadoEnLoteError, RepartidorYaAsignadoError, rutasService } from './rutas.service';
 import { validarGuardarRutasRequest, validarRutaIdRequest } from './rutas.request.js';
 
 export class RutasController {
@@ -24,6 +24,7 @@ export class RutasController {
                 datosGuardar.puntosEntrega,
                 datosGuardar.rutasRepartidorGeoJSON,
                 datosGuardar.fechaReparto,
+                datosGuardar.horaInicioRecorrido,
             );
 
             res.status(201).json({
@@ -31,7 +32,23 @@ export class RutasController {
                 rutasGuardadas,
             });
         } catch (error) {
-            const mensajeError = error instanceof Error ? error.message : 'Error interno del servidor';
+            const mensajeError =
+                error instanceof Error
+                    ? error.message
+                    : typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string'
+                        ? error.message
+                        : 'Error interno del servidor';
+
+            if (
+                error instanceof RepartidorDuplicadoEnLoteError ||
+                error instanceof RepartidorYaAsignadoError ||
+                mensajeError.includes('ya tiene una ruta asignada') ||
+                mensajeError.includes('aparece repetido en la misma generación')
+            ) {
+                res.status(409).json({ error: mensajeError });
+                return;
+            }
+
             res.status(500).json({ error: mensajeError });
         }
     }

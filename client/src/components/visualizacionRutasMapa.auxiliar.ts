@@ -20,39 +20,40 @@ function obtenerClaveFechaLocal(fecha: Date): string {
     return `${anio}-${mes}-${dia}`;
 }
 
-function parsearFechaFuente(fechaFuente: string): Date | null {
-    const coincidenciaFechaSimple = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fechaFuente.trim());
+function obtenerClaveFechaFuente(fechaFuente: string): string {
+    const texto = fechaFuente.trim();
+    const coincidenciaFechaSimple = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto);
     if (coincidenciaFechaSimple) {
-        const anio = Number(coincidenciaFechaSimple[1]);
-        const mes = Number(coincidenciaFechaSimple[2]);
-        const dia = Number(coincidenciaFechaSimple[3]);
-        const fechaLocal = new Date(anio, mes - 1, dia, 12, 0, 0, 0);
-        return Number.isNaN(fechaLocal.getTime()) ? null : fechaLocal;
+        return texto;
     }
 
-    const fecha = new Date(fechaFuente);
-    return Number.isNaN(fecha.getTime()) ? null : fecha;
+    const fecha = new Date(texto);
+    if (Number.isNaN(fecha.getTime())) {
+        return '';
+    }
+
+    return obtenerClaveFechaLocal(fecha);
 }
 
-function obtenerFechaRuta(ruta: RutaGuardadaUI): Date | null {
+function obtenerClaveFechaRuta(ruta: RutaGuardadaUI): string {
     const fechaFuente = ruta.fechaReparto ?? ruta.resumen.horaInicioEstimada;
     if (!fechaFuente) {
-        return null;
+        return '';
     }
 
-    return parsearFechaFuente(fechaFuente);
+    return obtenerClaveFechaFuente(fechaFuente);
 }
 
 export function filtrarRutasPorFecha(rutas: RutaGuardadaUI[], fechaObjetivo: Date): RutaGuardadaUI[] {
     const claveObjetivo = obtenerClaveFechaLocal(fechaObjetivo);
 
     return rutas.filter((ruta) => {
-        const fechaRuta = obtenerFechaRuta(ruta);
-        if (!fechaRuta) {
+        const claveRuta = obtenerClaveFechaRuta(ruta);
+        if (!claveRuta) {
             return false;
         }
 
-        return obtenerClaveFechaLocal(fechaRuta) === claveObjetivo;
+        return claveRuta === claveObjetivo;
     });
 }
 

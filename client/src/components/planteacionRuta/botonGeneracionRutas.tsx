@@ -5,10 +5,12 @@ import type { PuntoEntregaFormateado, CapacidadRepartidor, RutaRepartidorGeoJSON
 interface BotonGeneracionRutasProps {
     obtenerPuntosFormateados: () => PuntoEntregaFormateado[];
     capacidadesRepartidores: CapacidadRepartidor[];
+    cargandoDisponibilidad: boolean;
+    motivoSinRepartidores?: string;
     onRutasGeneradas: (rutas: RutaRepartidorGeoJSON[]) => void;
 }
 
-export default function BotonGeneracionRutas({obtenerPuntosFormateados,capacidadesRepartidores,onRutasGeneradas}: BotonGeneracionRutasProps) {
+export default function BotonGeneracionRutas({obtenerPuntosFormateados,capacidadesRepartidores,cargandoDisponibilidad,motivoSinRepartidores,onRutasGeneradas}: BotonGeneracionRutasProps) {
     const [cargando, setCargando] = useState(false);
 
     const generarRutas = async () => {
@@ -23,23 +25,43 @@ export default function BotonGeneracionRutas({obtenerPuntosFormateados,capacidad
             return;
         }
 
+        if (cargandoDisponibilidad) {
+            await Swal.fire({
+                icon: 'info',
+                title: 'Actualizando disponibilidad',
+                text: 'Espera un momento mientras validamos repartidores para el día y hora seleccionados.',
+            });
+            return;
+        }
+
         if (capacidadesRepartidores.length === 0) {
             await Swal.fire({
                 icon: 'warning',
                 title: 'Sin repartidores disponibles',
-                text: 'No hay repartidores disponibles para el día seleccionado.',
+                text: motivoSinRepartidores?.trim() || 'No hay repartidores disponibles para el día y hora seleccionados.',
             });
             return;
         }
 
         const pesoTotal = puntosEntrega.reduce((acumulado, punto) => acumulado + punto.peso, 0);
         const capacidadTotal = capacidadesRepartidores.reduce((acumulado, repartidor) => acumulado + repartidor.capacidad, 0);
+        const capacidadMaximaIndividual = Math.max(...capacidadesRepartidores.map((repartidor) => repartidor.capacidad));
+        const pesoMaximoIndividual = Math.max(...puntosEntrega.map((punto) => punto.peso));
 
         if (capacidadTotal < pesoTotal) {
             await Swal.fire({
                 icon: 'error',
                 title: 'Capacidad insuficiente',
                 text: `La capacidad disponible (${capacidadTotal}) es menor al peso total a repartir (${pesoTotal}).`,
+            });
+            return;
+        }
+
+        if (pesoMaximoIndividual > capacidadMaximaIndividual) {
+            await Swal.fire({
+                icon: 'error',
+                title: 'Peso por entrega no asignable',
+                text: `Existe al menos un punto con peso (${pesoMaximoIndividual}) mayor que la capacidad máxima individual de un repartidor (${capacidadMaximaIndividual}).`,
             });
             return;
         }
@@ -58,17 +80,37 @@ export default function BotonGeneracionRutas({obtenerPuntosFormateados,capacidad
             }
             
             const rutas: RutaRepartidorGeoJSON[] = await respuesta.json();
+
+            if (!Array.isArray(rutas) || rutas.length === 0) {
+                onRutasGeneradas([]);
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'No se pudieron generar rutas',
+                    text: 'No se generaron rutas para asignar con los datos actuales.',
+                });
+                return;
+            }
+
             onRutasGeneradas(rutas);
         } catch (error) {
             console.error('Error al generar rutas:', error);
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error al generar rutas',
+                text: error instanceof Error ? error.message : 'Ocurrió un error inesperado al generar rutas.',
+            });
         } finally {
             setCargando(false);
         }
     };
 
     return (
-        <button onClick={generarRutas} disabled={cargando}>
-            {cargando ? '⏳ Generando rutas...' : '🗺️ Generar rutas'}
+        <button onClick={generarRutas} disabled={cargando || cargandoDisponibilidad}>
+            {cargando
+                ? '⏳ Generando rutas...'
+                : cargandoDisponibilidad
+                    ? '⏳ Actualizando disponibilidad...'
+                    : '🗺️ Generar rutas'}
         </button>
     );
 }

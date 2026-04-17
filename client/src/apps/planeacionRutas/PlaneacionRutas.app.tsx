@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Swal from 'sweetalert2'
 import { PuntoEntrega } from '../../classes/PuntoEntrega'
 import type { MapaInteractivoFunciones } from '../../components/MapaInteractivo'
@@ -21,8 +21,8 @@ interface RepartidorParaAsignacionResponse {
 }
 
 interface HorarioRepartidorResponse {
-    diaSemana: number;
-    activo: boolean;
+    puedeRecibirRuta: boolean;
+    mensaje?: string;
 }
 
 const DIAS_SELECCIONABLES = 7;
@@ -71,70 +71,117 @@ export default function PlaneacionRutas() {
 
     const mapaRef = useRef<MapaInteractivoFunciones>(null);
     const puntosEntregaRef = useRef<PuntosEntregaAtributos>(null);
+    const ultimaConsultaDisponibilidadRef = useRef(0);
     const [capacidadesRepartidores, setCapacidadesRepartidores] = useState<CapacidadRepartidor[]>([]);
+    const [motivoSinRepartidores, setMotivoSinRepartidores] = useState<string>('');
+    const [cargandoDisponibilidad, setCargandoDisponibilidad] = useState(false);
     const [rutasGeneradas, setRutasGeneradas] = useState<RutaRepartidorGeoJSON[]>([]);
     const [rutasGuardadas, setRutasGuardadas] = useState<RutaGuardadaUI[]>([]);
     const [eliminandoRutaId, setEliminandoRutaId] = useState<number | null>(null);
     const [rutaGuardadaSeleccionadaId, setRutaGuardadaSeleccionadaId] = useState<number | null>(null);
     const [fechaReparto, setFechaReparto] = useState<Date>(() => normalizarFechaMediodiaLocal(new Date()));
+    const [horaInicioRecorrido, setHoraInicioRecorrido] = useState<string>('08:00');
     const [vistaLateralActiva, setVistaLateralActiva] = useState<VistaLateralActiva>('puntos');
+    const [mostrarTodasRutasAsignadas, setMostrarTodasRutasAsignadas] = useState(false);
     const opcionesSemana = useMemo(() => obtenerOpcionesSieteDiasConHoy(), []);
     const storageKeyPuntosPorFecha = useMemo(
         () => `conempaques:puntos-entrega:${formatearValorFecha(fechaReparto)}`,
         [fechaReparto],
     );
-    const rutasGuardadasFiltradas = useMemo(
+    const rutasGuardadasFiltradasPorDia = useMemo(
         () => filtrarRutasPorFecha(rutasGuardadas, fechaReparto),
         [rutasGuardadas, fechaReparto],
     );
+    const rutasGuardadasVisibles = useMemo(
+        () => (mostrarTodasRutasAsignadas ? rutasGuardadas : rutasGuardadasFiltradasPorDia),
+        [mostrarTodasRutasAsignadas, rutasGuardadas, rutasGuardadasFiltradasPorDia],
+    );
+    const cargarCapacidadesRepartidores = useCallback(async (): Promise<void> => {
+        const consultaId = ultimaConsultaDisponibilidadRef.current + 1;
+        ultimaConsultaDisponibilidadRef.current = consultaId;
+        setCargandoDisponibilidad(true);
+        setCapacidadesRepartidores([]);
+        setMotivoSinRepartidores('');
+
+        try {
+            const fechaSeleccionada = formatearValorFecha(fechaReparto);
+
+            const responseRepartidores = await fetch(URL_REPARTIDORES);
+            if (!responseRepartidores.ok) {
+                throw new Error(await obtenerMensajeErrorHttp(responseRepartidores));
+            }
+
+            const repartidores = (await responseRepartidores.json()) as RepartidorParaAsignacionResponse[];
+            const repIds = repartidores.map((repartidor) => repartidor.id);
+
+            const validacionPorRepartidor = await Promise.allSettled(
+                repIds.map(async (repartidorId) => {
+                    const responseHorarios = await fetch(`${URL_REPARTIDORES}/${repartidorId}/validar-recepcion-ruta`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            fecha: fechaSeleccionada,
+                            hora: horaInicioRecorrido,
+                        }),
+                    });
+
+                    if (!responseHorarios.ok) {
+                        throw new Error(await obtenerMensajeErrorHttp(responseHorarios));
+                    }
+
+                    const validacion = (await responseHorarios.json()) as HorarioRepartidorResponse;
+                    return { repartidorId, validacion };
+                }),
+            );
+
+            const validacionesExitosas = validacionPorRepartidor
+                .filter((resultado): resultado is PromiseFulfilledResult<{ repartidorId: number; validacion: HorarioRepartidorResponse }> =>
+                    resultado.status === 'fulfilled',
+                )
+                .map((resultado) => resultado.value);
+
+            const motivosNoDisponibles = validacionesExitosas
+                .map((resultado) => resultado.validacion)
+                .filter((validacion) => !validacion.puedeRecibirRuta)
+                .map((validacion) => validacion.mensaje ?? '')
+                .filter((mensaje) => mensaje.length > 0);
+
+            const repartidoresDisponibles = repartidores.filter((repartidor) => {
+                const validacion = validacionesExitosas.find((item) => item.repartidorId === repartidor.id)?.validacion;
+                return Boolean(validacion?.puedeRecibirRuta);
+            });
+
+            const capacidadesFormateadas = repartidoresDisponibles
+                .filter((repartidor) => typeof repartidor.capacidadVehiculo === 'number')
+                .map((repartidor) => ({
+                    id: repartidor.id,
+                    capacidad: repartidor.capacidadVehiculo,
+                }));
+
+            if (consultaId !== ultimaConsultaDisponibilidadRef.current) {
+                return;
+            }
+
+            setCapacidadesRepartidores(capacidadesFormateadas);
+            if (capacidadesFormateadas.length === 0 && motivosNoDisponibles.length > 0) {
+                setMotivoSinRepartidores(motivosNoDisponibles[0]);
+            }
+        } catch (errorOperacion) {
+            console.error('No se pudo obtener la lista de repartidores disponibles para la fecha seleccionada', errorOperacion);
+            if (consultaId === ultimaConsultaDisponibilidadRef.current) {
+                setCapacidadesRepartidores([]);
+                setMotivoSinRepartidores('No se pudo validar la disponibilidad de repartidores. Intenta nuevamente.');
+            }
+        } finally {
+            if (consultaId === ultimaConsultaDisponibilidadRef.current) {
+                setCargandoDisponibilidad(false);
+            }
+        }
+    }, [fechaReparto, horaInicioRecorrido]);
 
     useEffect(() => {
-        const cargarCapacidadesRepartidores = async (): Promise<void> => {
-            try {
-                const diaSemanaSeleccionado = fechaReparto.getDay();
-
-                const responseRepartidores = await fetch(URL_REPARTIDORES);
-                if (!responseRepartidores.ok) {
-                    throw new Error(await obtenerMensajeErrorHttp(responseRepartidores));
-                }
-
-                const repartidores = (await responseRepartidores.json()) as RepartidorParaAsignacionResponse[];
-                const repIds = repartidores.map((repartidor) => repartidor.id);
-
-                const horariosPorRepartidor = await Promise.all(
-                    repIds.map(async (repartidorId) => {
-                        const responseHorarios = await fetch(`${URL_REPARTIDORES}/${repartidorId}/horarios`);
-
-                        if (!responseHorarios.ok) {
-                            throw new Error(await obtenerMensajeErrorHttp(responseHorarios));
-                        }
-
-                        const horarios = (await responseHorarios.json()) as HorarioRepartidorResponse[];
-                        return { repartidorId, horarios };
-                    }),
-                );
-
-                const repartidoresDisponibles = repartidores.filter((repartidor) => {
-                    const horarios = horariosPorRepartidor.find((item) => item.repartidorId === repartidor.id)?.horarios ?? [];
-                    return horarios.some((horario) => horario.activo && horario.diaSemana === diaSemanaSeleccionado);
-                });
-
-                const capacidadesFormateadas = repartidoresDisponibles
-                    .filter((repartidor) => typeof repartidor.capacidadVehiculo === 'number')
-                    .map((repartidor) => ({
-                        id: repartidor.id,
-                        capacidad: repartidor.capacidadVehiculo,
-                    }));
-
-                setCapacidadesRepartidores(capacidadesFormateadas);
-            } catch (errorOperacion) {
-                console.error('No se pudo obtener la lista de repartidores disponibles para la fecha seleccionada', errorOperacion);
-                setCapacidadesRepartidores([]);
-            }
-        };
-
         void cargarCapacidadesRepartidores();
-    }, [fechaReparto]);
+    }, [cargarCapacidadesRepartidores]);
 
     useEffect(() => {
         if (vistaLateralActiva === 'puntos') {
@@ -152,21 +199,21 @@ export default function PlaneacionRutas() {
 
         visualizarRutasEnMapa({
             mapa: mapaRef.current,
-            rutasGuardadas: rutasGuardadasFiltradas,
+            rutasGuardadas: rutasGuardadasVisibles,
             rutaSeleccionadaId: rutaGuardadaSeleccionadaId,
         });
-    }, [vistaLateralActiva, rutasGeneradas, rutasGuardadasFiltradas, rutaGuardadaSeleccionadaId]);
+    }, [vistaLateralActiva, rutasGeneradas, rutasGuardadasVisibles, rutaGuardadaSeleccionadaId]);
 
     useEffect(() => {
         if (rutaGuardadaSeleccionadaId === null) {
             return;
         }
 
-        const existeRutaSeleccionada = rutasGuardadasFiltradas.some((ruta) => ruta.rutaId === rutaGuardadaSeleccionadaId);
+        const existeRutaSeleccionada = rutasGuardadasVisibles.some((ruta) => ruta.rutaId === rutaGuardadaSeleccionadaId);
         if (!existeRutaSeleccionada) {
             setRutaGuardadaSeleccionadaId(null);
         }
-    }, [rutaGuardadaSeleccionadaId, rutasGuardadasFiltradas]);
+    }, [rutaGuardadaSeleccionadaId, rutasGuardadasVisibles]);
 
     const agregarPunto = (punto: PuntoEntrega) => {
         mapaRef.current?.agregarPunto(punto);
@@ -226,6 +273,7 @@ export default function PlaneacionRutas() {
             }
 
             await cargarRutasGuardadas();
+                        await cargarCapacidadesRepartidores();
             if (rutaGuardadaSeleccionadaId === rutaId) {
                 setRutaGuardadaSeleccionadaId(null);
             }
@@ -297,6 +345,21 @@ export default function PlaneacionRutas() {
                         <p className="selectorFechaPlaneacion__ayuda">
                             Se consultan 7 días corridos contando hoy.
                         </p>
+
+                        {vistaLateralActiva === 'puntos' && (
+                            <>
+                                <label className="selectorFechaPlaneacion__label" htmlFor="horaInicioRecorrido">
+                                    Hora de inicio del recorrido
+                                </label>
+                                <input
+                                    id="horaInicioRecorrido"
+                                    type="time"
+                                    className="selectorFechaPlaneacion__select"
+                                    value={horaInicioRecorrido}
+                                    onChange={(evento) => setHoraInicioRecorrido(evento.target.value)}
+                                />
+                            </>
+                        )}
                     </div>
 
                     {vistaLateralActiva === 'puntos' && (
@@ -315,6 +378,8 @@ export default function PlaneacionRutas() {
                                 <BotonGeneracionRutas
                                     obtenerPuntosFormateados={obtenerPuntosFormateadosBackend}
                                     capacidadesRepartidores={capacidadesRepartidores}
+                                    cargandoDisponibilidad={cargandoDisponibilidad}
+                                    motivoSinRepartidores={motivoSinRepartidores}
                                     onRutasGeneradas={(rutas) => {
                                         const rutasInstanciadas = rutas.map(ruta => 
                                             new RutaRepartidorGeoJSON(
@@ -333,6 +398,7 @@ export default function PlaneacionRutas() {
                                     obtenerPuntosActuales={obtenerPuntosActuales}
                                     rutaRepartidorGeoJSON={rutasGeneradas}
                                     fechaReparto={fechaReparto}
+                                    horaInicioRecorrido={horaInicioRecorrido}
                                     onRutasGuardadas={(nuevasRutasGuardadas) => {
                                         setRutasGuardadas(nuevasRutasGuardadas);
                                         setRutaGuardadaSeleccionadaId(nuevasRutasGuardadas[0]?.rutaId ?? null);
@@ -340,6 +406,7 @@ export default function PlaneacionRutas() {
                                     }}
                                     onMensajeRutaGuardada={(mensaje) => {
                                         void cargarRutasGuardadas();
+                                        void cargarCapacidadesRepartidores();
                                         setVistaLateralActiva('rutas');
                                         Swal.fire({
                                             title: '¡Éxito!',
@@ -362,19 +429,33 @@ export default function PlaneacionRutas() {
                     )}
 
                     {vistaLateralActiva === 'rutas' && (
-                        <ResumenRutasGuardadas
-                            rutasGuardadas={rutasGuardadasFiltradas}
-                            eliminandoRutaId={eliminandoRutaId}
-                            rutaSeleccionadaId={rutaGuardadaSeleccionadaId}
-                            onSeleccionarRuta={(rutaId) => {
-                                setRutaGuardadaSeleccionadaId((rutaSeleccionadaActual) =>
-                                    rutaSeleccionadaActual === rutaId ? null : rutaId,
-                                );
-                            }}
-                            onEliminarRuta={(rutaId) => {
-                                void eliminarRutaGuardada(rutaId);
-                            }}
-                        />
+                        <>
+                            <div className="accionesRutasAsignadas">
+                                <button
+                                    type="button"
+                                    className="accionesRutasAsignadas__boton"
+                                    onClick={() => setMostrarTodasRutasAsignadas((valorActual) => !valorActual)}
+                                >
+                                    {mostrarTodasRutasAsignadas
+                                        ? 'Ver solo día seleccionado'
+                                        : 'Ver todas'}
+                                </button>
+                            </div>
+
+                            <ResumenRutasGuardadas
+                                rutasGuardadas={rutasGuardadasVisibles}
+                                eliminandoRutaId={eliminandoRutaId}
+                                rutaSeleccionadaId={rutaGuardadaSeleccionadaId}
+                                onSeleccionarRuta={(rutaId) => {
+                                    setRutaGuardadaSeleccionadaId((rutaSeleccionadaActual) =>
+                                        rutaSeleccionadaActual === rutaId ? null : rutaId,
+                                    );
+                                }}
+                                onEliminarRuta={(rutaId) => {
+                                    void eliminarRutaGuardada(rutaId);
+                                }}
+                            />
+                        </>
                     )}
                 </div>
             </div>

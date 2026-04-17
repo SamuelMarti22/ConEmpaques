@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PuntoEntregaFormateado, RutaRepartidorGeoJSON } from "../../types/routing.types";
 
 export interface RutaGuardadaUI {
@@ -43,28 +43,81 @@ interface GuardarRutasResponse {
     rutasGuardadas?: RutaGuardadaUI[];
 }
 
+function formatearFechaLocal(fecha: Date): string {
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
 interface BotonGuardarRutaProps {
     obtenerPuntosActuales: () => PuntoEntregaFormateado[];
     rutaRepartidorGeoJSON: RutaRepartidorGeoJSON[];
     fechaReparto: Date;
+    horaInicioRecorrido: string;
     onMensajeRutaGuardada: (mensaje: string[]) => void;
     onRutasGuardadas?: (rutas: RutaGuardadaUI[]) => void;
     onErrorRutaGuardada?: (error: string) => void;
 }
 
-export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGeoJSON,fechaReparto,onMensajeRutaGuardada, onRutasGuardadas, onErrorRutaGuardada}: BotonGuardarRutaProps) {
+export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGeoJSON,fechaReparto,horaInicioRecorrido,onMensajeRutaGuardada, onRutasGuardadas, onErrorRutaGuardada}: BotonGuardarRutaProps) {
     const [cargando, setCargando] = useState(false);
+    const guardandoRef = useRef(false);
+    const ultimoLoteGuardadoRef = useRef<string | null>(null);
+
+    const construirFirmaLote = (): string => {
+        const rutas = rutaRepartidorGeoJSON
+            .map((ruta) => {
+                const repartidorId = typeof ruta.repartidor_id === 'number' ? ruta.repartidor_id : 0;
+                const puntos = Array.isArray(ruta.ruta) ? ruta.ruta.join(',') : '';
+                return `${repartidorId}:${puntos}`;
+            })
+            .sort()
+            .join('|');
+
+        const fecha = Number.isNaN(fechaReparto.getTime()) ? '' : formatearFechaLocal(fechaReparto);
+        return `${fecha}#${horaInicioRecorrido}#${rutas}`;
+    };
+
+    useEffect(() => {
+        // Cualquier cambio en lote/fecha/hora habilita un nuevo guardado.
+        ultimoLoteGuardadoRef.current = null;
+    }, [rutaRepartidorGeoJSON, fechaReparto, horaInicioRecorrido]);
 
     const guardarRutas = async () => {
+        if (guardandoRef.current) {
+            return;
+        }
+
+        const firmaLote = construirFirmaLote();
+        if (ultimoLoteGuardadoRef.current === firmaLote) {
+            onErrorRutaGuardada?.('Este lote ya fue guardado. Genera rutas nuevas o cambia fecha/hora antes de volver a guardar.');
+            return;
+        }
+
+        guardandoRef.current = true;
+        const rutasRepartidorGeoJSON = rutaRepartidorGeoJSON;
+
+        if (!Array.isArray(rutasRepartidorGeoJSON) || rutasRepartidorGeoJSON.length === 0) {
+            onErrorRutaGuardada?.('No hay rutas generadas para guardar. Primero genera rutas con repartidores disponibles.');
+            guardandoRef.current = false;
+            return;
+        }
+
         setCargando(true);
         const puntosEntrega = obtenerPuntosActuales();
-        const rutasRepartidorGeoJSON = rutaRepartidorGeoJSON;
+        const fechaRepartoPayload = formatearFechaLocal(fechaReparto);
 
         try {
             const respuesta = await fetch('http://localhost:3000/api/rutas/guardar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ puntosEntrega, rutasRepartidorGeoJSON, fechaReparto })
+                body: JSON.stringify({
+                    puntosEntrega,
+                    rutasRepartidorGeoJSON,
+                    fechaReparto: fechaRepartoPayload,
+                    horaInicioRecorrido,
+                })
             });
             
             if (!respuesta.ok) {
@@ -74,6 +127,7 @@ export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGe
             
             const payload = (await respuesta.json()) as GuardarRutasResponse;
             const mensaje = payload.mensaje ?? payload.message ?? 'Rutas guardadas correctamente';
+            ultimoLoteGuardadoRef.current = firmaLote;
             onRutasGuardadas?.(payload.rutasGuardadas ?? []);
             onMensajeRutaGuardada([mensaje]);
         } catch (error) {
@@ -82,6 +136,7 @@ export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGe
             onErrorRutaGuardada?.(mensajeError);
         } finally {
             setCargando(false);
+            guardandoRef.current = false;
         }
     };
 
