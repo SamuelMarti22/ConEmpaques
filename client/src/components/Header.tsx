@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../authContext/AuthContext';
 import './Header.css';
 
 type Vista = 'agregar' | 'entregas' | 'dashboard' | 'repartidores';
@@ -15,11 +17,24 @@ const tabs: { id: Vista; icono: string; label: string }[] = [
 ];
 
 function Header({ vistaActiva, onCambiarVista }: HeaderProps) {
+    const { logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
+
     return (
         <header className="header">
-            <div className="header__marca">
-                <span className="header__titulo">Sistema de Gestión de Domicilios</span>
-                <span className="header__subtitulo">Organiza y rastrea tus entregas en tiempo real</span>
+            <div className="header__encabezado">
+                <div className="header__marca">
+                    <span className="header__titulo">Sistema de Gestión de Domicilios</span>
+                    <span className="header__subtitulo">Organiza y rastrea tus entregas en tiempo real</span>
+                </div>
+                <button className="header__botonLogout" onClick={handleLogout} title="Cerrar sesión">
+                    X
+                </button>
             </div>
 
             <nav className="header__nav">
