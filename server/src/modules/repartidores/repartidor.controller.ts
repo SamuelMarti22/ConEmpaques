@@ -62,19 +62,6 @@ async function obtenerDisponibles(request: Request, response: Response): Promise
     return manejarErrorController(error, response);
   }
 }
-async function obtenerDisponiblesPorFecha(request: Request, response: Response): Promise<Response | void> {
-  const datosConsulta = validarQueryDisponibilidadRequest(request, response);
-  if (!datosConsulta) {
-    return;
-  }
-
-  try {
-    const repartidoresDisponibles = await repartidorService.listarDisponiblesPorFecha(datosConsulta.fecha);
-    return response.status(200).json(repartidoresDisponibles);
-  } catch (error) {
-    return manejarErrorController(error, response);
-  }
-}
 
 async function obtenerPorId(request: Request, response: Response): Promise<Response | void> {
   const repartidorId = validarIdRequest(request, response);

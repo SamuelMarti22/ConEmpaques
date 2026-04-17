@@ -10,6 +10,9 @@
     "start": "node dist/index.js",
     "format": "prettier --write src/**/*.ts",
     "format:check": "prettier --check src/**/*.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "seed": "tsx ./src/databases/mongo/seeds/plantillaFormulario.seed.ts"
   },
   "keywords": [],
@@ -26,6 +29,7 @@
     "mongoose": "^9.2.4"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.2",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/mongoose": "^5.11.96",
@@ -33,6 +37,7 @@
     "nodemon": "^3.1.14",
     "prettier": "^3.8.1",
     "prisma": "^7.4.2",
+    "vitest": "^4.0.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../authContext/AuthContext";
 import "./LoginPage.css";
 
 type ModoAcceso = "usuario" | "cliente";
 
 export default function LoginPage() {
-  const navigate = useNavigate();
   const { loginLogistico, loginCliente, cargando, error } = useAuth();
   const [modoAcceso, setModoAcceso] = useState<ModoAcceso>("cliente");
   const [email, setEmail] = useState("");

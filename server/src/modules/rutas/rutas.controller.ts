@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
-import type {IPuntoEntrega} from '../../databases/mongoDB/schema';
-import type { RutaRepartidorGeoJSON } from '../../types/routing.types';
 import { rutasService } from './rutas.service';
+import { validarGuardarRutasRequest, validarRutaIdRequest } from './rutas.request.js';
 
 export class RutasController {
     async obtenerRutasGuardadas(_req: Request, res: Response): Promise<void> {
@@ -16,23 +15,16 @@ export class RutasController {
 
     async guardarRutas(req: Request, res: Response): Promise<void> {
         try {
-            
-            const puntosEntrega: IPuntoEntrega[] = req.body.puntosEntrega;
-            const rutasRepartidorGeoJSON: RutaRepartidorGeoJSON[] = req.body.rutasRepartidorGeoJSON 
-            const fechaRepartoRaw: unknown = req.body.fechaReparto;
-
-            if (!puntosEntrega || !rutasRepartidorGeoJSON || !fechaRepartoRaw) {
-                res.status(400).json({ error: 'Faltan datos necesarios: puntosEntrega, rutasRepartidorGeoJSON o fechaReparto' });
+            const datosGuardar = validarGuardarRutasRequest(req, res);
+            if (!datosGuardar) {
                 return;
             }
 
-            const fechaReparto = new Date(String(fechaRepartoRaw));
-            if (Number.isNaN(fechaReparto.getTime())) {
-                res.status(400).json({ error: 'fechaReparto es inválida' });
-                return;
-            }
-
-            const rutasGuardadas = await rutasService.guardarRuta(puntosEntrega, rutasRepartidorGeoJSON, fechaReparto);
+            const rutasGuardadas = await rutasService.guardarRuta(
+                datosGuardar.puntosEntrega,
+                datosGuardar.rutasRepartidorGeoJSON,
+                datosGuardar.fechaReparto,
+            );
 
             res.status(201).json({
                 mensaje: 'Rutas guardadas correctamente',
@@ -45,10 +37,8 @@ export class RutasController {
     }
 
     async eliminarRuta(req: Request, res: Response): Promise<void> {
-        const rutaId = Number(req.params.rutaId);
-
-        if (!Number.isInteger(rutaId) || rutaId <= 0) {
-            res.status(400).json({ error: 'El parámetro rutaId debe ser un entero positivo' });
+        const rutaId = validarRutaIdRequest(req, res);
+        if (rutaId === null) {
             return;
         }
 

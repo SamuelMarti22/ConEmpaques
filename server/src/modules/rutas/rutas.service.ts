@@ -82,9 +82,7 @@ export class RutasService {
         const rutasGuardadas: RutaGuardadaResumen[] = [];
 
         try {
-            while (rutasRepartidorGeoJSON.length != 0) {
-                const ruta = rutasRepartidorGeoJSON.pop();
-
+            for (const ruta of rutasRepartidorGeoJSON) {
                 if (!ruta || !ruta.repartidor_id) {
                     continue;
                 }
@@ -107,7 +105,7 @@ export class RutasService {
                     this.construirPuntosEntrega(puntosEntregaDiccionario[punto]!)
                 );
                 // Guardar la ruta de entrega en MongoDB
-                const rutaEntrega = await RutaEntregaModel.create({
+                await RutaEntregaModel.create({
                     rutaId: rutaCreada.id,
                     puntosEntrega: puntosTransformados,
                     geometria: ruta.geometria?.geometry?.coordinates ?? [],
@@ -282,7 +280,7 @@ export class RutasService {
         });
     }
 
-    construirPuntosEntrega(punto: any): IPuntoEntrega {
+    construirPuntosEntrega(punto: IPuntoEntrega): IPuntoEntrega {
         return {
             id: punto.id,
             nombreCliente: punto.nombreCliente,
