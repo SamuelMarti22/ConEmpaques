@@ -56,7 +56,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 			const nuevoUsuario: Usuario = {
 				id: 1,
 				nombre: email.split("@")[0] || "usuario",
-				rol: email.toLowerCase().includes("log") ? "logistico" : "cliente",
+				rol: "logistico",
 			};
 
 			setToken(nuevoToken);

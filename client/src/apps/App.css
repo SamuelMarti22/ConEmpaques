@@ -8,9 +8,6 @@
 @media (max-width: 768px) {
   #root {
     height: auto;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
   }
 }
 

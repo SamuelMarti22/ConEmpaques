@@ -4,6 +4,8 @@ import type { Vista } from '../../components/Header';
 import Header from '../../components/Header';
 import PlaneacionRutas from '../planeacionRutas/PlaneacionRutas.app';
 import RepartidoresApp from '../repartidores/Repartidores.app';
+import EntregasApp from '../entregas/Entregas.app';
+import DashboardApp from '../dashboard/Dashboard.app';
 import '../App.css';
 
 function renderVista(vista: Vista) {
@@ -11,9 +13,9 @@ function renderVista(vista: Vista) {
     case 'agregar':
       return <PlaneacionRutas />;
     case 'entregas':
-      return <div>Vista de Entregas (próximamente)</div>;
+      return <EntregasApp />;
     case 'dashboard':
-      return <div>Dashboard (próximamente)</div>;
+      return <DashboardApp />;
     case 'repartidores':
       return <RepartidoresApp />;
   }

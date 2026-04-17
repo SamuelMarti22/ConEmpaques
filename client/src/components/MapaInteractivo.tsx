@@ -1,5 +1,6 @@
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import './MapaInteractivo.css';
 
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { PuntoEntrega } from '../classes/PuntoEntrega';
@@ -12,6 +13,28 @@ const coordenadasMedellin: [number, number] = [-75.5636, 6.2442];
 const FUENTE_RUTAS_ID = 'rutas-geojson-source';
 const CAPA_RUTAS_ID = 'rutas-geojson-layer';
 const COLORES_RUTAS = ['#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#0891b2', '#ca8a04'];
+
+function normalizarEstadoEntrega(estado: PuntoEntregaSimple['estadoEntrega']): 'Pendiente' | 'En proceso' | 'Entregado' {
+    if (estado === 'En camino') {
+        return 'En proceso';
+    }
+
+    return estado;
+}
+
+function colorPorEstadoEntrega(estado: PuntoEntregaSimple['estadoEntrega']): string {
+    const estadoNormalizado = normalizarEstadoEntrega(estado);
+
+    if (estadoNormalizado === 'Pendiente') {
+        return '#f59e0b';
+    }
+
+    if (estadoNormalizado === 'En proceso') {
+        return '#2563eb';
+    }
+
+    return '#16a34a';
+}
 
 type GeometriaRuta = {
     type: 'Feature';
@@ -28,6 +51,7 @@ type PuntoEntregaSimple = {
     latitud: number;
     longitud: number;
     estadoEntrega: 'Pendiente' | 'En camino' | 'Entregado';
+    tipoMarcador?: 'punto' | 'inicio' | 'fin';
 };
 
 //Funciones que expone a otros componentes, para modificar sus propios marcadores
@@ -170,9 +194,23 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
             
             // Crear nuevo marcador para cada punto
             puntos.forEach((punto, indice) => {
-                const popup = new mapboxgl.Popup().setText(punto.cliente || 'Sin nombre');
+                const esInicio = punto.tipoMarcador === 'inicio';
+                const esFin = punto.tipoMarcador === 'fin';
+                const colorMarcador = esInicio
+                    ? '#059669'
+                    : esFin
+                        ? '#dc2626'
+                        : colorPorEstadoEntrega(punto.estadoEntrega);
+                const estadoNormalizado = normalizarEstadoEntrega(punto.estadoEntrega);
+                const textoPopup = esInicio
+                    ? `Inicio: ${punto.cliente || 'Ruta'}`
+                    : esFin
+                        ? `Fin: ${punto.cliente || 'Ruta'}`
+                        : `${punto.cliente || 'Sin nombre'} (${estadoNormalizado})`;
+
+                const popup = new mapboxgl.Popup().setText(textoPopup);
                 
-                const marker = new mapboxgl.Marker()
+                const marker = new mapboxgl.Marker({ color: colorMarcador })
                     .setLngLat([punto.longitud, punto.latitud])
                     .setPopup(popup)
                     .addTo(mapRef.current!);
@@ -186,7 +224,7 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
         },
     }));
 
-    return <div ref={contenedorMapa} style={{ width: '100%', height: '100%' }} />;
+    return <div ref={contenedorMapa} className="mapaInteractivo__contenedor" />;
 });
 
 export default MapaInteractivo;

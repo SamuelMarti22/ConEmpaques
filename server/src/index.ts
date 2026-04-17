@@ -16,7 +16,6 @@ app.use(cors());
 
 // Rutas repartidor
 app.get("/api/repartidores", repartidorController.obtenerTodos);
-app.get("/api/repartidores/disponibles-hoy", repartidorController.obtenerDisponiblesHoy);
 app.post("/api/repartidores/:id/validar-recepcion-ruta", horarioController.validarRecepcionRuta);
 app.get("/api/repartidores/:id", repartidorController.obtenerPorId);
 app.post("/api/repartidores", repartidorController.crear);

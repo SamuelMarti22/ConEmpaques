@@ -1,3 +1,10 @@
+:root {
+    --color-verde-oscuro: #1F6F5F;
+    --color-verde-medio: #2FA084;
+    --color-verde-claro: #6FCF97;
+    --color-neutro: #EEEEEE;
+}
+
 .header {
     display: flex;
     flex-direction: column;
@@ -7,11 +14,18 @@
     padding: 16px 24px 0 24px;
 }
 
+.header__encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    gap: 16px;
+}
+
 .header__marca {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    margin-bottom: 16px;
 }
 
 .header__titulo {
@@ -69,9 +83,46 @@
     font-size: 0.95rem;
 }
 
+.header__botonLogout {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--color-verde-oscuro);
+    border: 1.5px solid var(--color-verde-oscuro);
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.header__botonLogout:hover {
+    background-color: var(--color-verde-claro);
+    color: var(--color-verde-oscuro);
+    border-color: var(--color-verde-medio);
+}
+
+.header__botonLogout:active {
+    background-color: var(--color-verde-medio);
+    color: #ffffff;
+}
+
 @media (max-width: 768px) {
     .header {
         padding: 12px 16px 0 16px;
+    }
+
+    .header__encabezado {
+        flex-direction: row;
+    }
+
+    .header__botonLogout {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
     }
 
     .header__nav {

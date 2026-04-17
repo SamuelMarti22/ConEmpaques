@@ -1,0 +1,156 @@
+.vistaEntregas {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.vistaEntregas__mapa {
+  grid-column: span 4 / span 4;
+}
+
+.vistaEntregas__panel {
+  grid-column-start: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  border: 2px solid #d1d5db;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.vistaEntregas__encabezadoPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vistaEntregas__encabezadoPanel h3 {
+  margin: 0;
+}
+
+.vistaEntregas__botonFiltro {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2937;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.vistaEntregas__botonFiltro:hover {
+  background: #f9fafb;
+}
+
+.vistaEntregas__mensaje {
+  margin: 0;
+  color: #4b5563;
+}
+
+.vistaEntregas__actualizacion {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.vistaEntregas__leyendaEstados {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.leyendaEstado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  color: #1f2937;
+  background: #ffffff;
+}
+
+.leyendaEstado::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.leyendaEstado--pendiente::before {
+  background: #f59e0b;
+}
+
+.leyendaEstado--proceso::before {
+  background: #2563eb;
+}
+
+.leyendaEstado--entregado::before {
+  background: #16a34a;
+}
+
+.entregaRutaCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.entregaRutaCard--seleccionada {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.entregaRutaCard__tituloFila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.entregaRutaCard__metricas {
+  display: flex;
+  gap: 10px;
+  color: #374151;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.entregaRutaCard__inicioFin p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .vistaEntregas {
+    grid-template-columns: 1fr;
+    padding: 12px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .vistaEntregas__mapa {
+    grid-column: 1;
+    height: 380px;
+  }
+
+  .vistaEntregas__panel {
+    grid-column: 1;
+    min-height: 220px;
+  }
+}

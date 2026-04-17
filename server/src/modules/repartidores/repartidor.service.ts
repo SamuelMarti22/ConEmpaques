@@ -84,32 +84,61 @@ function formatearHora(horas: number, minutos: number): string {
   return `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
 }
 
-async function listarDisponiblesHoy(fechaHora: Date = new Date()): Promise<RepartidorDisponibleHoy[]> {
-  const diaSemana = fechaHora.getDay();
-  const hora = formatearHora(fechaHora.getHours(), fechaHora.getMinutes());
-
-  const repartidoresDisponibles = await prisma.usuario.findMany({
-    where: {
-      rol: Role.REPARTIDOR,
-      disponibilidades: {
-        some: {
-          diaSemana,
-          activo: true,
-          horaInicio: {
-            lte: hora,
-          },
-          horaFin: {
-            gt: hora,
-          },
+async function consultarRepartidoresDisponibles(
+  diaSemana: number,
+  hora: string | null,
+  fechaFiltro?: Date,
+): Promise<RepartidorDisponibleHoy[]> {
+  const filtroHorario = hora === null
+    ? {
+        diaSemana,
+        activo: true,
+      }
+    : {
+        diaSemana,
+        activo: true,
+        horaInicio: {
+          lte: hora,
         },
-      },
-      rutas: {
+        horaFin: {
+          gt: hora,
+        },
+      };
+
+  // Filtro de rutas: si hay fecha, solo excluir rutas en esa fecha; si no hay fecha, excluir cualquier ruta activa
+  const filtroRutas = fechaFiltro
+    ? {
+        none: {
+          AND: [
+            {
+              estadoRuta: {
+                in: [...ESTADOS_ENTREGA_ACTIVA],
+              },
+            },
+            {
+              fechaReparto: {
+                gte: new Date(fechaFiltro.getFullYear(), fechaFiltro.getMonth(), fechaFiltro.getDate(), 0, 0, 0),
+                lt: new Date(fechaFiltro.getFullYear(), fechaFiltro.getMonth(), fechaFiltro.getDate() + 1, 0, 0, 0),
+              },
+            },
+          ],
+        },
+      }
+    : {
         none: {
           estadoRuta: {
             in: [...ESTADOS_ENTREGA_ACTIVA],
           },
         },
+      };
+
+  const repartidoresDisponibles = await prisma.usuario.findMany({
+    where: {
+      rol: Role.REPARTIDOR,
+      disponibilidades: {
+        some: filtroHorario,
       },
+      rutas: filtroRutas,
     },
     orderBy: {
       id: "asc",
@@ -121,11 +150,17 @@ async function listarDisponiblesHoy(fechaHora: Date = new Date()): Promise<Repar
   });
 
   return repartidoresDisponibles
-    .filter((repartidor) => typeof repartidor.capacidadVehiculo === "number" && repartidor.capacidadVehiculo > 0)
+    .filter((repartidor) => typeof repartidor.capacidadVehiculo === "number")
     .map((repartidor) => ({
       id: repartidor.id,
       capacidad: repartidor.capacidadVehiculo,
     }));
+}
+
+async function listarDisponiblesPorFecha(fecha: Date): Promise<RepartidorDisponibleHoy[]> {
+  const diaSemana = fecha.getDay();
+
+  return consultarRepartidoresDisponibles(diaSemana, null, fecha);
 }
 
 async function obtenerPorId(repartidorId: number) {
@@ -218,7 +253,7 @@ async function eliminar(repartidorId: number) {
 
 export const repartidorService = {
   listar,
-  listarDisponiblesHoy,
+  listarDisponiblesPorFecha,
   obtenerPorId,
   crear,
   actualizar,
