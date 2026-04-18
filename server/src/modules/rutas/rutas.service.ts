@@ -337,6 +337,7 @@ export class RutasService {
                     data: {
                         repartidorId: ruta.repartidor_id,
                         fechaReparto: fechaRepartoPersistencia,
+                        room: `R-${ruta.repartidor_id}-${Date.now()}`,
                         estadoRuta: EstadoRuta.PENDIENTE,
                         horaInicioEntrega,
                         horaFinalizacionEntrega,

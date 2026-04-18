@@ -55,6 +55,7 @@ model Disponibilidad {
 model Ruta {
   id             Int        @id @default(autoincrement())
   repartidorId   Int        @map("repartidor_id")
+  room String?    @map("room")
   fechaReparto   DateTime   @db.Date @map("fecha_reparto")
   estadoRuta     EstadoRuta @map("estado_ruta")
   horaInicioEntrega    DateTime?     @map("hora_inicio_entrega")
