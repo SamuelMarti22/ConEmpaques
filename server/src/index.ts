@@ -42,6 +42,8 @@ app.post("/api/routing/optimizar", routingController.getRutaOptima);
 app.get("/api/rutas", rutasController.obtenerRutasGuardadas);
 app.post("/api/rutas/guardar", rutasController.guardarRutas);
 app.delete("/api/rutas/:rutaId", rutasController.eliminarRuta);
+app.get("/api/rutas/repartidor/:idRepartidor", rutasController.consultarRutasRepartidor);
+app.get("/api/rutas/:rutaId", rutasController.consultarDetalleRuta);
 
 // Ruta vista cliente
 app.get("/api/clientes/pedidos/:id", clienteController.getPuntoEntrega);

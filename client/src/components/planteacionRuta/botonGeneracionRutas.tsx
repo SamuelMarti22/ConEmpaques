@@ -8,14 +8,25 @@ interface BotonGeneracionRutasProps {
     cargandoDisponibilidad: boolean;
     motivoSinRepartidores?: string;
     onRutasGeneradas: (rutas: RutaRepartidorGeoJSON[]) => void;
+    onError?: (error: string) => void;
 }
 
-export default function BotonGeneracionRutas({obtenerPuntosFormateados,capacidadesRepartidores,cargandoDisponibilidad,motivoSinRepartidores,onRutasGeneradas}: BotonGeneracionRutasProps) {
+export default function BotonGeneracionRutas({
+    obtenerPuntosFormateados,
+    capacidadesRepartidores,
+    cargandoDisponibilidad,
+    motivoSinRepartidores,
+    onRutasGeneradas,
+    onError
+}: BotonGeneracionRutasProps) {
     const [cargando, setCargando] = useState(false);
 
     const generarRutas = async () => {
         const puntosEntrega = obtenerPuntosFormateados();
 
+        console.log('Puntos de entrega al backend:', puntosEntrega);
+        console.log('Capacidades de repartidores a enviar al backend:', capacidadesRepartidores);
+        
         if (puntosEntrega.length === 0) {
             await Swal.fire({
                 icon: 'warning',
@@ -67,22 +78,34 @@ export default function BotonGeneracionRutas({obtenerPuntosFormateados,capacidad
         }
 
         setCargando(true);
+
         try {
+            // Validaciones básicas en el cliente
+            if (!puntosEntrega || puntosEntrega.length === 0) {
+                throw new Error("Por favor, añade al menos un punto de entrega antes de generar rutas.");
+            }
+            if (!capacidadesRepartidores || capacidadesRepartidores.length === 0) {
+                throw new Error("No hay repartidores disponibles. Intenta más tarde o verifica su disponibilidad.");
+            }
+
             const respuesta = await fetch('http://localhost:3000/api/routing/optimizar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ puntosEntrega, capacidadesRepartidores })
             });
-            
-            if (!respuesta.ok) {
-                const errorText = await respuesta.text();
-                throw new Error(`Error ${respuesta.status}: ${errorText}`);
-            }
-            
-            const rutas: RutaRepartidorGeoJSON[] = await respuesta.json();
 
+            if (!respuesta.ok) {
+                const datos = await respuesta.json();
+                let mensajeError = `Error ${respuesta.status}`;
+                if (datos.error) {
+                    mensajeError = datos.error;
+                }
+                throw new Error(mensajeError);
+            }
+
+            const rutas: RutaRepartidorGeoJSON[] = await respuesta.json();
             if (!Array.isArray(rutas) || rutas.length === 0) {
-                onRutasGeneradas([]);
+                if (onError) onError("No se pudieron generar rutas válidas. Verifica que la capacidad total de los repartidores sea suficiente para todos los puntos de entrega.");
                 await Swal.fire({
                     icon: 'warning',
                     title: 'No se pudieron generar rutas',
@@ -90,15 +113,19 @@ export default function BotonGeneracionRutas({obtenerPuntosFormateados,capacidad
                 });
                 return;
             }
-
             onRutasGeneradas(rutas);
         } catch (error) {
+            const mensajeError = error instanceof Error ? error.message : 'Error desconocido al generar rutas';
             console.error('Error al generar rutas:', error);
-            await Swal.fire({
-                icon: 'error',
-                title: 'Error al generar rutas',
-                text: error instanceof Error ? error.message : 'Ocurrió un error inesperado al generar rutas.',
-            });
+            if (onError) {
+                onError(mensajeError);
+            } else {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error al generar rutas',
+                    text: mensajeError,
+                });
+            }
         } finally {
             setCargando(false);
         }

@@ -19,9 +19,23 @@ def health():
 @app.post("/optimizar", response_model=OptimizacionResponse)
 async def optimizar(request: OptimizacionRequest):
     try:
-        return await OptimizationService().optimizar(request)
+        result = await OptimizationService().optimizar(request)
+
+        # Validar si se obtuvieron rutas válidas
+        if not getattr(result, "rutas", None):
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "No se pudieron generar rutas válidas",
+                    "razon": "Verifica que haya puntos de entrega, repartidores disponibles y que la capacidad total sea suficiente para todos los puntos."
+                }
+            )
+
+        return result
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except HTTPException:
+        raise
     except Exception as exc:
         logging.exception("Error interno durante la optimización de rutas")
         raise HTTPException(

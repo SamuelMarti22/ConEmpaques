@@ -396,6 +396,14 @@ export default function PlaneacionRutas() {
                                         );
                                         setRutasGeneradas(rutasInstanciadas);
                                     }}
+                                    onError={(error) => {
+                                        Swal.fire({
+                                            title: ' No se pudieron generar rutas',
+                                            text: error,
+                                            icon: 'error',
+                                            confirmButtonText: 'Aceptar'
+                                        });
+                                    }}
                                 />
 
                                 <BotonGuardarRuta
