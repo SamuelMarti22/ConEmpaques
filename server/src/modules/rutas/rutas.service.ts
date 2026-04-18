@@ -1,17 +1,22 @@
 import type { IPuntoEntrega } from '../../databases/mongoDB/schema';
-import { RutaRepartidorGeoJSON } from '../../types/routing.types';
+import { RutaRepartidorGeoJSON, RutaRepartidorResumen } from '../../types/routing.types';
 import { prisma } from "../../databases/prisma/lib/prisma.js";
 import { RutaEntregaModel } from '../../databases/mongoDB/models/rutaEntrega.model.js';
+import { resolve, Resolver } from 'node:dns';
 
 type EstadoRepartidorResumen = 'disponible' | 'en ruta' | 'finalizado';
 
 interface DetalleParadaResumen {
     orden: number;
     puntoId: number;
+    codigo: string | null;
     direccion: string | null;
     cliente: string | null;
+    contactoCliente: string | null;
     estadoEntrega: 'Pendiente' | 'En camino' | 'Entregado';
     tiempoEstimadoParada: number | null;
+    pesoProducto: number | null;
+    descripcionEntrega: string | null;
     latitud: number;
     longitud: number;
 }
@@ -160,10 +165,14 @@ export class RutasService {
                         return {
                             orden: indiceParada + 1,
                             puntoId,
+                            codigo: punto?.codigo ?? null,
                             direccion: punto?.direccion ?? null,
                             cliente: punto?.nombreCliente ?? null,
+                            contactoCliente: punto?.contactoCliente ?? null,
                             estadoEntrega: 'Pendiente',
                             tiempoEstimadoParada: null,
+                            pesoProducto: punto?.pesoProducto ?? null,
+                            descripcionEntrega: punto?.descripcionEntrega ?? null,
                             latitud: punto?.latitud ?? 0,
                             longitud: punto?.longitud ?? 0,
                         };
@@ -264,10 +273,14 @@ export class RutasService {
                 detalleParadas: puntos.map((punto, indiceParada) => ({
                     orden: indiceParada + 1,
                     puntoId: punto.id,
+                    codigo: punto.codigo ?? null,
                     direccion: punto.direccion ?? null,
                     cliente: punto.nombreCliente ?? null,
+                    contactoCliente: punto.contactoCliente ?? null,
                     estadoEntrega: punto.estadoEntrega === 'ENTREGADO' ? 'Entregado' : 'Pendiente',
                     tiempoEstimadoParada: null,
+                    pesoProducto: punto.pesoProducto ?? null,
+                    descripcionEntrega: punto.descripcionEntrega ?? null,
                     latitud: punto.latitud,
                     longitud: punto.longitud,
                 })),
@@ -303,6 +316,153 @@ export class RutasService {
             return acc;
         }, {} as Record<string, IPuntoEntrega>);
     }
+
+    async consultarRutasRepartidor(idRepartidor: number): Promise<RutaRepartidorResumen[]> {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const sieteDiasDespues = new Date(hoy);
+        sieteDiasDespues.setDate(hoy.getDate() + 7);
+
+        // Buscar rutas en el rango de fechas
+        const rutas = await prisma.ruta.findMany({
+            where: {
+                repartidorId: idRepartidor,
+                fechaReparto: {
+                    gte: hoy,
+                    lt: sieteDiasDespues,
+                },
+            },
+            orderBy: {
+                fechaReparto: 'asc',
+            },
+            include: {
+                repartidor: {
+                    select: {
+                        id: true,
+                        nombre: true,
+                        capacidadVehiculo: true,
+                    },
+                },
+            },
+        });
+
+        if (rutas.length === 0) {
+            return [];
+        }
+
+        // Buscar detalles en MongoDB
+        const rutasMongo = await RutaEntregaModel.find({
+            rutaId: { $in: rutas.map(r => r.id) },
+        }).lean();
+        const rutasMongoPorRutaId = new Map<number, (typeof rutasMongo)[number]>();
+        rutasMongo.forEach(rutaMongo => rutasMongoPorRutaId.set(rutaMongo.rutaId, rutaMongo));
+
+        // Formatear respuesta
+        const resultado = rutas.map(ruta => {
+            const rutaMongo = rutasMongoPorRutaId.get(ruta.id);
+            return {
+                id: ruta.id,
+                repartidorId: ruta.repartidorId,
+                fechaReparto: ruta.fechaReparto,
+                estadoRuta: ruta.estadoRuta,
+                horaInicioEntrega: ruta.horaInicioEntrega,
+                horaFinalizacionEntrega: ruta.horaFinalizacionEntrega,
+                distanciaTotal: ruta.distanciaTotal,
+                tiempoEstimado: ruta.tiempoEstimado,
+                createdAt: ruta.createdAt,
+                cantidadPuntos: Array.isArray(rutaMongo?.puntosEntrega) ? rutaMongo.puntosEntrega.length : 0,
+            };
+        });
+        return resultado;
+    }
+
+    async consultarDetalleRuta(rutaId: string): Promise<RutaGuardadaResumen> {
+        const rutaIdNumber = parseInt(rutaId, 10);
+        
+        if (isNaN(rutaIdNumber)) {
+            throw new Error('El ID de la ruta debe ser un número válido');
+        }
+
+        // Buscar la ruta en MySQL
+        const ruta = await prisma.ruta.findUnique({
+            where: {
+                id: rutaIdNumber,
+            },
+            include: {
+                repartidor: {
+                    select: {
+                        id: true,
+                        nombre: true,
+                        capacidadVehiculo: true,
+                    },
+                },
+            },
+        });
+
+        if (!ruta) {
+            throw new Error(`No existe la ruta con ID ${rutaIdNumber}`);
+        }
+
+        // Buscar los detalles en MongoDB
+        const rutaMongo = await RutaEntregaModel.findOne({
+            rutaId: rutaIdNumber,
+        }).lean();
+
+        if (!rutaMongo) {
+            throw new Error(`No se encontraron detalles de la ruta ${rutaIdNumber} en MongoDB`);
+        }
+
+        const puntos = rutaMongo.puntosEntrega ?? [];
+        const cargaActualKg = puntos.reduce((acumulado, punto) => {
+            const pesoProducto = punto.pesoProducto;
+            if (typeof pesoProducto !== 'number' || Number.isNaN(pesoProducto)) {
+                return acumulado;
+            }
+
+            return acumulado + pesoProducto;
+        }, 0);
+
+        return {
+            rutaId: ruta.id,
+            fechaReparto: ruta.fechaReparto.toISOString(),
+            repartidor: {
+                id: ruta.repartidorId,
+                nombre: ruta.repartidor?.nombre ?? null,
+                estado: mapearEstadoRepartidor(ruta.estadoRuta),
+                capacidad: ruta.repartidor?.capacidadVehiculo ?? null,
+            },
+            resumen: {
+                numeroPedidos: puntos.length,
+                cargaActualKg,
+                distanciaTotal: ruta.distanciaTotal ?? 0,
+                tiempoEstimado: ruta.tiempoEstimado ?? null,
+                horaInicioEstimada: ruta.fechaReparto.toISOString(),
+                horaFinEstimada: calcularHoraFinEstimada(ruta.fechaReparto, ruta.tiempoEstimado),
+            },
+            detalleParadas: puntos.map((punto, indiceParada) => ({
+                orden: indiceParada + 1,
+                puntoId: punto.id,
+                codigo: punto.codigo ?? null,
+                direccion: punto.direccion ?? null,
+                cliente: punto.nombreCliente ?? null,
+                contactoCliente: punto.contactoCliente ?? null,
+                estadoEntrega: punto.estadoEntrega === 'ENTREGADO' ? 'Entregado' : 'Pendiente',
+                tiempoEstimadoParada: null,
+                pesoProducto: punto.pesoProducto ?? null,
+                descripcionEntrega: punto.descripcionEntrega ?? null,
+                latitud: punto.latitud,
+                longitud: punto.longitud,
+            })),
+            geometria: {
+                type: 'Feature',
+                geometry: {
+                    type: 'LineString',
+                    coordinates: Array.isArray(rutaMongo.geometria) ? rutaMongo.geometria : [],
+                },
+            },
+        };
+    }
+
 
 }
 

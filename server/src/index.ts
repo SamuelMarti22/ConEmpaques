@@ -38,6 +38,8 @@ app.post("/api/routing/optimizar", routingController.getRutaOptima);
 app.get("/api/rutas", rutasController.obtenerRutasGuardadas);
 app.post("/api/rutas/guardar", rutasController.guardarRutas);
 app.delete("/api/rutas/:rutaId", rutasController.eliminarRuta);
+app.get("/api/rutas/repartidor/:idRepartidor", rutasController.consultarRutasRepartidor);
+app.get("/api/rutas/:rutaId", rutasController.consultarDetalleRuta);
 
 // Alias para mantener compatibilidad entre frontend y backend
 app.use("/api/geocodificacion", geoCodificacionRutasController);
