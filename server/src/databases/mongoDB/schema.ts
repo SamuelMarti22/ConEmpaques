@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 
 //////////////////////
 // INTERFACES
@@ -14,7 +14,7 @@ export interface IPuntoEntrega {
   longitud: number;
   pesoProducto: number;
   descripcionEntrega: string;
-  estadoEntrega: "PENDIENTE" | "ENTREGADO" | "FALLIDO";
+  estadoEntrega: "EN_BODEGA" | "PENDIENTE" | "EN_CAMINO" | "ENTREGADO" | "FALLIDO";
   fechaHoraEntrega?: Date;
   firmaUrl?: string;
   motivoFallido?: string;
@@ -41,8 +41,8 @@ export interface IPuntoEntregaMethods {
   setLongitud(valor: number): void;
   getDescripcionEntrega(): string;
   setDescripcionEntrega(valor: string): void;
-  getEstadoEntrega(): "PENDIENTE" | "ENTREGADO" | "FALLIDO";
-  setEstadoEntrega(valor: "PENDIENTE" | "ENTREGADO" | "FALLIDO"): void;
+  getEstadoEntrega(): "EN_BODEGA" | "PENDIENTE" | "EN_CAMINO" | "ENTREGADO" | "FALLIDO";
+  setEstadoEntrega(valor: "EN_BODEGA" | "PENDIENTE" | "EN_CAMINO" | "ENTREGADO" | "FALLIDO"): void;
   getFechaHoraEntrega(): Date | undefined;
   setFechaHoraEntrega(valor: Date): void;
   getFirmaUrl(): string | undefined;
@@ -80,8 +80,8 @@ export const PuntoEntregaSchema = new Schema<IPuntoEntrega, mongoose.Model<IPunt
 
   estadoEntrega: {
     type: String,
-    enum: ["PENDIENTE", "ENTREGADO", "FALLIDO"],
-    default: "PENDIENTE",
+    enum: ["EN_BODEGA", "PENDIENTE", "EN_CAMINO", "ENTREGADO", "FALLIDO"],
+    default: "EN_BODEGA",
   },
 
   fechaHoraEntrega: { type: Date },

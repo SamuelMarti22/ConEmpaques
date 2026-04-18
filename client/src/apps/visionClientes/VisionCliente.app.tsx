@@ -2,15 +2,23 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../authContext/AuthContext";
 import "./VisionCliente.app.css";
 
-type EstadoEntrega = 'PENDIENTE' | 'EN_ENTREGA' | 'ENTREGADO' | 'FALLIDO' | undefined;
+type EstadoEntrega = 'EN_BODEGA' | 'PENDIENTE' | 'EN_CAMINO' | 'ENTREGADO' | 'FALLIDO' | undefined;
 
 function normalizarEstadoEntrega(estado: string | undefined): EstadoEntrega {
     if (!estado) {
+        return 'EN_BODEGA';
+    }
+
+    if (estado === 'EN_BODEGA') {
+        return 'EN_BODEGA';
+    }
+
+    if (estado === 'PENDIENTE') {
         return 'PENDIENTE';
     }
 
-    if (estado === 'EN_ENTREGA') {
-        return 'EN_ENTREGA';
+    if (estado === 'EN_CAMINO' || estado === 'EN_ENTREGA') {
+        return 'EN_CAMINO';
     }
 
     if (estado === 'ENTREGADO') {
@@ -21,12 +29,20 @@ function normalizarEstadoEntrega(estado: string | undefined): EstadoEntrega {
         return 'FALLIDO';
     }
 
-    return 'PENDIENTE';
+    return 'EN_BODEGA';
 }
 
 function etiquetaEstadoEntrega(estado: EstadoEntrega): string {
-    if (estado === 'EN_ENTREGA') {
-        return 'En entrega';
+    if (estado === 'EN_BODEGA') {
+        return 'En bodega';
+    }
+
+    if (estado === 'PENDIENTE') {
+        return 'Pendiente';
+    }
+
+    if (estado === 'EN_CAMINO') {
+        return 'En camino';
     }
 
     if (estado === 'ENTREGADO') {
@@ -37,16 +53,24 @@ function etiquetaEstadoEntrega(estado: EstadoEntrega): string {
         return 'Fallido';
     }
 
-    return 'Pendiente';
+    return 'En bodega';
 }
 
-function obtenerPasoActual(estado: EstadoEntrega): 1 | 2 | 3 {
-    if (estado === 'EN_ENTREGA') {
+function obtenerPasoActual(estado: EstadoEntrega): 1 | 2 | 3 | 4 {
+    if (estado === 'PENDIENTE') {
         return 2;
     }
 
-    if (estado === 'ENTREGADO' || estado === 'FALLIDO') {
+    if (estado === 'EN_CAMINO') {
         return 3;
+    }
+
+    if (estado === 'ENTREGADO') {
+        return 4;
+    }
+
+    if (estado === 'FALLIDO') {
+        return 4;
     }
 
     return 1;
@@ -58,10 +82,14 @@ export default function VisionCliente() {
     const estado = normalizarEstadoEntrega(usuario?.estadoEntrega);
     const pasoActual = obtenerPasoActual(estado);
     const esFallido = estado === 'FALLIDO';
+
+    const esPasoActivo = (paso: number): boolean => paso <= pasoActual;
+
     const etapas = [
-        { paso: 1, titulo: 'Pendiente' },
-        { paso: 2, titulo: 'En entrega' },
-        { paso: 3, titulo: esFallido ? 'Fallido' : 'Entregado' },
+        { paso: 1, titulo: 'En bodega' },
+        { paso: 2, titulo: 'Pendiente' },
+        { paso: 3, titulo: 'En camino' },
+        { paso: 4, titulo: 'Entregado' },
     ] as const;
 
     const handleLogout = () => {
@@ -104,14 +132,13 @@ export default function VisionCliente() {
                         <div className="clienteTrack__lineaBase" />
                         <div
                             className={esFallido ? 'clienteTrack__lineaActiva clienteTrack__lineaActiva--fallido' : 'clienteTrack__lineaActiva'}
-                            style={{ width: `${(pasoActual - 1) * 50}%` }}
+                            style={{ width: `${(pasoActual - 1) * 33.3333}%` }}
                         />
 
                         <div className="clienteTrack__nodos">
                             {etapas.map((etapa) => {
-                                const activo = pasoActual >= etapa.paso;
+                                const activo = esPasoActivo(etapa.paso);
                                 const actual = pasoActual === etapa.paso;
-                                const fallidoFinal = esFallido && etapa.paso === 3;
 
                                 return (
                                     <div key={etapa.paso} className="clienteTrack__nodoWrap">
@@ -120,7 +147,6 @@ export default function VisionCliente() {
                                                 'clienteTrack__nodo',
                                                 activo ? 'clienteTrack__nodo--activo' : '',
                                                 actual ? 'clienteTrack__nodo--actual' : '',
-                                                fallidoFinal ? 'clienteTrack__nodo--fallido' : '',
                                             ].join(' ').trim()}
                                         >
                                             {etapa.paso}
@@ -133,7 +159,7 @@ export default function VisionCliente() {
                     </div>
 
                     <p className="clienteTrack__nota">
-                        Referencia: 1 de 3 (pendiente), 2 de 3 (en entrega), 3 de 3 (entregado o fallido).
+                        Referencia: 1 en bodega, 2 pendiente, 3 en camino, 4 entregado.
                     </p>
                 </section>
             </main>

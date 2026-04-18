@@ -15,7 +15,7 @@ import { styles } from './Pedidos.style';
 import { COLORS } from '../../assets/styles/Colores.style';
 import { RutaResumen } from '../../types/rutas.types';
 
-const ID_REPARTIDOR = 2;
+const ID_REPARTIDOR = 1;
 
 export default function PedidosScreen() {
   const router = useRouter();
