@@ -646,6 +646,50 @@ describe("Rutas", () => {
       expect(salida[0].resumen.horaFinEstimada).not.toBeNull();
     });
 
+    it("depurarRutasAntiguas elimina rutas vencidas en mysql y mongo", async () => {
+      const { rutasService, prismaMock, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.findMany.mockResolvedValue([{ id: 11 }, { id: 12 }]);
+      prismaMock.ruta.deleteMany.mockResolvedValue({ count: 2 });
+      rutaEntregaModelMock.deleteMany.mockResolvedValue({ deletedCount: 2 });
+
+      const resultado = await rutasService.depurarRutasAntiguas(30);
+
+      expect(prismaMock.ruta.findMany).toHaveBeenCalledWith({
+        where: {
+          fechaReparto: {
+            lt: expect.any(Date),
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+      expect(prismaMock.ruta.deleteMany).toHaveBeenCalledWith({
+        where: {
+          id: {
+            in: [11, 12],
+          },
+        },
+      });
+      expect(rutaEntregaModelMock.deleteMany).toHaveBeenCalledWith({
+        rutaId: {
+          $in: [11, 12],
+        },
+      });
+      expect(resultado).toEqual({ rutasEliminadas: 2, documentosMongoEliminados: 2 });
+    });
+
+    it("depurarRutasAntiguas no elimina nada cuando no hay rutas vencidas", async () => {
+      const { rutasService, prismaMock, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.findMany.mockResolvedValue([]);
+
+      const resultado = await rutasService.depurarRutasAntiguas(30);
+
+      expect(resultado).toEqual({ rutasEliminadas: 0, documentosMongoEliminados: 0 });
+      expect(prismaMock.ruta.deleteMany).not.toHaveBeenCalled();
+      expect(rutaEntregaModelMock.deleteMany).not.toHaveBeenCalled();
+    });
+
     // Helper interno: normaliza un punto y fija estado inicial PENDIENTE.
     it("construirPuntosEntrega retorna punto con estado pendiente", async () => {
       const { rutasService } = await cargarRutasServiceConMocks();

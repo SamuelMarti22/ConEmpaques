@@ -8,9 +8,12 @@ import { repartidorController } from "./modules/repartidores/repartidor.controll
 import { routingController } from "./modules/routing/routing.controller.js";
 import { rutasController } from "./modules/rutas/rutas.controller.js";
 import geoCodificacionRutasController from "./modules/geoCodificacion/geoCodificacion.controller.js";
+import { rutasService } from "./modules/rutas/rutas.service.js";
 
 
 const app = express();
+const INTERVALO_DEPURACION_RUTAS_MS = 12 * 60 * 60 * 1000;
+const DIAS_RETENCION_RUTAS = 30;
 app.use(express.json());
 app.use(cors());
 
@@ -47,6 +50,24 @@ app.use("/api/geocoding", geoCodificacionRutasController);
 const iniciar = async () => {
 	await prisma.$connect();
 	await connectMongo();
+
+	const ejecutarDepuracionRutas = async () => {
+		try {
+			const resultado = await rutasService.depurarRutasAntiguas(DIAS_RETENCION_RUTAS);
+			if (resultado.rutasEliminadas > 0 || resultado.documentosMongoEliminados > 0) {
+				console.log(
+					`Depuracion rutas +30 dias: MySQL=${resultado.rutasEliminadas}, Mongo=${resultado.documentosMongoEliminados}`,
+				);
+			}
+		} catch (error) {
+			console.error('Error durante depuracion automatica de rutas:', error);
+		}
+	};
+
+	void ejecutarDepuracionRutas();
+	setInterval(() => {
+		void ejecutarDepuracionRutas();
+	}, INTERVALO_DEPURACION_RUTAS_MS);
 
 	const puerto = Number(env.PORT ?? 3000);
 	app.listen(puerto, () => {

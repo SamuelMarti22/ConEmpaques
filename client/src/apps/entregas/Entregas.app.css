@@ -101,39 +101,10 @@
   background: #16a34a;
 }
 
-.entregaRutaCard {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 10px;
-  cursor: pointer;
+.vistaEntregas__listaRutas {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.entregaRutaCard--seleccionada {
-  border-color: #2563eb;
-  background: #eff6ff;
-}
-
-.entregaRutaCard__tituloFila {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.entregaRutaCard__metricas {
-  display: flex;
   gap: 10px;
-  color: #374151;
-  font-size: 0.9rem;
-  flex-wrap: wrap;
-}
-
-.entregaRutaCard__inicioFin p {
-  margin: 0;
-  font-size: 0.9rem;
 }
 
 @media (max-width: 768px) {

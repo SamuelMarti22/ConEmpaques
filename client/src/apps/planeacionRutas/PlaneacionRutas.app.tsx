@@ -11,7 +11,7 @@ import BotonGeneracionRutas from '../../components/planteacionRuta/botonGeneraci
 import {RutaRepartidorGeoJSON} from './../../classes/RutaRepartidorGeoJSON'
 import BotonGuardarRuta, { type RutaGuardadaUI } from '../../components/guardadoRuta/botonGuardarRuta.component'
 import ResumenRutasGuardadas from './ResumenRutasGuardadas'
-import { filtrarRutasPorFecha, visualizarRutasEnMapa } from '../../components/visualizacionRutasMapa.auxiliar'
+import { filtrarRutasDesdeFecha, filtrarRutasPorFecha, visualizarRutasEnMapa } from '../../components/visualizacionRutasMapa.auxiliar'
 
 import './PlaneacionRutas.css';
 
@@ -88,13 +88,17 @@ export default function PlaneacionRutas() {
         () => `conempaques:puntos-entrega:${formatearValorFecha(fechaReparto)}`,
         [fechaReparto],
     );
+    const rutasGuardadasDesdeHoy = useMemo(
+        () => filtrarRutasDesdeFecha(rutasGuardadas, normalizarFechaMediodiaLocal(new Date())),
+        [rutasGuardadas],
+    );
     const rutasGuardadasFiltradasPorDia = useMemo(
-        () => filtrarRutasPorFecha(rutasGuardadas, fechaReparto),
-        [rutasGuardadas, fechaReparto],
+        () => filtrarRutasPorFecha(rutasGuardadasDesdeHoy, fechaReparto),
+        [rutasGuardadasDesdeHoy, fechaReparto],
     );
     const rutasGuardadasVisibles = useMemo(
-        () => (mostrarTodasRutasAsignadas ? rutasGuardadas : rutasGuardadasFiltradasPorDia),
-        [mostrarTodasRutasAsignadas, rutasGuardadas, rutasGuardadasFiltradasPorDia],
+        () => (mostrarTodasRutasAsignadas ? rutasGuardadasDesdeHoy : rutasGuardadasFiltradasPorDia),
+        [mostrarTodasRutasAsignadas, rutasGuardadasDesdeHoy, rutasGuardadasFiltradasPorDia],
     );
     const cargarCapacidadesRepartidores = useCallback(async (): Promise<void> => {
         const consultaId = ultimaConsultaDisponibilidadRef.current + 1;

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MapaInteractivo, { type MapaInteractivoFunciones } from '../../components/MapaInteractivo';
 import type { RutaGuardadaUI } from '../../components/guardadoRuta/botonGuardarRuta.component';
+import RutaResumenCard from '../../components/rutaResumenCard/RutaResumenCard';
 import {
     filtrarRutasPorFecha,
     obtenerRutasActivasParaMapa,
@@ -15,18 +16,6 @@ type RutasResponse = {
 
 const URL_RUTAS = 'http://localhost:3000/api/rutas';
 const INTERVALO_ACTUALIZACION_MS = 10000;
-
-function formatearTiempo(segundos: number | null): string {
-    if (segundos === null || segundos <= 0) return 'No calculado';
-    return `${Math.round(segundos / 60)} min`;
-}
-
-function nombreParada(
-    parada: RutaGuardadaUI['detalleParadas'][number],
-    indiceParada: number,
-): string {
-    return parada.cliente?.trim() || `Parada ${indiceParada + 1}`;
-}
 
 export default function EntregasApp() {
     const mapaRef = useRef<MapaInteractivoFunciones>(null);
@@ -135,33 +124,18 @@ export default function EntregasApp() {
                     <p className="vistaEntregas__mensaje">No hay rutas activas para hoy.</p>
                 )}
 
-                {!cargandoInicial && rutasActivas.map((ruta) => {
-                    const inicio = ruta.detalleParadas[0];
-                    const fin = ruta.detalleParadas[ruta.detalleParadas.length - 1];
-
-                    return (
-                        <article
-                            key={ruta.rutaId}
-                            className={`entregaRutaCard ${rutaSeleccionadaId === ruta.rutaId ? 'entregaRutaCard--seleccionada' : ''}`}
-                            onClick={() => setRutaSeleccionadaId((anterior) => (anterior === ruta.rutaId ? null : ruta.rutaId))}
-                        >
-                            <div className="entregaRutaCard__tituloFila">
-                                <strong>Ruta #{ruta.rutaId}</strong>
-                                <span>{ruta.repartidor.nombre?.trim() || 'Sin nombre'}</span>
-                            </div>
-
-                            <div className="entregaRutaCard__metricas">
-                                <span>Paradas: {ruta.detalleParadas.length}</span>
-                                <span>Tiempo: {formatearTiempo(ruta.resumen.tiempoEstimado)}</span>
-                            </div>
-
-                            <div className="entregaRutaCard__inicioFin">
-                                <p><strong>Inicio:</strong> {inicio ? nombreParada(inicio, 0) : 'No disponible'}</p>
-                                <p><strong>Fin:</strong> {fin ? nombreParada(fin, ruta.detalleParadas.length - 1) : 'No disponible'}</p>
-                            </div>
-                        </article>
-                    );
-                })}
+                {!cargandoInicial && (
+                    <div className="vistaEntregas__listaRutas">
+                        {rutasActivas.map((ruta) => (
+                            <RutaResumenCard
+                                key={ruta.rutaId}
+                                ruta={ruta}
+                                seleccionada={rutaSeleccionadaId === ruta.rutaId}
+                                alSeleccionar={(rutaId) => setRutaSeleccionadaId((anterior) => (anterior === rutaId ? null : rutaId))}
+                            />
+                        ))}
+                    </div>
+                )}
             </aside>
         </div>
     );

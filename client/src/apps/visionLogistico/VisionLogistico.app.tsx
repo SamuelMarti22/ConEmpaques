@@ -6,6 +6,7 @@ import PlaneacionRutas from '../planeacionRutas/PlaneacionRutas.app';
 import RepartidoresApp from '../repartidores/Repartidores.app';
 import EntregasApp from '../entregas/Entregas.app';
 import DashboardApp from '../dashboard/Dashboard.app';
+import HistorialRutasApp from '../historialRutas/HistorialRutas.app';
 import '../App.css';
 
 function renderVista(vista: Vista) {
@@ -18,6 +19,8 @@ function renderVista(vista: Vista) {
       return <DashboardApp />;
     case 'repartidores':
       return <RepartidoresApp />;
+    case 'historial':
+      return <HistorialRutasApp />;
   }
 }
 

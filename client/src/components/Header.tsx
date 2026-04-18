@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../authContext/AuthContext';
 import './Header.css';
 
-type Vista = 'agregar' | 'entregas' | 'dashboard' | 'repartidores';
+type Vista = 'agregar' | 'entregas' | 'dashboard' | 'repartidores' | 'historial';
 
 interface HeaderProps {
     vistaActiva: Vista;
@@ -14,6 +14,7 @@ const tabs: { id: Vista; iconoClass: string; label: string }[] = [
     { id: 'entregas', iconoClass: 'bi bi-map', label: 'Vista de Entregas' },
     { id: 'dashboard', iconoClass: 'bi bi-grid', label: 'Dashboard' },
     { id: 'repartidores', iconoClass: 'bi bi-truck', label: 'Repartidores' },
+    { id: 'historial', iconoClass: 'bi bi-clock-history', label: 'Historial de rutas' },
 ];
 
 function Header({ vistaActiva, onCambiarVista }: HeaderProps) {

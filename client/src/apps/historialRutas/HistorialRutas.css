@@ -1,0 +1,452 @@
+.historialRutas {
+  padding: 20px;
+  height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #f9fcfb 0%, #f0f6f4 100%);
+}
+
+.historialRutas__encabezado {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.historialRutas__encabezado h2 {
+  margin: 0;
+  color: var(--color-verde-oscuro);
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.historialRutas__encabezado p {
+  margin: 4px 0 0 0;
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.historialRutas__botonRecargar {
+  border: 1px solid #c6e3db;
+  border-radius: 8px;
+  background: #f7fcfa;
+  color: var(--color-verde-oscuro);
+  padding: 8px 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.historialRutas__botonRecargar:hover {
+  background: #eaf6f2;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(24, 80, 66, 0.12);
+}
+
+.historialRutas__iconoGirando {
+  display: inline-block;
+  animation: historialRutasSpin 0.9s linear infinite;
+}
+
+.historialRutas__estado {
+  margin: 8px 0;
+  color: #374151;
+}
+
+.historialRutas__estado--error {
+  color: #b91c1c;
+}
+
+.historialRutas__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.historialRutas__lista--lista {
+  grid-template-columns: 1fr;
+}
+
+.historialRutas__card {
+  background: #ffffff;
+  border: 1px solid #d8eae4;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 8px 20px rgba(21, 62, 54, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.historialRutas__card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(21, 62, 54, 0.14);
+}
+
+.historialRutas__cardEncabezado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.historialRutas__tituloRuta {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #103f36;
+}
+
+.historialRutas__datoFecha {
+  color: #6b7280;
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+.historialRutas__filtros {
+  display: grid;
+  grid-template-columns: minmax(230px, 1.3fr) minmax(150px, 0.8fr) minmax(150px, 0.8fr) auto;
+  gap: 10px;
+  margin-bottom: 10px;
+  max-width: 960px;
+  background: #ffffff;
+  border: 1px solid #dcebe6;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.historialRutas__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.historialRutas__campo span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #41525a;
+}
+
+.historialRutas__campo input,
+.historialRutas__campo select {
+  border: 1px solid #cfe4dd;
+  border-radius: 9px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #253338;
+  min-height: 38px;
+}
+
+.historialRutas__campo input:focus,
+.historialRutas__campo select:focus {
+  outline: none;
+  border-color: var(--color-verde-medio);
+  box-shadow: 0 0 0 3px rgba(47, 160, 132, 0.14);
+}
+
+.historialRutas__inputIcono {
+  position: relative;
+}
+
+.historialRutas__inputIcono i {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+}
+
+.historialRutas__inputIcono input {
+  width: 100%;
+  padding-left: 34px;
+  box-sizing: border-box;
+}
+
+.historialRutas__vistaSelector {
+  display: inline-flex;
+  border: 1px solid #c6e3db;
+  border-radius: 9px;
+  overflow: hidden;
+  align-self: end;
+  height: 38px;
+}
+
+.historialRutas__botonLimpiar {
+  border: 1px solid #f4c7c7;
+  border-radius: 9px;
+  background: #fff5f5;
+  color: #b91c1c;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+  align-self: end;
+  height: 38px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.historialRutas__botonLimpiar:hover:not(:disabled) {
+  background: #fee2e2;
+  transform: translateY(-1px);
+}
+
+.historialRutas__botonLimpiar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.historialRutas__vistaBoton {
+  border: none;
+  background: #ffffff;
+  color: #3f5551;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.historialRutas__vistaBoton--activa {
+  background: #e8f7f1;
+  color: var(--color-verde-oscuro);
+  font-weight: 700;
+}
+
+.historialRutas__resultado {
+  margin: 0 0 10px 0;
+  color: #4b5563;
+  font-size: 0.86rem;
+}
+
+.historialRutas__grupo {
+  margin-bottom: 12px;
+}
+
+.historialRutas__grupo:last-child {
+  margin-bottom: 0;
+}
+
+.historialRutas__grupo--principal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.historialRutas__dato {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.historialRutas__dato--repartidor {
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.historialRutas__estadoBadge {
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.historialRutas__estadoBadge--pendiente {
+  background: #f3f4f6;
+  color: #4b5563;
+  border-color: #d1d5db;
+}
+
+.historialRutas__estadoBadge--enRuta {
+  background: #e8f7f1;
+  color: #146e5d;
+  border-color: #b5e0d3;
+}
+
+.historialRutas__estadoBadge--finalizado {
+  background: #eaf8f2;
+  color: #185946;
+  border-color: #bfe3d6;
+}
+
+.historialRutas__grupo--chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.historialRutas__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.historialRutas__chip--pedidos {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.historialRutas__chip--tiempo {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.historialRutas__grupo--detalles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.historialRutas__datoSecundario {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: #6b7280;
+}
+
+.historialRutas__grupo--tiempos h3,
+.historialRutas__paradas h3 {
+  margin: 0 0 6px 0;
+  font-size: 0.88rem;
+  color: #2f3f45;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.historialRutas__tiempoFila {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.historialRutas__tiempoFila span {
+  font-size: 0.84rem;
+  color: #5b6670;
+}
+
+.historialRutas__paradas {
+  margin-top: 2px;
+}
+
+.historialRutas__paradas p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #4b5563;
+}
+
+.historialRutas__paradas ol {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.historialRutas__timelineItem {
+  position: relative;
+  padding: 0 0 8px 24px;
+}
+
+.historialRutas__timelineItem::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 18px;
+  width: 1px;
+  height: calc(100% - 10px);
+  background: #d4e6e0;
+}
+
+.historialRutas__timelineItem:last-child::before {
+  display: none;
+}
+
+.historialRutas__timelineItem i {
+  position: absolute;
+  left: 0;
+  top: 1px;
+  margin-right: 0;
+}
+
+.historialRutas__timelineItem span {
+  font-size: 0.88rem;
+  color: #374151;
+}
+
+.historialRutas i {
+  width: 14px;
+  text-align: center;
+}
+
+.historialRutas__card--skeleton {
+  pointer-events: none;
+}
+
+.historialRutas__skeleton {
+  border-radius: 8px;
+  background: linear-gradient(90deg, #eef3f1 25%, #f8fbfa 37%, #eef3f1 63%);
+  background-size: 400% 100%;
+  animation: historialRutasShimmer 1.4s ease infinite;
+  margin-bottom: 8px;
+}
+
+.historialRutas__skeleton--titulo {
+  width: 52%;
+  height: 18px;
+}
+
+.historialRutas__skeleton--linea {
+  width: 100%;
+  height: 12px;
+}
+
+.historialRutas__skeleton--lineaCorta {
+  width: 72%;
+  height: 12px;
+}
+
+@keyframes historialRutasShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes historialRutasSpin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .historialRutas {
+    padding: 12px;
+  }
+
+  .historialRutas__encabezado {
+    flex-direction: column;
+  }
+
+  .historialRutas__filtros {
+    grid-template-columns: 1fr;
+    max-width: none;
+  }
+
+  .historialRutas__vistaSelector {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .historialRutas__botonLimpiar {
+    width: 100%;
+  }
+
+  .historialRutas__vistaBoton {
+    flex: 1;
+  }
+
+  .historialRutas__botonRecargar {
+    width: 100%;
+  }
+}

@@ -1,0 +1,209 @@
+.rutaResumenCard {
+  border: 1px solid #d8eae4;
+  border-radius: 12px;
+  padding: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(21, 62, 54, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rutaResumenCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(21, 62, 54, 0.14);
+}
+
+.rutaResumenCard--seleccionada {
+  border-color: var(--color-verde-medio);
+  background: #ecf8f3;
+}
+
+.rutaResumenCard__header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.rutaResumenCard__titulo {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #103f36;
+}
+
+.rutaResumenCard__fecha {
+  justify-self: end;
+  color: #6b7280;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rutaResumenCard__botonEliminar {
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 0.84rem;
+}
+
+.rutaResumenCard__botonEliminar:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+.rutaResumenCard__botonEliminar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rutaResumenCard__acciones {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rutaResumenCard__principal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.rutaResumenCard__repartidor {
+  color: #4b5563;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rutaResumenCard__estado {
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.rutaResumenCard__estado--pendiente {
+  background: #f3f4f6;
+  color: #4b5563;
+  border-color: #d1d5db;
+}
+
+.rutaResumenCard__estado--enRuta {
+  background: #e8f7f1;
+  color: #146e5d;
+  border-color: #b5e0d3;
+}
+
+.rutaResumenCard__estado--finalizado {
+  background: #eaf8f2;
+  color: #185946;
+  border-color: #bfe3d6;
+}
+
+.rutaResumenCard__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rutaResumenCard__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.rutaResumenCard__chip--pedidos {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.rutaResumenCard__chip--tiempo {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.rutaResumenCard__detalles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.rutaResumenCard__detalles span {
+  color: #6b7280;
+  font-size: 0.84rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rutaResumenCard__tiempos h4,
+.rutaResumenCard__paradas h4 {
+  margin: 0 0 6px 0;
+  font-size: 0.88rem;
+  color: #2f3f45;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.rutaResumenCard__tiempos p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #5b6670;
+}
+
+.rutaResumenCard__paradas p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #4b5563;
+}
+
+.rutaResumenCard__paradas ol {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.rutaResumenCard__paradas li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 6px;
+  color: #374151;
+  font-size: 0.88rem;
+}
+
+.rutaResumenCard__paradas li i {
+  position: absolute;
+  left: 0;
+  top: 1px;
+}
+
+.rutaResumenCard i {
+  width: 14px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .rutaResumenCard__header {
+    grid-template-columns: 1fr;
+  }
+
+  .rutaResumenCard__fecha {
+    justify-self: start;
+  }
+
+  .rutaResumenCard__botonEliminar {
+    width: 100%;
+  }
+}

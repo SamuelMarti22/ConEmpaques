@@ -6,6 +6,7 @@ import { EstadoRuta } from '../../databases/prisma/generated/prisma/enums.js';
 
 const ESTADOS_RUTA_ASIGNADA = [EstadoRuta.PENDIENTE, EstadoRuta.EN_PROCESO] as const;
 const BLOQUEOS_GUARDADO_RUTA = new Set<string>();
+let DEPURACION_RUTAS_EN_CURSO = false;
 
 type EstadoRepartidorResumen = 'disponible' | 'en ruta' | 'finalizado';
 
@@ -150,6 +151,61 @@ export class RepartidorDuplicadoEnLoteError extends Error {
 
 
 export class RutasService {
+    async depurarRutasAntiguas(diasRetencion = 30): Promise<{ rutasEliminadas: number; documentosMongoEliminados: number }> {
+        if (!Number.isInteger(diasRetencion) || diasRetencion <= 0) {
+            throw new Error('diasRetencion debe ser un entero positivo');
+        }
+
+        if (DEPURACION_RUTAS_EN_CURSO) {
+            return { rutasEliminadas: 0, documentosMongoEliminados: 0 };
+        }
+
+        DEPURACION_RUTAS_EN_CURSO = true;
+
+        try {
+            const fechaLimite = obtenerInicioDiaLocal(new Date());
+            fechaLimite.setDate(fechaLimite.getDate() - diasRetencion);
+
+            const rutasAntiguas = await prisma.ruta.findMany({
+                where: {
+                    fechaReparto: {
+                        lt: fechaLimite,
+                    },
+                },
+                select: {
+                    id: true,
+                },
+            });
+
+            if (rutasAntiguas.length === 0) {
+                return { rutasEliminadas: 0, documentosMongoEliminados: 0 };
+            }
+
+            const rutasIds = rutasAntiguas.map((ruta) => ruta.id);
+
+            const resultadoMysql = await prisma.ruta.deleteMany({
+                where: {
+                    id: {
+                        in: rutasIds,
+                    },
+                },
+            });
+
+            const resultadoMongo = await RutaEntregaModel.deleteMany({
+                rutaId: {
+                    $in: rutasIds,
+                },
+            });
+
+            return {
+                rutasEliminadas: resultadoMysql.count,
+                documentosMongoEliminados: typeof resultadoMongo.deletedCount === 'number' ? resultadoMongo.deletedCount : 0,
+            };
+        } finally {
+            DEPURACION_RUTAS_EN_CURSO = false;
+        }
+    }
+
     async guardarRuta(
         puntosEntrega: IPuntoEntrega[],
         rutasRepartidorGeoJSON: RutaRepartidorGeoJSON[],

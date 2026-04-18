@@ -57,6 +57,19 @@ export function filtrarRutasPorFecha(rutas: RutaGuardadaUI[], fechaObjetivo: Dat
     });
 }
 
+export function filtrarRutasDesdeFecha(rutas: RutaGuardadaUI[], fechaMinima: Date): RutaGuardadaUI[] {
+    const claveMinima = obtenerClaveFechaLocal(fechaMinima);
+
+    return rutas.filter((ruta) => {
+        const claveRuta = obtenerClaveFechaRuta(ruta);
+        if (!claveRuta) {
+            return false;
+        }
+
+        return claveRuta >= claveMinima;
+    });
+}
+
 export function filtrarRutasConGeometria(rutas: RutaGuardadaUI[]): RutaGuardadaUI[] {
     return rutas.filter(esGeometriaValida);
 }
