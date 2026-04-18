@@ -15,7 +15,7 @@ import { styles } from './Pedidos.style';
 import { COLORS } from '../../assets/styles/Colores.style';
 import { RutaResumen } from '../../types/rutas.types';
 
-const ID_REPARTIDOR = 2;
+const ID_REPARTIDOR = 3;
 
 export default function PedidosScreen() {
   const router = useRouter();
@@ -30,7 +30,7 @@ export default function PedidosScreen() {
       setError(null);
 
       const response = await fetch(
-        `http://localhost:3000/api/rutas/repartidor/${ID_REPARTIDOR}`
+        `http://192.168.1.11:3000/api/rutas/repartidor/${ID_REPARTIDOR}`
       );
       const data = await response.json();
 

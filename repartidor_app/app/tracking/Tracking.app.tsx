@@ -1,5 +1,6 @@
 // Tracking.app.tsx
 import React, { useState, useEffect } from 'react';
+import { obtenerUbicacionActual } from '@/services/ubicacion.service';
 import {
   View, Text, TouchableOpacity,
   SafeAreaView, ScrollView, Linking, Alert, ActivityIndicator,
@@ -8,12 +9,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { styles } from './Tracking.style';
 import { DetalleParada, RutaGuardada } from '../../types/rutas.types';
 import { COLORS } from '../../assets/styles/Colores.style';
+import { abrirGoogleMapsConRuta } from '@/services/RutaGoogleMaps.app';
 import Feather from '@expo/vector-icons/Feather';
 
 const C = COLORS;
 
 const ESTADO_CFG = {
-  Pendiente: { bg: '#fff3cd', text: '#856404' },
+  Bodega: { bg: '#e8f4f8', text: '#1F6F5F' },
+  Pendiente: { bg: '#fff3cd', text: '#856404' }, 
   Entregado: { bg: '#d1f0e4', text: '#1F6F5F' },
   Fallido:   { bg: '#fde8e8', text: '#a32d2d' },
 };
@@ -181,6 +184,9 @@ export default function TrackingScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paradaSeleccionada, setParadaSeleccionada] = useState<number | null>(null);
+  // Los hooks deben ir aquí, fuera de cualquier if
+  const [ubicacionActual, setUbicacionActual] = useState<{ lat: number, lng: number } | null>(null);
+  const [obteniendoUbicacion, setObteniendoUbicacion] = useState(false);
 
   useEffect(() => {
     const cargarDetalleRuta = async () => {
@@ -195,12 +201,12 @@ export default function TrackingScreen() {
         console.log('Cargando detalles para ruta ID:', rutaId);
 
         const response = await fetch(
-          `http://localhost:3000/api/rutas/${rutaId}`
+          `http://192.168.1.11:3000/api/rutas/${rutaId}`
           
         );
-        console.log('Respuesta recibida:', response.status);
+      
         const data = await response.json();
-        console.log('Datos recibidos:', data);
+  
 
         if (!response.ok) {
           throw new Error(data?.message ?? 'Error al cargar la ruta');
@@ -231,7 +237,7 @@ export default function TrackingScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.screen}>
-        <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+        <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>...
           <ActivityIndicator size="large" color={C.teal} />
           <Text style={{ marginTop: 12, color: '#666' }}>Cargando ruta...</Text>
         </View>
@@ -263,9 +269,42 @@ export default function TrackingScreen() {
   // Debug: Log del estado actual
   console.log('Estado actual:', { ruta: !!ruta, paradaSeleccionada, detallesCount: ruta?.detalleParadas?.length });
 
-
   if (ruta && ruta.detalleParadas && ruta.detalleParadas.length > 0) {
-    return <ParadasListScreen paradas={ruta.detalleParadas} onBack={() => router.back()} />;
+    const coordenadasTracking = ruta.detalleParadas.map((p) => ({ lat: p.latitud, lng: p.longitud }));
+
+    return (
+      <>
+        {/* Botón de Iniciar Ruta */}
+        <SafeAreaView style={{ backgroundColor: '#fff' }}>
+          <View style={{ padding: 16, backgroundColor: '#fff', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#eee' }}>
+            <TouchableOpacity
+              style={{ backgroundColor: C.primary, borderRadius: 8, paddingVertical: 14, paddingHorizontal: 32, marginBottom: 10 }}
+              disabled={obteniendoUbicacion}
+              onPress={async () => {
+                setObteniendoUbicacion(true);
+                try {
+                  const ubicacion = await obtenerUbicacionActual();
+                  setUbicacionActual(ubicacion);
+                  const puntoFinal = { lat: 6.3000, lng: -75.5700 }; // Cambia estas coords si quieres
+                  const coordenadasConInicioYFinal = [ubicacion, ...coordenadasTracking, puntoFinal];
+                  abrirGoogleMapsConRuta(coordenadasConInicioYFinal);
+                } catch (err: any) {
+                  Alert.alert('Error', err.message || 'No se pudo obtener la ubicación');
+                } finally {
+                  setObteniendoUbicacion(false);
+                }
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 17 }}>
+                {obteniendoUbicacion ? 'Obteniendo ubicación...' : 'Iniciar ruta'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+        {/* Lista de paradas */}
+        <ParadasListScreen paradas={ruta.detalleParadas} onBack={() => router.back()} />
+      </>
+    );
   }
 
   return (
