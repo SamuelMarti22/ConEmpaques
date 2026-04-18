@@ -5,7 +5,6 @@ import type { IPuntoEntrega } from '../../databases/mongoDB/schema';
 import { EstadoRuta } from '../../databases/prisma/generated/prisma/enums.js';
 import { prisma } from "../../databases/prisma/lib/prisma.js";
 import { RutaRepartidorGeoJSON, RutaRepartidorResumen } from '../../types/routing.types';
-import { resolve, Resolver } from 'node:dns';
 
 const ESTADOS_RUTA_ASIGNADA = [EstadoRuta.PENDIENTE, EstadoRuta.EN_PROCESO] as const;
 const BLOQUEOS_GUARDADO_RUTA = new Set<string>();
@@ -17,7 +16,7 @@ type EstadoRepartidorResumen = 'disponible' | 'en ruta' | 'finalizado';
 interface DetalleParadaResumen {
     orden: number;
     puntoId: number;
-    codigo: string | null;
+    codigoSeguimiento: string | null;
     direccion: string | null;
     cliente: string | null;
     contactoCliente: string | null;
@@ -416,7 +415,7 @@ export class RutasService {
                         return {
                             orden: indiceParada + 1,
                             puntoId,
-                            codigo: codigosSeguimientoPorPuntoId.get(puntoId) ?? punto?.codigo ?? null,
+                            codigoSeguimiento: codigosSeguimientoPorPuntoId.get(puntoId) ?? punto?.codigo ?? null,
                             direccion: punto?.direccion ?? null,
                             cliente: punto?.nombreCliente ?? null,
                             contactoCliente: punto?.contactoCliente ?? null,
@@ -533,7 +532,7 @@ export class RutasService {
                 detalleParadas: puntos.map((punto, indiceParada) => ({
                     orden: indiceParada + 1,
                     puntoId: punto.id,
-                    codigo: punto.codigo ?? null,
+                    codigoSeguimiento: punto.codigo ?? null,
                     direccion: punto.direccion ?? null,
                     cliente: punto.nombreCliente ?? null,
                     contactoCliente: punto.contactoCliente ?? null,
@@ -566,7 +565,7 @@ export class RutasService {
             pesoProducto: punto.pesoProducto,
             descripcionEntrega: punto.descripcionEntrega,
             direccion: punto.direccion,
-            estadoEntrega: 'PENDIENTE'
+            estadoEntrega: 'EN_BODEGA'
         }
     }
 
@@ -702,7 +701,7 @@ export class RutasService {
             detalleParadas: puntos.map((punto, indiceParada) => ({
                 orden: indiceParada + 1,
                 puntoId: punto.id,
-                codigo: punto.codigo ?? null,
+                codigoSeguimiento: punto.codigo ?? null,
                 direccion: punto.direccion ?? null,
                 cliente: punto.nombreCliente ?? null,
                 contactoCliente: punto.contactoCliente ?? null,

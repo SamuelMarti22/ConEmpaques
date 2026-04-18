@@ -12,7 +12,7 @@ interface PuntoEntregaClienteResponse {
 	id: number;
 	nombreCliente: string;
 	codigo: string;
-	estadoEntrega: 'PENDIENTE' | 'ENTREGADO' | 'FALLIDO';
+	estadoEntrega: 'EN_BODEGA' | 'PENDIENTE' | 'EN_CAMINO' | 'ENTREGADO' | 'FALLIDO';
 }
 
 interface ObtenerPedidoClienteResponse {
