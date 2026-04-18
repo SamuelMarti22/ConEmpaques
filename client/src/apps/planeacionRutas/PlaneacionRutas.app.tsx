@@ -287,7 +287,7 @@ export default function PlaneacionRutas() {
         } catch (error) {
             const mensajeError = error instanceof Error ? error.message : 'Error desconocido al eliminar la ruta';
             Swal.fire({
-                title: '❌ Error',
+                title: 'Error',
                 text: mensajeError,
                 icon: 'error',
                 confirmButtonText: 'Aceptar'
@@ -417,7 +417,7 @@ export default function PlaneacionRutas() {
                                     }}
                                     onErrorRutaGuardada={(error) => {
                                         Swal.fire({
-                                            title: '❌ Error',
+                                            title: 'Error',
                                             text: error,
                                             icon: 'error',
                                             confirmButtonText: 'Aceptar'

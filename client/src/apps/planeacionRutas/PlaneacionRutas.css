@@ -36,18 +36,18 @@
 }
 
 .selectorVistaPlaneacion__boton {
-  border: 1px solid #d1d5db;
+  border: 1px solid #c6e3db;
   border-radius: 8px;
   background: #ffffff;
-  color: #1f2937;
+  color: var(--color-verde-oscuro);
   padding: 8px 10px;
   cursor: pointer;
 }
 
 .selectorVistaPlaneacion__boton--activo {
-  background: #eff6ff;
-  border-color: #60a5fa;
-  color: #1d4ed8;
+  background: #e8f7f1;
+  border-color: var(--color-verde-claro);
+  color: var(--color-verde-oscuro);
 }
 
 .selectorFechaPlaneacion {
@@ -60,7 +60,7 @@
 .selectorFechaPlaneacion__label {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-verde-oscuro);
 }
 
 .selectorFechaPlaneacion__select {
@@ -74,8 +74,8 @@
 
 .selectorFechaPlaneacion__select:focus {
   outline: none;
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  border-color: var(--color-verde-medio);
+  box-shadow: 0 0 0 3px rgba(47, 160, 132, 0.16);
 }
 
 .selectorFechaPlaneacion__ayuda {
@@ -90,7 +90,7 @@
   width: 100%;
   height: auto;
   border-radius: 20px;
-  border: 2px solid #d1d5db;
+  border: 2px solid #cfe6df;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   overflow: auto;
   box-sizing: border-box;
@@ -109,22 +109,22 @@
 }
 
 .accionesRutasAsignadas__boton {
-  border: 1px solid #d1d5db;
+  border: 1px solid #c6e3db;
   border-radius: 8px;
-  background: #ffffff;
-  color: #1f2937;
+  background: #f7fcfa;
+  color: var(--color-verde-oscuro);
   padding: 8px 10px;
   cursor: pointer;
 }
 
 .accionesRutasAsignadas__boton:hover {
-  background: #f9fafb;
+  background: #eaf6f2;
 }
 
 .panelRutasGuardadas {
   flex: 1;
   min-height: 0;
-  border: 2px solid #d1d5db;
+  border: 2px solid #cfe6df;
   border-radius: 16px;
   background: #ffffff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -142,7 +142,7 @@
 }
 
 .rutaGuardadaCard {
-  border: 1px solid #e5e7eb;
+  border: 1px solid #dcebe6;
   border-radius: 12px;
   padding: 12px;
   margin-bottom: 10px;
@@ -150,8 +150,8 @@
 }
 
 .rutaGuardadaCard--seleccionada {
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: var(--color-verde-medio);
+  background: #ecf8f3;
 }
 
 .rutaGuardadaCard__encabezado {
@@ -182,15 +182,33 @@
 
 .rutaGuardadaCard__repartidorNombre {
   font-size: 0.95rem;
-  color: #111827;
+  color: #1f5449;
 }
 
 .rutaGuardadaCard__estadoBadge {
   font-size: 0.85rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid #cfe6df;
   border-radius: 999px;
   padding: 2px 8px;
-  background: #f9fafb;
+  background: #f2faf7;
+}
+
+.rutaGuardadaCard__estadoBadge--disponible {
+  color: #1b5e51;
+  border-color: #bfe3d6;
+  background: #eaf8f2;
+}
+
+.rutaGuardadaCard__estadoBadge--enRuta {
+  color: #156c5f;
+  border-color: #9bd9c4;
+  background: #ddf3ea;
+}
+
+.rutaGuardadaCard__estadoBadge--finalizado {
+  color: #0f4e43;
+  border-color: #87cdb5;
+  background: #d3ede2;
 }
 
 .rutaGuardadaCard__resumenRapido {
@@ -202,16 +220,16 @@
 }
 
 .rutaGuardadaCard__btnEliminar {
-  border: 1px solid #d1d5db;
+  border: 1px solid #fecaca;
   border-radius: 8px;
-  background: #ffffff;
-  color: #374151;
+  background: #fef2f2;
+  color: #b91c1c;
   padding: 6px 8px;
   cursor: pointer;
 }
 
 .rutaGuardadaCard__btnEliminar:hover:not(:disabled) {
-  background: #f9fafb;
+  background: #fee2e2;
 }
 
 .rutaGuardadaCard__btnEliminar:disabled {
@@ -245,6 +263,10 @@
 .rutaGuardadaCard__paradaEstado {
   font-size: 0.82rem;
   color: #4b5563;
+}
+
+.rutaGuardadaCard i {
+  margin-right: 4px;
 }
 
 /* 📱 Tablet y móvil: secciones apiladas */

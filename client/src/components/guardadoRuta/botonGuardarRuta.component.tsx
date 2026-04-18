@@ -142,7 +142,9 @@ export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGe
 
     return (
         <button onClick={guardarRutas} disabled={cargando}>
-            {cargando ? '⏳ Guardando rutas...' : '💾 Guardar rutas'}
+            {cargando
+                ? (<><i className="bi bi-hourglass-split" aria-hidden="true"></i> Guardando rutas...</>)
+                : (<><i className="bi bi-save" aria-hidden="true"></i> Guardar rutas</>)}
         </button>
     );
 }

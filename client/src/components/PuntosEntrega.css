@@ -13,6 +13,7 @@
     margin: 0 0 4px 0;
     font-size: 1rem;
     font-weight: 600;
+    color: var(--color-verde-oscuro);
 }
 
 .puntosMapa__header p {
@@ -40,14 +41,14 @@
 .btn:hover { opacity: 0.85; }
 
 .btn--agregar {
-    background-color: #3b82f6;
+    background-color: var(--color-verde-medio);
     color: white;
 }
 
 .btn--eliminar {
-    background-color: #f3f4f6;
-    color: #374151;
-    border: 1px solid #d1d5db;
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
 }
 
 .puntosMapa__lista h4 {
@@ -69,8 +70,8 @@
     gap: 6px;
     padding: 12px;
     border-radius: 10px;
-    border: 1px solid #e5e7eb;
-    background-color: #f9fafb;
+    border: 1px solid #d6e9e3;
+    background-color: #f8fcfb;
     margin-bottom: 8px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     position: relative;
@@ -82,8 +83,8 @@
     padding: 4px 10px;
     font-size: 0.8rem;
     background-color: #fee2e2;
-    color: #dc2626;
-    border: 1px solid #fca5a5;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
     border-radius: 6px;
 }
 
@@ -97,9 +98,9 @@
     flex: unset;
     padding: 4px 10px;
     font-size: 0.8rem;
-    background-color: #dbeafe;
-    color: #1d4ed8;
-    border: 1px solid #93c5fd;
+    background-color: #e8f7f1;
+    color: var(--color-verde-oscuro);
+    border: 1px solid #b4dfd1;
     border-radius: 6px;
 }
 
@@ -117,4 +118,9 @@
     color: #6b7280;
     flex-wrap: wrap;
     align-items: center;
+}
+
+.puntosMapa i,
+.btn i {
+    margin-right: 6px;
 }

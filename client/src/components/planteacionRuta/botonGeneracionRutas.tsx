@@ -107,10 +107,10 @@ export default function BotonGeneracionRutas({obtenerPuntosFormateados,capacidad
     return (
         <button onClick={generarRutas} disabled={cargando || cargandoDisponibilidad}>
             {cargando
-                ? '⏳ Generando rutas...'
+                ? (<><i className="bi bi-hourglass-split" aria-hidden="true"></i> Generando rutas...</>)
                 : cargandoDisponibilidad
-                    ? '⏳ Actualizando disponibilidad...'
-                    : '🗺️ Generar rutas'}
+                    ? (<><i className="bi bi-arrow-repeat" aria-hidden="true"></i> Actualizando disponibilidad...</>)
+                    : (<><i className="bi bi-map" aria-hidden="true"></i> Generar rutas</>)}
         </button>
     );
 }

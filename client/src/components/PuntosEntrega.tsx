@@ -148,7 +148,7 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
             />
             <div className="puntosMapa">
                 <div className="puntosMapa__header">
-                    <h3>📍 Agregar Punto de Entrega</h3>
+                    <h3><i className="bi bi-geo-alt" aria-hidden="true"></i> Agregar Punto de Entrega</h3>
                     <p>Haz clic en el mapa para agregar un punto de entrega</p>
                 </div>
 
@@ -156,8 +156,8 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
                     <button className="btn btn--agregar" onClick={() => {
                         setIndiceEdicion(null);
                         setIsOpenModal(true);
-                    }}>+ Agregar punto</button>
-                    <button className="btn btn--eliminar" onClick={vaciarListaPuntos}>🗑 Eliminar todos</button>
+                    }}><i className="bi bi-plus-circle" aria-hidden="true"></i> Agregar punto</button>
+                    <button className="btn btn--eliminar" onClick={vaciarListaPuntos}><i className="bi bi-trash" aria-hidden="true"></i> Eliminar todos</button>
                 </div>
 
             <div className="puntosMapa__lista">
@@ -168,20 +168,20 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
                     puntosActuales.map((punto, index) => (
                         <div key={punto.getId()} className="puntosMapa__tarjeta">
                             <div className="puntosMapa__tarjeta__titulo">
-                                <span>📦</span>
+                                <span><i className="bi bi-box-seam" aria-hidden="true"></i></span>
                                 <strong>{punto.cliente}</strong> - <strong>ID: {punto.getId()}</strong>
                             </div>
                             <div className="puntosMapa__tarjeta__coords">
-                                <span>📍 Dirección: {punto.getDireccion() || 'Sin dirección'}</span>
-                                <span>☎️ Celular: {punto.getContactoCliente() || 'Sin celular'}</span>
+                                <span><i className="bi bi-geo" aria-hidden="true"></i> Dirección: {punto.getDireccion() || 'Sin dirección'}</span>
+                                <span><i className="bi bi-telephone" aria-hidden="true"></i> Celular: {punto.getContactoCliente() || 'Sin celular'}</span>
                                 {punto.getDescripcionProducto() && (
-                                    <span>🗒️ Descripción: {punto.getDescripcionProducto()}</span>
+                                    <span><i className="bi bi-card-text" aria-hidden="true"></i> Descripción: {punto.getDescripcionProducto()}</span>
                                 )}
-                                <span>⚖️ Peso: {punto.getPeso()} kg</span>
+                                <span><i className="bi bi-speedometer2" aria-hidden="true"></i> Peso: {punto.getPeso()} kg</span>
                             </div>
                             <div className="puntosMapa__tarjeta__acciones">
-                                <button className="btn btn--editar-uno" onClick={() => editarPunto(index)}>Editar</button>
-                                <button className="btn btn--eliminar btn--eliminar-uno" onClick={() => EliminarMarcadorMapa(index)}>🗑</button>
+                                <button className="btn btn--editar-uno" onClick={() => editarPunto(index)}><i className="bi bi-pencil-square" aria-hidden="true"></i> Editar</button>
+                                <button className="btn btn--eliminar btn--eliminar-uno" onClick={() => EliminarMarcadorMapa(index)} aria-label={`Eliminar punto ${punto.getId()}`}><i className="bi bi-trash" aria-hidden="true"></i></button>
                             </div>
                         </div>
                     ))

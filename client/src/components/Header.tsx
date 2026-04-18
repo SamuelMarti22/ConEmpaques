@@ -9,11 +9,11 @@ interface HeaderProps {
     onCambiarVista: (vista: Vista) => void;
 }
 
-const tabs: { id: Vista; icono: string; label: string }[] = [
-    { id: 'agregar',    icono: '📍', label: 'Agregar Puntos' },
-    { id: 'entregas',   icono: '🗺',  label: 'Vista de Entregas' },
-    { id: 'dashboard',  icono: '⊞',  label: 'Dashboard' },
-    { id: 'repartidores',  icono: '🚚',  label: 'Repartidores' },
+const tabs: { id: Vista; iconoClass: string; label: string }[] = [
+    { id: 'agregar', iconoClass: 'bi bi-geo-alt', label: 'Agregar Puntos' },
+    { id: 'entregas', iconoClass: 'bi bi-map', label: 'Vista de Entregas' },
+    { id: 'dashboard', iconoClass: 'bi bi-grid', label: 'Dashboard' },
+    { id: 'repartidores', iconoClass: 'bi bi-truck', label: 'Repartidores' },
 ];
 
 function Header({ vistaActiva, onCambiarVista }: HeaderProps) {
@@ -33,7 +33,7 @@ function Header({ vistaActiva, onCambiarVista }: HeaderProps) {
                     <span className="header__subtitulo">Organiza y rastrea tus entregas en tiempo real</span>
                 </div>
                 <button className="header__botonLogout" onClick={handleLogout} title="Cerrar sesión">
-                    X
+                    <i className="bi bi-box-arrow-right" aria-hidden="true"></i>
                 </button>
             </div>
 
@@ -44,7 +44,7 @@ function Header({ vistaActiva, onCambiarVista }: HeaderProps) {
                         className={`header__tab${vistaActiva === tab.id ? ' header__tab--activo' : ''}`}
                         onClick={() => onCambiarVista(tab.id)}
                     >
-                        <span className="header__tab__icono">{tab.icono}</span>
+                        <i className={`header__tab__icono ${tab.iconoClass}`} aria-hidden="true"></i>
                         {tab.label}
                     </button>
                 ))}

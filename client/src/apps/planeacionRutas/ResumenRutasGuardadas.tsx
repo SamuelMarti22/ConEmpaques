@@ -28,14 +28,26 @@ function formatearCargaCapacidad(cargaActualKg: number, capacidadKg: number | nu
 
 function textoEstadoRepartidor(estado: RutaGuardadaUI['repartidor']['estado']): string {
   if (estado === 'en ruta') {
-    return '🟡 En ruta';
+    return 'En ruta';
   }
 
   if (estado === 'finalizado') {
-    return '🔴 Finalizado';
+    return 'Finalizado';
   }
 
-  return '🟢 Disponible';
+  return 'Disponible';
+}
+
+function claseEstadoRepartidor(estado: RutaGuardadaUI['repartidor']['estado']): string {
+  if (estado === 'en ruta') {
+    return 'rutaGuardadaCard__estadoBadge--enRuta';
+  }
+
+  if (estado === 'finalizado') {
+    return 'rutaGuardadaCard__estadoBadge--finalizado';
+  }
+
+  return 'rutaGuardadaCard__estadoBadge--disponible';
 }
 
 function nombreParada(
@@ -103,17 +115,17 @@ export default function ResumenRutasGuardadas({
             </div>
 
             <div className="rutaGuardadaCard__repartidorHeader">
-              <span className="rutaGuardadaCard__repartidorNombre">👤 {ruta.repartidor.nombre?.trim() || 'Sin nombre'}</span>
-              <span className="rutaGuardadaCard__estadoBadge">{textoEstadoRepartidor(ruta.repartidor.estado)}</span>
+              <span className="rutaGuardadaCard__repartidorNombre"><i className="bi bi-person" aria-hidden="true"></i> {ruta.repartidor.nombre?.trim() || 'Sin nombre'}</span>
+              <span className={`rutaGuardadaCard__estadoBadge ${claseEstadoRepartidor(ruta.repartidor.estado)}`}>{textoEstadoRepartidor(ruta.repartidor.estado)}</span>
             </div>
 
             <div className="rutaGuardadaCard__resumenRapido">
-              <span>📦 {ruta.resumen.numeroPedidos} pedidos</span>
-              <span>⏱ {formatearTiempo(ruta.resumen.tiempoEstimado)}</span>
-              <span>🚚 Capacidad: {formatearCargaCapacidad(ruta.resumen.cargaActualKg, ruta.repartidor.capacidad)}</span>
-              <span>🗓 {ruta.fechaReparto ?? 'Sin fecha'}</span>
-              <span>▶ {formatearFechaHora(ruta.resumen.horaInicioEstimada)}</span>
-              <span>■ {formatearFechaHora(ruta.resumen.horaFinEstimada)}</span>
+              <span><i className="bi bi-box-seam" aria-hidden="true"></i> {ruta.resumen.numeroPedidos} pedidos</span>
+              <span><i className="bi bi-stopwatch" aria-hidden="true"></i> {formatearTiempo(ruta.resumen.tiempoEstimado)}</span>
+              <span><i className="bi bi-truck" aria-hidden="true"></i> Capacidad: {formatearCargaCapacidad(ruta.resumen.cargaActualKg, ruta.repartidor.capacidad)}</span>
+              <span><i className="bi bi-calendar-event" aria-hidden="true"></i> {ruta.fechaReparto ?? 'Sin fecha'}</span>
+              <span><i className="bi bi-play-circle" aria-hidden="true"></i> {formatearFechaHora(ruta.resumen.horaInicioEstimada)}</span>
+              <span><i className="bi bi-stop-circle" aria-hidden="true"></i> {formatearFechaHora(ruta.resumen.horaFinEstimada)}</span>
             </div>
           </div>
 
@@ -125,7 +137,7 @@ export default function ResumenRutasGuardadas({
               <ol className="rutaGuardadaCard__listaParadas">
                 {ruta.detalleParadas.map((parada, indice) => (
                   <li key={`${ruta.rutaId}-${parada.orden}-${parada.puntoId}`}>
-                    <div className="rutaGuardadaCard__paradaLinea">📍 {nombreParada(parada, indice)}</div>
+                    <div className="rutaGuardadaCard__paradaLinea"><i className="bi bi-geo-alt" aria-hidden="true"></i> {nombreParada(parada, indice)}</div>
                   </li>
                 ))}
               </ol>

@@ -137,21 +137,24 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm, modo = 'cr
         <div className="modal-backdrop">
             <div className="modal-container">
                 <div className="modal-header">
-                    <h2 className="modal-titulo">{modo === 'editar' ? '✏️ Editar Punto de Entrega' : '📍 Nuevo Punto de Entrega'}</h2>
+                    <h2 className="modal-titulo">
+                        <i className={`bi ${modo === 'editar' ? 'bi-pencil-square' : 'bi-geo-alt'}`} aria-hidden="true"></i>
+                        {modo === 'editar' ? 'Editar Punto de Entrega' : 'Nuevo Punto de Entrega'}
+                    </h2>
                     <button
                         className="modal-cerrar"
                         onClick={handleCerrar}
                         aria-label="Cerrar modal"
                         disabled={cargando}
                     >
-                        ✕
+                        <i className="bi bi-x-lg" aria-hidden="true"></i>
                     </button>
                 </div>
 
                 <div className="modal-body">
                     <div className="modal-seccion">
                         <label className="modal-label" htmlFor="modal-cliente">
-                            🏢 Nombre del Cliente
+                            <i className="bi bi-building" aria-hidden="true"></i> Nombre del Cliente
                         </label>
                         <input
                             id="modal-cliente"
@@ -167,7 +170,7 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm, modo = 'cr
 
                     <div className="modal-seccion">
                         <label className="modal-label" htmlFor="modal-celular">
-                            ☎️ Celular de contacto
+                            <i className="bi bi-telephone" aria-hidden="true"></i> Celular de contacto
                         </label>
                         <input
                             id="modal-celular"
@@ -182,7 +185,7 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm, modo = 'cr
 
                     <div className="modal-seccion">
                         <label className="modal-label" htmlFor="modal-descripcion">
-                            🗒️ Descripción
+                            <i className="bi bi-card-text" aria-hidden="true"></i> Descripción
                         </label>
                         <input
                             id="modal-descripcion"
@@ -206,7 +209,7 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm, modo = 'cr
 
                     <div className="modal-seccion">
                         <label className="modal-label" htmlFor="modal-peso">
-                            ⚖️ Peso (kg)
+                            <i className="bi bi-speedometer2" aria-hidden="true"></i> Peso (kg)
                         </label>
                         <input
                             id="modal-peso"
@@ -223,7 +226,7 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm, modo = 'cr
 
                     {errorValidacion && (
                         <div className="modal-error">
-                            ❌ {errorValidacion}
+                            <i className="bi bi-exclamation-circle" aria-hidden="true"></i> {errorValidacion}
                         </div>
                     )}
                 </div>
@@ -241,7 +244,7 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm, modo = 'cr
                         onClick={handleConfirmar}
                         disabled={cargando || !ubicacionSeleccionada}
                     >
-                        {cargando ? (modo === 'editar' ? '⏳ Guardando...' : '⏳ Agregando...') : (modo === 'editar' ? '✓ Guardar cambios' : '✓ Agregar Punto')}
+                        {cargando ? (modo === 'editar' ? 'Guardando...' : 'Agregando...') : (modo === 'editar' ? 'Guardar cambios' : 'Agregar Punto')}
                     </button>
                 </div>
             </div>
