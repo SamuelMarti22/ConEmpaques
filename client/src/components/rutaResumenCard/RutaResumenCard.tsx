@@ -143,6 +143,7 @@ export default function RutaResumenCard({
               <li key={`${ruta.rutaId}-${parada.orden}-${parada.puntoId}`}>
                 <i className="bi bi-geo-alt" aria-hidden="true"></i>
                 {nombreParada(parada, indice)}
+                <span className="rutaResumenCard__codigoSeguimiento"> - Código: {parada.codigoSeguimiento}</span>
               </li>
             ))}
           </ol>

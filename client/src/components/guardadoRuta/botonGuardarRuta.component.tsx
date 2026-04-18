@@ -21,6 +21,7 @@ export interface RutaGuardadaUI {
     detalleParadas: {
         orden: number;
         puntoId: number;
+        codigoSeguimiento: string;
         direccion: string | null;
         cliente: string | null;
         estadoEntrega: 'Pendiente' | 'En camino' | 'Entregado';

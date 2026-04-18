@@ -7,6 +7,7 @@ import { horarioController } from "./modules/horarios/horario.controller.js";
 import { repartidorController } from "./modules/repartidores/repartidor.controller.js";
 import { routingController } from "./modules/routing/routing.controller.js";
 import { rutasController } from "./modules/rutas/rutas.controller.js";
+import { clienteController } from "./modules/vistaCliente/cliente.controller.js";
 import geoCodificacionRutasController from "./modules/geoCodificacion/geoCodificacion.controller.js";
 import { rutasService } from "./modules/rutas/rutas.service.js";
 
@@ -41,6 +42,9 @@ app.post("/api/routing/optimizar", routingController.getRutaOptima);
 app.get("/api/rutas", rutasController.obtenerRutasGuardadas);
 app.post("/api/rutas/guardar", rutasController.guardarRutas);
 app.delete("/api/rutas/:rutaId", rutasController.eliminarRuta);
+
+// Ruta vista cliente
+app.get("/api/clientes/pedidos/:id", clienteController.getPuntoEntrega);
 
 // Alias para mantener compatibilidad entre frontend y backend
 app.use("/api/geocodificacion", geoCodificacionRutasController);

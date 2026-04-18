@@ -76,7 +76,6 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
         }
 
         const idAutomatico = nextId.current;
-        const codigoGenerado = `P-${idAutomatico}`;
         const nuevoPunto = new PuntoEntrega(
             idAutomatico,
             datosNuevoPunto.cliente,
@@ -84,7 +83,7 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
             datosNuevoPunto.longitud,
             datosNuevoPunto.peso,
             datosNuevoPunto.direccion,
-            codigoGenerado,
+            '',
             datosNuevoPunto.celular,
             datosNuevoPunto.descripcion ?? ''
         );

@@ -32,7 +32,7 @@ export function recuperarPuntosGuardados(storageKey: string = STORAGE_KEY_PUNTOS
                 longitud,
                 pesoProducto,
                 String(punto.direccion ?? ''),
-                String(punto.codigo ?? `P-${id}`),
+                String(punto.codigo ?? ''),
                 String(punto.contactoCliente ?? 'Sin contacto'),
                 String(punto.descripcionProducto ?? ''),
                 (punto.estadoEntrega ?? 'PENDIENTE') as 'PENDIENTE' | 'ENTREGADO' | 'FALLIDO',

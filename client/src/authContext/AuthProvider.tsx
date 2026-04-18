@@ -8,6 +8,19 @@ interface AuthProviderProps {
 	children: ReactNode;
 }
 
+interface PuntoEntregaClienteResponse {
+	id: number;
+	nombreCliente: string;
+	codigo: string;
+	estadoEntrega: 'PENDIENTE' | 'ENTREGADO' | 'FALLIDO';
+}
+
+interface ObtenerPedidoClienteResponse {
+	rutaId: number;
+	puntoEntrega: PuntoEntregaClienteResponse;
+	error?: string;
+}
+
 function leerTokenInicial(): string | null {
 	return localStorage.getItem(STORAGE_TOKEN_KEY);
 }
@@ -78,14 +91,30 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 		setError(null);
 
 		try {
-			if (codigoEntrega.trim().length === 0) {
+			const codigoNormalizado = codigoEntrega.trim().toUpperCase();
+
+			if (codigoNormalizado.length === 0) {
 				throw new Error("Debes enviar un código de entrega válido");
 			}
 
-			const nuevoToken = `demo-token-cliente-${Date.now()}`;
+			const respuesta = await fetch(`http://localhost:3000/api/clientes/pedidos/${encodeURIComponent(codigoNormalizado)}`);
+			const payload = (await respuesta.json().catch(() => null)) as ObtenerPedidoClienteResponse | null;
+
+			if (!respuesta.ok) {
+				throw new Error(payload?.error ?? "No se pudo validar el código de entrega");
+			}
+
+			if (!payload?.puntoEntrega) {
+				throw new Error("Respuesta inválida del servidor al consultar el pedido");
+			}
+
+			const nuevoToken = `cliente-token-${Date.now()}`;
 			const nuevoUsuario: Usuario = {
-				id: 0,
-				nombre: `Cliente ${codigoEntrega}`,
+				id: payload.puntoEntrega.id,
+				nombre: payload.puntoEntrega.nombreCliente || "cliente",
+				codigoEntrega: payload.puntoEntrega.codigo,
+				rutaId: payload.rutaId,
+				estadoEntrega: payload.puntoEntrega.estadoEntrega,
 				rol: "cliente",
 			};
 

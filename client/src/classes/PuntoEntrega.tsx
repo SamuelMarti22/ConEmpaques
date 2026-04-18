@@ -20,7 +20,7 @@ export class PuntoEntrega {
         longitud: number,
         pesoProducto: number,
         direccion: string = '',
-        codigo: string = `P-${id}`,
+        codigo: string = '',
         contactoCliente: string = 'Sin contacto',
         descripcionProducto: string = '',
         estadoEntrega: "PENDIENTE" | "ENTREGADO" | "FALLIDO" = "PENDIENTE",

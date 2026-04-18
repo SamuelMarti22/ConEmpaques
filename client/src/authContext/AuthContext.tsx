@@ -3,6 +3,9 @@ import { createContext, useContext } from "react";
 export interface Usuario {
     id: number;
     nombre?: string;
+    codigoEntrega?: string;
+    rutaId?: number;
+    estadoEntrega?: 'PENDIENTE' | 'ENTREGADO' | 'FALLIDO';
     rol: 'logistico' | 'cliente';
 }
 

@@ -1,8 +1,9 @@
-import type { IPuntoEntrega } from '../../databases/mongoDB/schema';
-import { RutaRepartidorGeoJSON } from '../../types/routing.types';
-import { prisma } from "../../databases/prisma/lib/prisma.js";
+import { randomUUID } from 'crypto';
 import { RutaEntregaModel } from '../../databases/mongoDB/models/rutaEntrega.model.js';
+import type { IPuntoEntrega } from '../../databases/mongoDB/schema';
 import { EstadoRuta } from '../../databases/prisma/generated/prisma/enums.js';
+import { prisma } from "../../databases/prisma/lib/prisma.js";
+import { RutaRepartidorGeoJSON } from '../../types/routing.types';
 
 const ESTADOS_RUTA_ASIGNADA = [EstadoRuta.PENDIENTE, EstadoRuta.EN_PROCESO] as const;
 const BLOQUEOS_GUARDADO_RUTA = new Set<string>();
@@ -13,6 +14,7 @@ type EstadoRepartidorResumen = 'disponible' | 'en ruta' | 'finalizado';
 interface DetalleParadaResumen {
     orden: number;
     puntoId: number;
+    codigoSeguimiento: string;
     direccion: string | null;
     cliente: string | null;
     estadoEntrega: 'Pendiente' | 'En camino' | 'Entregado';
@@ -133,6 +135,10 @@ function obtenerClaveBloqueoGuardado(repartidorId: number, fechaClave: string, h
     return `${repartidorId}|${fechaClave}|${hora}`;
 }
 
+function generarCodigoSeguimiento(): string {
+    return `PE-${randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase()}`;
+}
+
 export class RepartidorYaAsignadoError extends Error {
     constructor(repartidorId: number, detalle?: string) {
         const sufijo = detalle ? ` (${detalle})` : '';
@@ -151,6 +157,21 @@ export class RepartidorDuplicadoEnLoteError extends Error {
 
 
 export class RutasService {
+    async generarCodigoSeguimientoUnico(): Promise<string> {
+        for (let intento = 0; intento < 10; intento += 1) {
+            const codigoSeguimiento = generarCodigoSeguimiento();
+            const existe = await RutaEntregaModel.exists({
+                'puntosEntrega.codigo': codigoSeguimiento,
+            });
+
+            if (!existe) {
+                return codigoSeguimiento;
+            }
+        }
+
+        throw new Error('No se pudo generar un codigo de seguimiento unico');
+    }
+
     async depurarRutasAntiguas(diasRetencion = 30): Promise<{ rutasEliminadas: number; documentosMongoEliminados: number }> {
         if (!Number.isInteger(diasRetencion) || diasRetencion <= 0) {
             throw new Error('diasRetencion debe ser un entero positivo');
@@ -320,9 +341,19 @@ export class RutasService {
                 });
 
                 // Transformar los puntos de entrega de la ruta al formato esperado por MongoDB
-                const puntosTransformados = ruta.ruta.map(punto =>
-                    this.construirPuntosEntrega(puntosEntregaDiccionario[punto]!)
-                );
+                const puntosTransformados: IPuntoEntrega[] = [];
+                const codigosSeguimientoPorPuntoId = new Map<number, string>();
+                for (const puntoId of ruta.ruta) {
+                    const puntoOriginal = puntosEntregaDiccionario[puntoId];
+                    if (!puntoOriginal) {
+                        throw new Error(`No se encontro el punto de entrega ${puntoId} en el lote recibido`);
+                    }
+
+                    const codigoSeguimiento = await this.generarCodigoSeguimientoUnico();
+                    codigosSeguimientoPorPuntoId.set(puntoId, codigoSeguimiento);
+                    puntosTransformados.push(this.construirPuntosEntrega(puntoOriginal, codigoSeguimiento));
+                }
+
                 // Guardar la ruta de entrega en MongoDB
                 await RutaEntregaModel.create({
                     rutaId: rutaCreada.id,
@@ -379,6 +410,7 @@ export class RutasService {
                         return {
                             orden: indiceParada + 1,
                             puntoId,
+                            codigoSeguimiento: codigosSeguimientoPorPuntoId.get(puntoId) ?? punto?.codigo ?? '',
                             direccion: punto?.direccion ?? null,
                             cliente: punto?.nombreCliente ?? null,
                             estadoEntrega: 'Pendiente',
@@ -492,6 +524,7 @@ export class RutasService {
                 detalleParadas: puntos.map((punto, indiceParada) => ({
                     orden: indiceParada + 1,
                     puntoId: punto.id,
+                    codigoSeguimiento: punto.codigo,
                     direccion: punto.direccion ?? null,
                     cliente: punto.nombreCliente ?? null,
                     estadoEntrega: punto.estadoEntrega === 'ENTREGADO' ? 'Entregado' : 'Pendiente',
@@ -510,11 +543,11 @@ export class RutasService {
         });
     }
 
-    construirPuntosEntrega(punto: IPuntoEntrega): IPuntoEntrega {
+    construirPuntosEntrega(punto: IPuntoEntrega, codigoSeguimiento: string): IPuntoEntrega {
         return {
             id: punto.id,
             nombreCliente: punto.nombreCliente,
-            codigo: punto.codigo,
+            codigo: codigoSeguimiento,
             contactoCliente: punto.contactoCliente,
             latitud: punto.latitud,
             longitud: punto.longitud,

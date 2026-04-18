@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../authContext/AuthContext";
-import "./LoginPage.css";
+import "./Login.app.css";
 
 type ModoAcceso = "usuario" | "cliente";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
   const { loginLogistico, loginCliente, cargando, error } = useAuth();
   const [modoAcceso, setModoAcceso] = useState<ModoAcceso>("cliente");
   const [email, setEmail] = useState("");
@@ -16,6 +18,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await loginLogistico(email, password);
+      navigate("/logis");
     } catch (err) {
       console.error("Login error:", err);
     }
@@ -33,6 +36,7 @@ export default function LoginPage() {
     setErrorCodigo(null);
     try {
       await loginCliente(codigoLimpio);
+      navigate("/client");
     } catch (err) {
       console.error("Login error:", err);
     }

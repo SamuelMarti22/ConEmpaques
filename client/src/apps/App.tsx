@@ -3,7 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../authContext/AuthContext';
 import ProtectedRoute from '../authContext/ProtectedRoutes';
 import './App.css';
-import LoginPage from './login/LoginPage';
+import LoginPage from './login/Login.app';
 import VisionLogisticoApp from './visionLogistico/VisionLogistico.app';
 import VisionCliente from './visionClientes/VisionCliente.app';
 
@@ -18,7 +18,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={isAuthenticated ? <Navigate to={usuario?.rol === 'logistico' ? '/logis' : '/client'} /> : <Navigate to="/login" />} />
       
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/logis" /> : <LoginPage />} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to={usuario?.rol === 'logistico' ? '/logis' : '/client'} /> : <LoginPage />} />
       
       <Route
         path="/logis"
@@ -32,7 +32,9 @@ function AppRoutes() {
       <Route
         path="/client"
         element={
+          <ProtectedRoute allowedRoles={['cliente']}>
             <VisionCliente />
+          </ProtectedRoute>
         }
       />
       
