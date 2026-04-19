@@ -27,18 +27,33 @@ export class RoutingService {
                 body: JSON.stringify(requestBody)
             });
 
-            const data = await response.json() as { rutas?: RutaRepartidor[], detail?: { error: string, razon: string } };
-
             // Manejo de errores HTTP
             if (!response.ok) {
-                const detalle = data.detail;
-                if (detalle) {
-                    throw new Error(`${detalle.error}: ${detalle.razon}`);
-                }
-                // Si no hay detalle estructurado, intentar obtener texto plano
                 const rawError = typeof response.text === 'function' ? await response.text() : '';
-                throw new Error(this.obtenerDetalleErrorRouting(rawError, response.status));
+                if (rawError && rawError.trim().length > 0) {
+                    throw new Error(this.obtenerDetalleErrorRouting(rawError, response.status));
+                }
+
+                if (typeof response.json === 'function') {
+                    const dataError = await response.json() as { detail?: { error?: string, razon?: string }, error?: string, message?: string };
+                    const detalle = dataError.detail;
+                    const mensaje = detalle?.error && detalle?.razon
+                        ? `${detalle.error}: ${detalle.razon}`
+                        : detalle?.error ?? dataError.error ?? dataError.message;
+
+                    if (mensaje && mensaje.trim().length > 0) {
+                        throw new Error(`El servicio de optimización respondió con error ${response.status}. ${mensaje}`);
+                    }
+                }
+
+                throw new Error(`El servicio de optimización respondió con error ${response.status}.`);
             }
+
+            if (typeof response.json !== 'function') {
+                throw new Error("Respuesta inválida de servidor de routing: el servidor no expuso un cuerpo JSON.");
+            }
+
+            const data = await response.json() as { rutas?: RutaRepartidor[] };
 
             if (!data.rutas || !Array.isArray(data.rutas)) {
                 throw new Error(`Respuesta inválida de servidor de routing: ${JSON.stringify(data)}`);
@@ -61,10 +76,6 @@ export class RoutingService {
                     throw new Error(
                         `No fue posible conectar con el microservicio de optimización (${this.rutingServer}). Verifica que esté ejecutándose en el puerto esperado.`
                     );
-                }
-                // Si es un error conocido, relanzar
-                if (error.message.trim().length > 0 && error.message.startsWith('El servicio de optimización respondió con error')) {
-                    throw error;
                 }
                 // Si es un error lanzado por validación o respuesta del microservicio
                 throw error;

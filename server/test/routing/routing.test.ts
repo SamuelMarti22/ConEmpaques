@@ -136,6 +136,7 @@ describe("Routing", () => {
     it("retorna rutas cuando el servidor responde formato válido", async () => {
       const routingService = await cargarRoutingService();
       const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
         json: vi.fn().mockResolvedValue({
           rutas: [
             {
@@ -164,6 +165,7 @@ describe("Routing", () => {
     it("lanza error controlado cuando el servidor responde formato inválido", async () => {
       const routingService = await cargarRoutingService();
       const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
         json: vi.fn().mockResolvedValue({ resultado: [] }),
       });
       vi.stubGlobal("fetch", fetchMock);
@@ -174,7 +176,7 @@ describe("Routing", () => {
           [{ id: 1, capacidad: 25 }],
         ),
       ).rejects.toThrow(
-        "No fue posible encontrar una ruta optima para esta combinación de puntos de entrega y capacidades de repartidores.",
+        "Respuesta inválida de servidor de routing: {\"resultado\":[]}",
       );
     });
 
@@ -244,11 +246,17 @@ describe("Routing", () => {
       ).rejects.toThrow("El servicio de optimización respondió con error 503.");
     });
 
-    it("retorna error genérico cuando la respuesta HTTP falla y no existe text()", async () => {
+    it("propaga detalle estructurado cuando HTTP falla sin text() pero con json()", async () => {
       const routingService = await cargarRoutingService();
       const fetchMock = vi.fn().mockResolvedValue({
         ok: false,
-        status: 500,
+        status: 400,
+        json: vi.fn().mockResolvedValue({
+          detail: {
+            error: "Validacion",
+            razon: "Payload incompleto",
+          },
+        }),
       });
       vi.stubGlobal("fetch", fetchMock);
 
@@ -257,7 +265,53 @@ describe("Routing", () => {
           [{ id: 10, latitud: 6.24, longitud: -75.57, peso: 3 }],
           [{ id: 1, capacidad: 25 }],
         ),
-      ).rejects.toThrow("El servicio de optimización respondió con error 500.");
+      ).rejects.toThrow("El servicio de optimización respondió con error 400. Validacion: Payload incompleto");
+    });
+
+    it("lanza error cuando HTTP exitoso no expone json()", async () => {
+      const routingService = await cargarRoutingService();
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(
+        routingService.getRutaOptima(
+          [{ id: 10, latitud: 6.24, longitud: -75.57, peso: 3 }],
+          [{ id: 1, capacidad: 25 }],
+        ),
+      ).rejects.toThrow("Respuesta inválida de servidor de routing: el servidor no expuso un cuerpo JSON.");
+    });
+
+    it("lanza error cuando el microservicio responde rutas vacías", async () => {
+      const routingService = await cargarRoutingService();
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          rutas: [],
+        }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(
+        routingService.getRutaOptima(
+          [{ id: 10, latitud: 6.24, longitud: -75.57, peso: 3 }],
+          [{ id: 1, capacidad: 25 }],
+        ),
+      ).rejects.toThrow("No se pudieron generar rutas. Verifica que la capacidad total de los repartidores sea suficiente para todos los puntos de entrega.");
+    });
+
+    it("retorna error genérico cuando fetch rechaza un valor no Error", async () => {
+      const routingService = await cargarRoutingService();
+      const fetchMock = vi.fn().mockRejectedValue("fallo no tipado");
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(
+        routingService.getRutaOptima(
+          [{ id: 10, latitud: 6.24, longitud: -75.57, peso: 3 }],
+          [{ id: 1, capacidad: 25 }],
+        ),
+      ).rejects.toThrow("No fue posible encontrar una ruta optima para esta combinación de puntos de entrega y capacidades de repartidores.");
     });
   });
 
