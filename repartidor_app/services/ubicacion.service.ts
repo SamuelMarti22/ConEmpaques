@@ -15,3 +15,13 @@ export const obtenerUbicacionActual = async (): Promise<{ lat: number; lng: numb
     lng: location.coords.longitude,
   };
 };
+
+export const obtenerUbicacionEnTiempoReal = async (): Promise<{ lat: number; lng: number }> => {
+  const location = await Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.Highest,
+  });
+  return {
+    lat: location.coords.latitude,
+    lng: location.coords.longitude,
+  };
+};

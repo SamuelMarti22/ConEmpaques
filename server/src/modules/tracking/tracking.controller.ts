@@ -1,0 +1,78 @@
+import { obtenerRoom } from "../../sockets/rooms.service";
+import { Request } from "express";
+import { Response } from "express";
+import { trackingStore } from "../../store/storeTracking.service";
+import { rutasService } from "../rutas/rutas.service.js";
+
+export class TrackingController {
+
+    async iniciarTrackingRuta(req: Request, res: Response): Promise<void> {
+        const rutaId = Number(req.params.rutaId);
+
+        // Validar rutaId
+        if (!Number.isInteger(rutaId) || rutaId <= 0) {
+            res.status(400).json({ error: 'El parámetro rutaId debe ser un entero positivo' });
+            return;
+        }
+
+        try {
+            // Obtener detalles de la ruta para extraer idRepartidor y puntos
+            const detalleRuta = await rutasService.consultarDetalleRuta(String(rutaId));
+
+            if (!detalleRuta) {
+                res.status(404).json({ error: 'No se encontró la ruta especificada' });
+                return;
+            }
+
+            // Extraer idRepartidor del detalleRuta
+            const idRepartidor = detalleRuta.repartidor.id;
+            const puntos = detalleRuta.detalleParadas.map(p => p.codigoSeguimiento).filter(Boolean);
+
+            // Crear la sesión en el store
+            trackingStore.crearSession(idRepartidor, puntos as string[], rutaId);
+
+            // Obtener el nombre de la room desde BD
+            const room = await obtenerRoom(rutaId);
+
+            // Retornar información necesaria
+            res.status(200).json({
+                mensaje: 'Tracking iniciado correctamente',
+                data: {
+                    rutaId,
+                    idRepartidor,
+                    room
+                }
+            });
+        }
+        catch (error) {
+            const mensajeError = error instanceof Error ? error.message : 'Error interno del servidor';
+            res.status(500).json({ error: mensajeError });
+        }
+    }
+
+    async obtenerUbicacionRepartidor(req: Request, res: Response): Promise<void> {
+        const rutaId = Number(req.params.rutaId);
+
+        try {
+            // Obtener la última posición registrada
+            const ultimaPosicion = trackingStore.obtenerUltimaPosicion(rutaId);
+
+            if (!ultimaPosicion) {
+                res.status(404).json({ error: 'No hay ubicación registrada para esta ruta' });
+                return;
+            }
+
+            res.status(200).json({
+                mensaje: 'Ubicación actual',
+                data: {
+                    lat: ultimaPosicion.lat,
+                    lng: ultimaPosicion.lng,
+                    timestamp: ultimaPosicion.timestamp,
+                    hace: `${(Date.now() - ultimaPosicion.timestamp) / 1000} segundos`
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ error: 'Error al obtener ubicación' });
+        }
+    }
+}

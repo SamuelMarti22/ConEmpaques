@@ -1,5 +1,7 @@
 import cors from "cors";
 import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import env from "./config/env.js";
 import { prisma } from "./databases/prisma/lib/prisma.js";
 import { connectMongo } from "./databases/mongoDB/conection.js";
@@ -7,9 +9,11 @@ import { horarioController } from "./modules/horarios/horario.controller.js";
 import { repartidorController } from "./modules/repartidores/repartidor.controller.js";
 import { routingController } from "./modules/routing/routing.controller.js";
 import { rutasController } from "./modules/rutas/rutas.controller.js";
+import { TrackingController } from "./modules/tracking/tracking.controller.js";
 import { clienteController } from "./modules/vistaCliente/cliente.controller.js";
 import geoCodificacionRutasController from "./modules/geoCodificacion/geoCodificacion.controller.js";
 import { rutasService } from "./modules/rutas/rutas.service.js";
+import { registerHandlers } from "./sockets/handle.js";
 import { authController } from "./modules/autenticacion/auth.controller.js";
 
 
@@ -51,6 +55,10 @@ app.delete("/api/rutas/:rutaId", rutasController.eliminarRuta);
 app.get("/api/rutas/repartidor/:idRepartidor", rutasController.consultarRutasRepartidor);
 app.get("/api/rutas/:rutaId", rutasController.consultarDetalleRuta);
 
+// Rutas para tracking
+const trackingController = new TrackingController();
+app.post("/api/tracking/iniciar/:rutaId", trackingController.iniciarTrackingRuta);
+
 // Ruta vista cliente
 app.get("/api/clientes/pedidos/:id", clienteController.getPuntoEntrega);
 
@@ -62,6 +70,27 @@ app.use("/api/geocoding", geoCodificacionRutasController);
 const iniciar = async () => {
 	await prisma.$connect();
 	await connectMongo();
+
+	// Crear servidor HTTP para Socket.io
+	const server = createServer(app);
+	
+	// Inicializar Socket.io
+	const io = new Server(server, {
+		cors: {
+			origin: "*",
+			methods: ["GET", "POST"]
+		}
+	});
+
+	// Registrar handlers de Socket.io
+	io.on("connection", (socket) => {
+		console.log(`✅ Cliente conectado: ${socket.id}`);
+		registerHandlers(io, socket);
+		
+		socket.on("disconnect", () => {
+			console.log(`❌ Cliente desconectado: ${socket.id}`);
+		});
+	});
 
 	const ejecutarDepuracionRutas = async () => {
 		try {
@@ -82,8 +111,9 @@ const iniciar = async () => {
 	}, INTERVALO_DEPURACION_RUTAS_MS);
 
 	const puerto = Number(env.PORT ?? 3000);
-	app.listen(puerto, () => {
-		console.log(`Server running on http://localhost:${puerto}`);
+	server.listen(puerto, () => {
+		console.log(`🚀 Server running on http://localhost:${puerto}`);
+		console.log(`📡 Socket.io listening on ws://localhost:${puerto}`);
 	});
 };
 

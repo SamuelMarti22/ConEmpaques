@@ -1,6 +1,6 @@
 // Tracking.app.tsx
 import React, { useState, useEffect } from 'react';
-import { obtenerUbicacionActual } from '@/services/ubicacion.service';
+import { obtenerUbicacionActual, obtenerUbicacionEnTiempoReal } from '@/services/ubicacion.service';
 import {
   View, Text, TouchableOpacity,
   SafeAreaView, ScrollView, Linking, Alert, ActivityIndicator,
@@ -10,7 +10,9 @@ import { styles } from './Tracking.style';
 import { DetalleParada, RutaGuardada } from '../../types/rutas.types';
 import { COLORS } from '../../assets/styles/Colores.style';
 import { abrirGoogleMapsConRuta } from '@/services/RutaGoogleMaps.app';
+import { socketService } from '@/services/socket.service';
 import Feather from '@expo/vector-icons/Feather';
+import { Mapa } from '@/components/Mapa';
 
 const C = COLORS;
 
@@ -31,7 +33,21 @@ interface DetalleParadaScreenProps {
 
 
 // Mostrar todas las paradas en una sola vista
-const ParadasListScreen = ({ paradas, onBack }: { paradas: DetalleParada[], onBack: () => void }) => {
+const ParadasListScreen = ({ 
+  paradas, 
+  onBack,
+  geometria,
+  onIniciarRuta,
+  obteniendoUbicacion,
+  trackingActivo,
+}: { 
+  paradas: DetalleParada[], 
+  onBack: () => void,
+  geometria?: any,
+  onIniciarRuta?: () => void,
+  obteniendoUbicacion?: boolean,
+  trackingActivo?: boolean,
+}) => {
   // Calcula distancia entre dos puntos
   const calcularDistancia = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const toRad = (deg: number) => deg * Math.PI / 180;
@@ -44,22 +60,44 @@ const ParadasListScreen = ({ paradas, onBack }: { paradas: DetalleParada[], onBa
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={[styles.mapContainer, { backgroundColor: '#e8f4f8', justifyContent: 'center', alignItems: 'center', position: 'relative' }]}> 
+      <View style={[styles.mapContainer, { position: 'relative' }]}> 
+        {/* Mapa de Mapbox
+        <Mapa 
+          paradas={paradas.map(p => ({
+            latitud: p.latitud,
+            longitud: p.longitud,
+            codigo: p.codigo,
+            orden: p.orden,
+            estadoEntrega: p.estadoEntrega,
+          }))}
+          geometria={geometria}
+        /> */}
+        
         {/* Header sobre el mapa */}
         <View style={styles.mapHeader}>
           <TouchableOpacity style={styles.backBtn} onPress={onBack}>
             <Text style={{ color: '#fff', fontSize: 18 }}>‹</Text>
           </TouchableOpacity>
           <Text style={styles.mapTitle}>Resumen de {paradas.length} paradas </Text>
-          <View style={styles.enRutaBadge}>
-            <Text style={styles.enRutaText}>En ruta</Text>
-          </View>
-        </View>
-        {/* Simulación de mapa */}
-        <View style={{ alignItems: 'center', gap: 16 }}>
-          <View style={{ marginBottom: 8 }}>
-            <Text style={{ fontSize: 40 }}>🗺️</Text>
-          </View>
+          {/* Botón Iniciar Ruta en lugar del badge */}
+          {onIniciarRuta && (
+            <TouchableOpacity
+              style={{ 
+                backgroundColor: '#FF6B35', 
+                borderRadius: 8, 
+                paddingVertical: 8, 
+                paddingHorizontal: 14,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+              disabled={obteniendoUbicacion || trackingActivo}
+              onPress={onIniciarRuta}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>
+                {obteniendoUbicacion ? '⏳' : trackingActivo ? '✓' : '▶️'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
       <ScrollView style={styles.body} contentContainerStyle={{ padding: 12, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
@@ -187,6 +225,12 @@ export default function TrackingScreen() {
   // Los hooks deben ir aquí, fuera de cualquier if
   const [ubicacionActual, setUbicacionActual] = useState<{ lat: number, lng: number } | null>(null);
   const [obteniendoUbicacion, setObteniendoUbicacion] = useState(false);
+  
+  // Estados para tracking
+  const [trackingActivo, setTrackingActivo] = useState(false);
+  const [idRepartidor, setIdRepartidor] = useState<number | null>(null);
+  const [room, setRoom] = useState<string | null>(null);
+  const [ultimoHito, setUltimoHito] = useState<string | null>(null);
 
   useEffect(() => {
     const cargarDetalleRuta = async () => {
@@ -214,10 +258,7 @@ export default function TrackingScreen() {
 
         // Acceder a detalleRuta dentro de la respuesta
         const rutaData = data.detalleRuta || data;
-        console.log('Datos de ruta procesados:', rutaData);
-        console.log('Detalles de paradas:', rutaData.detalleParadas?.length);
         setRuta(rutaData);
-        // Mostrar la primera parada por defecto
         if (rutaData.detalleParadas && rutaData.detalleParadas.length > 0) {
           console.log('Inicializando con parada 0');
           setParadaSeleccionada(0);
@@ -233,6 +274,37 @@ export default function TrackingScreen() {
 
     cargarDetalleRuta();
   }, [rutaId]);
+
+  // Limpiar socket cuando el componente se desmonta
+  useEffect(() => {
+    return () => {
+      if (trackingActivo) {
+        socketService.disconnect();
+      }
+    };
+  }, [trackingActivo]);
+
+  // Enviar ubicación cada 10 segundos cuando tracking está activo
+  useEffect(() => {
+    if (!trackingActivo) return;
+
+    console.log('📍 Iniciando envío de ubicación cada 10 segundos');
+
+    const intervaloUbicacion = setInterval(async () => {
+      try {
+        const ubicacion = await obtenerUbicacionEnTiempoReal();
+        console.log(`📤 Enviando ubicación: ${ubicacion.lat}, ${ubicacion.lng}`);
+        socketService.enviarUbicacion(ubicacion.lat, ubicacion.lng);
+      } catch (error) {
+        console.error('❌ Error al obtener ubicación:', error);
+      }
+    }, 10000); // 10 segundos
+
+    return () => {
+      console.log('🛑 Deteniendo envío de ubicación');
+      clearInterval(intervaloUbicacion);
+    };
+  }, [trackingActivo]);
 
   if (loading) {
     return (
@@ -274,35 +346,95 @@ export default function TrackingScreen() {
 
     return (
       <>
-        {/* Botón de Iniciar Ruta */}
-        <SafeAreaView style={{ backgroundColor: '#fff' }}>
-          <View style={{ padding: 16, backgroundColor: '#fff', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#eee' }}>
-            <TouchableOpacity
-              style={{ backgroundColor: C.primary, borderRadius: 8, paddingVertical: 14, paddingHorizontal: 32, marginBottom: 10 }}
-              disabled={obteniendoUbicacion}
-              onPress={async () => {
-                setObteniendoUbicacion(true);
-                try {
-                  const ubicacion = await obtenerUbicacionActual();
-                  setUbicacionActual(ubicacion);
-                  const puntoFinal = { lat: 6.3000, lng: -75.5700 }; // Cambia estas coords si quieres
-                  const coordenadasConInicioYFinal = [ubicacion, ...coordenadasTracking, puntoFinal];
-                  abrirGoogleMapsConRuta(coordenadasConInicioYFinal);
-                } catch (err: any) {
-                  Alert.alert('Error', err.message || 'No se pudo obtener la ubicación');
-                } finally {
-                  setObteniendoUbicacion(false);
-                }
-              }}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 17 }}>
-                {obteniendoUbicacion ? 'Obteniendo ubicación...' : 'Iniciar ruta'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
         {/* Lista de paradas */}
-        <ParadasListScreen paradas={ruta.detalleParadas} onBack={() => router.back()} />
+        <ParadasListScreen 
+          paradas={ruta.detalleParadas} 
+          onBack={() => router.back()}
+          geometria={ruta.geometria}
+          onIniciarRuta={async () => {
+            setObteniendoUbicacion(true);
+            try {
+              // 1️⃣ Iniciar tracking en el servidor
+              console.log('🚀 Iniciando tracking para ruta:', rutaId);
+              
+              const url = `http://192.168.1.11:3000/api/tracking/iniciar/${rutaId}`;
+              console.log('📍 URL del endpoint:', url);
+              
+              const responseTracking = await fetch(url, { method: 'POST' });
+              console.log('📦 Response status:', responseTracking.status);
+
+              const trackingData = await responseTracking.json();
+              console.log('📦 Response data:', trackingData);
+
+              if (!responseTracking.ok) {
+                const errorData = trackingData;
+                throw new Error(errorData.error || 'Error al iniciar tracking');
+              }
+
+              const { data } = trackingData;
+              const { idRepartidor: repId, room: roomName } = data;
+
+              console.log('✅ Tracking iniciado:', { repId, roomName });
+              Alert.alert('DEBUG', `Room: ${roomName}\nRepartidor: ${repId}`);
+
+              // 2️⃣ Conectar socket
+              console.log('🔌 Conectando socket...');
+              await socketService.connect();
+              console.log('✅ Socket listo para emitir eventos');
+
+              // 3️⃣ Escuchar eventos del servidor
+              socketService.onLocationUpdate((locationData) => {
+                console.log('📍 Ubicación actualizada:', locationData);
+              });
+
+              socketService.onOrderMilestone((milestoneData) => {
+                console.log('🎯 Hito alcanzado:', milestoneData);
+                setUltimoHito(milestoneData.hito);
+                Alert.alert('¡Notificación!', `Falta ${milestoneData.hito} para la siguiente parada`);
+              });
+
+              socketService.onDriverFinished(() => {
+                console.log('🏁 Ruta finalizada desde el servidor');
+                Alert.alert('Ruta finalizada', 'La jornada ha terminado');
+                setTrackingActivo(false);
+              });
+
+              socketService.onError((errorData) => {
+                console.error('❌ Error del socket:', errorData);
+                Alert.alert('Error', 'Error en la conexión del socket');
+              });
+
+              // 4️⃣ Emitir driver:start
+              console.log('📤 Preparando driver:start...');
+              const puntos = ruta.detalleParadas.map(p => p.codigo);
+              console.log('📤 Puntos:', puntos);
+              socketService.iniciarRuta(repId, puntos, Number(rutaId));
+
+              // 5️⃣ Guardar datos del tracking
+              setIdRepartidor(repId);
+              setRoom(roomName);
+              setTrackingActivo(true);
+
+              // 6️⃣ Obtener ubicación y abrir Google Maps
+              const ubicacion = await obtenerUbicacionActual();
+              setUbicacionActual(ubicacion);
+              const puntoFinal = { lat: 6.3000, lng: -75.5700 };
+              const coordenadasConInicioYFinal = [ubicacion, ...ruta.detalleParadas.map((p) => ({ lat: p.latitud, lng: p.longitud })), puntoFinal];
+              abrirGoogleMapsConRuta(coordenadasConInicioYFinal);
+
+              Alert.alert('¡Éxito!', 'Tracking iniciado correctamente');
+            } catch (err: any) {
+              console.error('❌ Error completo:', err);
+              console.error('❌ Mensaje:', err.message);
+              Alert.alert('Error', err.message || 'No se pudo iniciar el tracking');
+              setTrackingActivo(false);
+            } finally {
+              setObteniendoUbicacion(false);
+            }
+          }}
+          obteniendoUbicacion={obteniendoUbicacion}
+          trackingActivo={trackingActivo}
+        />
       </>
     );
   }

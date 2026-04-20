@@ -25,4 +25,14 @@ export const trackingStore = {
     eliminarSession(idRuta: string | number) {
         sessions.delete(String(idRuta))
     },
+
+
+  // Guardar nueva posición, máximo 3
+  agregarPosicion(idRepartidor: string, posicion: Posicion) {
+    const session = sessions.get(idRepartidor)
+    if (!session) return
+
+    session.posiciones.unshift(posicion)          
+    session.posiciones = session.posiciones.slice(0, 3)  
+  },
 }
