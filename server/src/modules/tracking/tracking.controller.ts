@@ -26,17 +26,13 @@ export class TrackingController {
                 return;
             }
 
-            // Extraer idRepartidor del detalleRuta
             const idRepartidor = detalleRuta.repartidor.id;
             const puntos = detalleRuta.detalleParadas.map(p => p.codigoSeguimiento).filter(Boolean);
 
-            // Crear la sesión en el store
             trackingStore.crearSession(idRepartidor, puntos as string[], rutaId);
-
-            // Actualizar estado de la ruta a EN_PROCESO
+        
             await rutasService.actualizarEstadoRuta(rutaId, EstadoRuta.EN_PROCESO);
 
-            // Actualizar estado de los puntos de entrega de EN_BODEGA a PENDIENTE
             const rutaEntrega = await RutaEntregaModel.findOne({ rutaId });
             if (rutaEntrega) {
                 rutaEntrega.puntosEntrega.forEach(punto => {
@@ -48,10 +44,8 @@ export class TrackingController {
                 console.log(`✅ ${rutaEntrega.puntosEntrega.length} puntos cambiados a PENDIENTE`);
             }
 
-            // Obtener el nombre de la room desde BD
             const room = await obtenerRoom(rutaId);
-
-            // Retornar información necesaria
+            
             res.status(200).json({
                 mensaje: 'Tracking iniciado correctamente',
                 data: {

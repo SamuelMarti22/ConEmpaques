@@ -110,7 +110,7 @@ const ParadasListScreen = ({
       console.log('📤 Enviando actualización:', { rutaId, puntoId, nuevoEstado });
 
       const response = await fetch(
-        `http://192.168.1.11:3000/api/rutas/${rutaId}/actualizarPunto`,
+        `http://10.149.177.33:3000/api/rutas/${rutaId}/actualizarPunto`,
         {
           method: 'POST',
           headers: {

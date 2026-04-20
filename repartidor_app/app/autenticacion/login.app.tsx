@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { styles } from "./login.style";
 
 export default function Login() {
@@ -14,19 +15,26 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       setIsSubmitting(true);
-      // const res = await fetch("http://192.168.1.10:3000/api/login", {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({
-      //     email,
-      //     password,
-      //   }),
-      // });
+      const res = await fetch("http://10.149.177.33:3000/api/auth/repartidor", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-      // const data = await res.json();
-      // console.log(data);
+      const data = await res.json();
+      console.log(data);
+
+      // Guardar el ID del repartidor en AsyncStorage
+      if (data?.id || data?.repartidor?.id) {
+        const idRepartidor = data.id || data.repartidor.id;
+        await AsyncStorage.setItem("idRepartidor", String(idRepartidor));
+        console.log("✅ ID del repartidor guardado:", idRepartidor);
+      }
 
       router.push("../pedidos/Pedidos.app");
     } catch (error) {

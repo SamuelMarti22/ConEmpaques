@@ -9,28 +9,51 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../../components/pedidos/Header.component';
 import RutaInfoCard from '../../components/pedidos/RutaInfoCard.component';
 import { styles } from './Pedidos.style';
 import { COLORS } from '../../assets/styles/Colores.style';
 import { RutaResumen } from '../../types/rutas.types';
 
-const ID_REPARTIDOR = 3;
-
 export default function PedidosScreen() {
   const router = useRouter();
+  const [idRepartidor, setIdRepartidor] = useState<number | null>(null);
   const [rutas, setRutas] = useState<RutaResumen[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Cargar el ID del repartidor al montar el componente
+  useEffect(() => {
+    const cargarIdRepartidor = async () => {
+      try {
+        const id = await AsyncStorage.getItem("idRepartidor");
+        if (id) {
+          setIdRepartidor(parseInt(id, 10));
+        } else {
+          setError("No se encontró el ID del repartidor. Por favor, inicia sesión nuevamente.");
+        }
+      } catch (err) {
+        setError("Error al cargar el ID del repartidor");
+        console.error(err);
+      }
+    };
+    cargarIdRepartidor();
+  }, []);
+
   const consultarRutas = useCallback(async (isRefresh = false) => {
+    if (!idRepartidor) {
+      setError("ID del repartidor no disponible");
+      return;
+    }
+
     try {
       isRefresh ? setRefreshing(true) : setLoading(true);
       setError(null);
 
       const response = await fetch(
-        `http://192.168.1.11:3000/api/rutas/repartidor/${ID_REPARTIDOR}`
+        `http://10.149.177.33:3000/api/rutas/repartidor/${idRepartidor}`
       );
       const data = await response.json();
 
@@ -72,11 +95,13 @@ export default function PedidosScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [idRepartidor]);
 
   useEffect(() => {
-    consultarRutas();
-  }, [consultarRutas]);
+    if (idRepartidor) {
+      consultarRutas();
+    }
+  }, [idRepartidor, consultarRutas]);
 
   const formatearFecha = (fecha: string): string => {
     const date = new Date(fecha);
