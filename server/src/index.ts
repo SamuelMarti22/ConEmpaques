@@ -10,6 +10,7 @@ import { rutasController } from "./modules/rutas/rutas.controller.js";
 import { clienteController } from "./modules/vistaCliente/cliente.controller.js";
 import geoCodificacionRutasController from "./modules/geoCodificacion/geoCodificacion.controller.js";
 import { rutasService } from "./modules/rutas/rutas.service.js";
+import { authController } from "./modules/autenticacion/auth.controller.js";
 
 
 const app = express();
@@ -17,6 +18,11 @@ const INTERVALO_DEPURACION_RUTAS_MS = 12 * 60 * 60 * 1000;
 const DIAS_RETENCION_RUTAS = 30;
 app.use(express.json());
 app.use(cors());
+
+// Rutas autenticacion
+app.post("/api/auth/logistico", authController.loginLogistico);
+app.post("/api/auth/repartidor", authController.loginRepartidor);
+app.post("/api/auth/cliente", authController.loginCliente);
 
 // Rutas repartidor
 app.get("/api/repartidores", repartidorController.obtenerTodos);
