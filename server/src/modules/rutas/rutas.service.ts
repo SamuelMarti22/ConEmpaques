@@ -144,6 +144,18 @@ function generarCodigoSeguimiento(): string {
     return `PE-${randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase()}`;
 }
 
+// Helper para obtener el ID de un punto (puede ser 'id' o '_id')
+function obtenerIdPunto(punto: any): number {
+    if (typeof punto.id === 'number') {
+        return punto.id;
+    }
+    if (punto._id instanceof Object && 'toString' in punto._id) {
+        // Si es un ObjectId de MongoDB, convertir a string y luego a número
+        return parseInt(String(punto._id), 16);
+    }
+    return 0;
+}
+
 export class RepartidorYaAsignadoError extends Error {
     constructor(repartidorId: number, detalle?: string) {
         const sufijo = detalle ? ` (${detalle})` : '';
@@ -415,7 +427,7 @@ export class RutasService {
                         const punto = puntosEntregaDiccionario[puntoId];
                         return {
                             orden: indiceParada + 1,
-                            puntoId,
+                            puntoId: obtenerIdPunto(punto || {}),
                             codigoSeguimiento: codigosSeguimientoPorPuntoId.get(puntoId) ?? punto?.codigo ?? null,
                             direccion: punto?.direccion ?? null,
                             cliente: punto?.nombreCliente ?? null,
@@ -532,7 +544,7 @@ export class RutasService {
                 },
                 detalleParadas: puntos.map((punto, indiceParada) => ({
                     orden: indiceParada + 1,
-                    puntoId: punto.id,
+                    puntoId: obtenerIdPunto(punto),
                     codigoSeguimiento: punto.codigo ?? null,
                     direccion: punto.direccion ?? null,
                     cliente: punto.nombreCliente ?? null,
@@ -701,7 +713,7 @@ export class RutasService {
             },
             detalleParadas: puntos.map((punto, indiceParada) => ({
                 orden: indiceParada + 1,
-                puntoId: punto.id,
+                puntoId: obtenerIdPunto(punto),
                 codigoSeguimiento: punto.codigo ?? null,
                 direccion: punto.direccion ?? null,
                 cliente: punto.nombreCliente ?? null,
@@ -723,6 +735,43 @@ export class RutasService {
         };
     }
 
+    async actualizarEstadoRuta(rutaId: number, nuevoEstado: EstadoRuta): Promise<void> {
+        const rutaActualizada = await prisma.ruta.updateMany({
+            where: {
+                id: rutaId,
+            },
+            data: {
+                estadoRuta: nuevoEstado,
+            },
+        });
+
+        if (rutaActualizada.count === 0) {
+            throw new Error(`No existe la ruta ${rutaId} para actualizar`);
+        }
+    }
+
+    async actualizarEstadoPuntos(rutaId: number, estadoEntrega: IPuntoEntrega['estadoEntrega']): Promise<void> {
+        await RutaEntregaModel.updateMany(
+            { rutaId },
+            { $set: { 'puntosEntrega.$[].estadoEntrega': estadoEntrega } }
+        );
+    }
+
+    async actualizarEstadoPunto(rutaId: number, puntoId: number, estadoEntrega: IPuntoEntrega['estadoEntrega']): Promise<void> {
+        await RutaEntregaModel.updateOne(
+            { rutaId, 'puntosEntrega.id': puntoId },
+            { $set: { 'puntosEntrega.$.estadoEntrega': estadoEntrega } }
+        );
+    }
+
+    async finalizarRuta(rutaId: number): Promise<void> {
+        await this.actualizarEstadoRuta(rutaId, EstadoRuta.ENTREGADA);
+        await this.actualizarEstadoPuntos(rutaId, 'ENTREGADO');
+    }
+
+    async cancelarRuta(rutaId: number): Promise<void> {
+        await this.actualizarEstadoRuta(rutaId, EstadoRuta.CANCELADA);
+    }   
 
 }
 

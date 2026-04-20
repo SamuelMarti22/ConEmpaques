@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { RepartidorDuplicadoEnLoteError, RepartidorYaAsignadoError, rutasService } from './rutas.service';
 import { validarGuardarRutasRequest, validarRutaIdRequest } from './rutas.request.js';
-import type {IPuntoEntrega} from '../../databases/mongoDB/schema';
+import type { IPuntoEntrega } from '../../databases/mongoDB/schema';
 import type { RutaRepartidorGeoJSON, RutaRepartidorResumen } from '../../types/routing.types';
+import { EstadoRuta } from '../../databases/prisma/generated/prisma/browser';
 
 
 export class RutasController {
@@ -73,12 +74,12 @@ export class RutasController {
 
     async consultarRutasRepartidor(req: Request, res: Response): Promise<void> {
         const idRepartidor = Number(req.params.idRepartidor);
-        
+
         if (!Number.isInteger(idRepartidor) || idRepartidor <= 0) {
             res.status(400).json({ error: 'El parámetro idRepartidor debe ser un entero positivo' });
             return;
         }
-    
+
         try {
             const detalleParadas = await rutasService.consultarRutasRepartidor(idRepartidor);
             res.status(200).json({ detalleParadas });
@@ -96,10 +97,73 @@ export class RutasController {
             res.status(400).json({ error: 'El parámetro rutaId debe ser un entero positivo' });
             return;
         }
-        
+
         try {
             const detalleRuta = await rutasService.consultarDetalleRuta(String(rutaId));
             res.status(200).json({ detalleRuta });
+        } catch (error) {
+            const mensajeError = error instanceof Error ? error.message : 'Error interno del servidor';
+            res.status(500).json({ error: mensajeError });
+        }
+    }
+
+    async actualizarEstadoPunto(req: Request, res: Response): Promise<void> {
+        const rutaId = Number(req.params.rutaId);
+        let { puntoId, nuevoEstado } = req.body;
+
+        // Convertir puntoId a número si es string
+        puntoId = Number(puntoId);
+        
+        if (!Number.isInteger(rutaId) || rutaId <= 0) {
+            res.status(400).json({ error: 'El parámetro rutaId debe ser un entero positivo' });
+            return;
+        }
+        if (!Number.isInteger(puntoId) || puntoId <= 0) {
+            res.status(400).json({ error: `El campo puntoId debe ser un entero positivo. Recibido: ${req.body.puntoId} (tipo: ${typeof req.body.puntoId})` });
+            return;
+        }
+        if (typeof nuevoEstado !== 'string' || !['EN_BODEGA', 'PENDIENTE', 'EN_CAMINO', 'ENTREGADO', 'FALLIDO'].includes(nuevoEstado)) {
+            res.status(400).json({ error: 'El campo nuevoEstado debe ser uno de los siguientes: EN_BODEGA, PENDIENTE, EN_CAMINO, ENTREGADO, FALLIDO' });
+            return;
+        }
+        
+        try {
+            await rutasService.actualizarEstadoPunto(rutaId, puntoId, nuevoEstado as IPuntoEntrega['estadoEntrega']);
+            res.status(200).json({ mensaje: 'Estado del punto actualizado correctamente' });
+        } catch (error) {
+            const mensajeError = error instanceof Error ? error.message : 'Error interno del servidor';
+            res.status(500).json({ error: mensajeError });
+        }
+    }
+
+    async finalizarRuta(req: Request, res: Response): Promise<void> {
+        const rutaId = Number(req.params.rutaId);
+
+        if (!Number.isInteger(rutaId) || rutaId <= 0) {
+            res.status(400).json({ error: 'El parámetro rutaId debe ser un entero positivo' });
+            return;
+        }
+
+        try {
+            await rutasService.finalizarRuta(rutaId);
+            res.status(200).json({ mensaje: 'Ruta finalizada correctamente' });
+        } catch (error) {
+            const mensajeError = error instanceof Error ? error.message : 'Error interno del servidor';
+            res.status(500).json({ error: mensajeError });
+        }
+    }
+
+    async cancelarRuta(req: Request, res: Response): Promise<void> {
+        const rutaId = Number(req.params.rutaId);
+
+        if (!Number.isInteger(rutaId) || rutaId <= 0) {
+            res.status(400).json({ error: 'El parámetro rutaId debe ser un entero positivo' });
+            return;
+        }
+
+        try {
+            await rutasService.cancelarRuta(rutaId);
+            res.status(200).json({ mensaje: 'Ruta cancelada correctamente' });
         } catch (error) {
             const mensajeError = error instanceof Error ? error.message : 'Error interno del servidor';
             res.status(500).json({ error: mensajeError });

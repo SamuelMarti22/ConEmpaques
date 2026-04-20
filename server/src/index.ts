@@ -54,10 +54,15 @@ app.post("/api/rutas/guardar", rutasController.guardarRutas);
 app.delete("/api/rutas/:rutaId", rutasController.eliminarRuta);
 app.get("/api/rutas/repartidor/:idRepartidor", rutasController.consultarRutasRepartidor);
 app.get("/api/rutas/:rutaId", rutasController.consultarDetalleRuta);
+app.post("/api/rutas/:rutaId/finalizar", rutasController.finalizarRuta);
+app.post("/api/rutas/:rutaId/cancelar", rutasController.cancelarRuta);
+app.post("/api/rutas/:rutaId/actualizarPunto", rutasController.actualizarEstadoPunto);
 
 // Rutas para tracking
 const trackingController = new TrackingController();
-app.post("/api/tracking/iniciar/:rutaId", trackingController.iniciarTrackingRuta);
+app.post("/api/tracking/iniciar/:rutaId", (req, res) => trackingController.iniciarTrackingRuta(req, res));
+app.get("/api/tracking/ubicacion/:rutaId", (req, res) => trackingController.obtenerUbicacionRepartidor(req, res));
+
 
 // Ruta vista cliente
 app.get("/api/clientes/pedidos/:id", clienteController.getPuntoEntrega);

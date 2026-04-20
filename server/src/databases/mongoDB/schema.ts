@@ -69,6 +69,7 @@ export interface IRutaEntregaMethods {
 //////////////////////
 
 export const PuntoEntregaSchema = new Schema<IPuntoEntrega, mongoose.Model<IPuntoEntrega, {}, IPuntoEntregaMethods>, IPuntoEntregaMethods>({
+  id: { type: Number, required: true },
   nombreCliente: { type: String, required: true },
   codigo: { type: String, required: true },
   contactoCliente: { type: String, required: true },

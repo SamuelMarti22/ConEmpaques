@@ -10,11 +10,12 @@ export interface RutaResumen {
 
 export interface DetalleParada {
   orden: number;
+  puntoId: number;
   codigo: string;
   direccion: string;
   cliente: string;
   contactoCliente: string;
-  estadoEntrega: 'Pendiente' | 'Entregado' | 'Fallido';
+  estadoEntrega: 'Pendiente' | 'Entregado' | 'Fallido' | 'EN_BODEGA' | 'EN_CAMINO' | 'ENTREGADO' | 'FALLIDO';
   pesoProducto: number;
   descripcionEntrega: string;
   latitud: number;

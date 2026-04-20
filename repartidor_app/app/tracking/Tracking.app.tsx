@@ -1,10 +1,10 @@
-// Tracking.app.tsx
 import React, { useState, useEffect } from 'react';
 import { obtenerUbicacionActual, obtenerUbicacionEnTiempoReal } from '@/services/ubicacion.service';
 import {
   View, Text, TouchableOpacity,
   SafeAreaView, ScrollView, Linking, Alert, ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { styles } from './Tracking.style';
 import { DetalleParada, RutaGuardada } from '../../types/rutas.types';
@@ -12,15 +12,47 @@ import { COLORS } from '../../assets/styles/Colores.style';
 import { abrirGoogleMapsConRuta } from '@/services/RutaGoogleMaps.app';
 import { socketService } from '@/services/socket.service';
 import Feather from '@expo/vector-icons/Feather';
-import { Mapa } from '@/components/Mapa';
 
 const C = COLORS;
 
 const ESTADO_CFG = {
-  Bodega: { bg: '#e8f4f8', text: '#1F6F5F' },
-  Pendiente: { bg: '#fff3cd', text: '#856404' }, 
-  Entregado: { bg: '#d1f0e4', text: '#1F6F5F' },
-  Fallido:   { bg: '#fde8e8', text: '#a32d2d' },
+  EN_BODEGA: { bg: '#e8f4f8', text: '#1F6F5F' },
+  PENDIENTE: { bg: '#fff3cd', text: '#856404' }, 
+  EN_CAMINO: { bg: '#e3f2fd', text: '#1565c0' },
+  ENTREGADO: { bg: '#d1f0e4', text: '#1F6F5F' },
+  FALLIDO:   { bg: '#fde8e8', text: '#a32d2d' },
+};
+
+const guardarSesion = async (rutaId: number, idRepartidor: number) => {
+  try {
+    await AsyncStorage.setItem('tracking_session', JSON.stringify({
+      rutaId,
+      idRepartidor,
+      timestamp: Date.now(),
+    }));
+    console.log('✅ Sesión guardada en AsyncStorage');
+  } catch (error) {
+    console.error('❌ Error guardando sesión:', error);
+  }
+};
+
+const obtenerSesion = async () => {
+  try {
+    const session = await AsyncStorage.getItem('tracking_session');
+    return session ? JSON.parse(session) : null;
+  } catch (error) {
+    console.error('❌ Error recuperando sesión:', error);
+    return null;
+  }
+};
+
+const limpiarSesion = async () => {
+  try {
+    await AsyncStorage.removeItem('tracking_session');
+    console.log('✅ Sesión eliminada');
+  } catch (error) {
+    console.error('❌ Error limpiando sesión:', error);
+  }
 };
 
 interface DetalleParadaScreenProps {
@@ -40,6 +72,7 @@ const ParadasListScreen = ({
   onIniciarRuta,
   obteniendoUbicacion,
   trackingActivo,
+  rutaId,
 }: { 
   paradas: DetalleParada[], 
   onBack: () => void,
@@ -47,6 +80,7 @@ const ParadasListScreen = ({
   onIniciarRuta?: () => void,
   obteniendoUbicacion?: boolean,
   trackingActivo?: boolean,
+  rutaId?: string | number,
 }) => {
   // Calcula distancia entre dos puntos
   const calcularDistancia = (lat1: number, lng1: number, lat2: number, lng2: number) => {
@@ -56,6 +90,51 @@ const ParadasListScreen = ({
     const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2) * Math.sin(dLng/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return (6371 * c).toFixed(2);
+  };
+
+  // Función para actualizar el estado de un punto
+  const actualizarEstadoPunto = async (puntoId: number, nuevoEstado: 'ENTREGADO' | 'FALLIDO') => {
+    try {
+      // Validar puntoId
+      if (!puntoId || !Number.isInteger(puntoId) || puntoId <= 0) {
+        console.error('❌ puntoId inválido:', { puntoId, type: typeof puntoId });
+        Alert.alert('Error', `ID de punto inválido: ${puntoId} (tipo: ${typeof puntoId})`);
+        return;
+      }
+
+      if (!rutaId) {
+        Alert.alert('Error', 'No se pudo obtener el ID de la ruta');
+        return;
+      }
+
+      console.log('📤 Enviando actualización:', { rutaId, puntoId, nuevoEstado });
+
+      const response = await fetch(
+        `http://192.168.1.11:3000/api/rutas/${rutaId}/actualizarPunto`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            puntoId: Number(puntoId),
+            nuevoEstado,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Error al actualizar el estado');
+      }
+
+      Alert.alert('Éxito', `Punto actualizado a ${nuevoEstado}`);
+    } catch (error) {
+      const mensaje = error instanceof Error ? error.message : 'Error desconocido';
+      Alert.alert('Error', mensaje);
+      console.error('Error al actualizar estado:', error);
+    }
   };
 
   return (
@@ -102,7 +181,7 @@ const ParadasListScreen = ({
       </View>
       <ScrollView style={styles.body} contentContainerStyle={{ padding: 12, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
         {paradas.map((parada, idx) => {
-          const estado = ESTADO_CFG[parada.estadoEntrega] ?? ESTADO_CFG.Pendiente;
+          const estado = ESTADO_CFG[parada.estadoEntrega as keyof typeof ESTADO_CFG] ?? ESTADO_CFG.PENDIENTE;
           // Distancia desde la primera parada
           const origenLat = paradas[0]?.latitud ?? parada.latitud;
           const origenLng = paradas[0]?.longitud ?? parada.longitud;
@@ -193,16 +272,25 @@ const ParadasListScreen = ({
                     </Text>
                   </View>
                 </View>
-                {/* Botón de Entregado debajo de Indicaciones*/}
-                <View style={{ marginTop: 10 }}>
+                {/* Botones de Entregado y Fallido */}
+                <View style={{ marginTop: 10, flexDirection: 'row', gap: 10 }}>
                   <TouchableOpacity
-                    style={{ backgroundColor: C.teal, borderRadius: 8, paddingVertical: 12, width: '100%' }}
+                    style={{ flex: 1, backgroundColor: C.teal, borderRadius: 8, paddingVertical: 12 }}
                     onPress={() => {
-                      console.log('Entregado:', parada.orden);
-                      Alert.alert('Entregado', `ID/Orden: ${parada.orden}`);
+                      console.log('🔍 Parada:', parada);
+                      actualizarEstadoPunto(parada.puntoId, 'ENTREGADO');
                     }}
                   >
-                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>Entregado</Text>
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>✓ Entregado</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{ flex: 1, backgroundColor: '#d32f2f', borderRadius: 8, paddingVertical: 12 }}
+                    onPress={() => {
+                      console.log('🔍 Parada:', parada);
+                      actualizarEstadoPunto(parada.puntoId, 'FALLIDO');
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>✗ Fallido</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -274,6 +362,61 @@ export default function TrackingScreen() {
 
     cargarDetalleRuta();
   }, [rutaId]);
+
+  // 🔄 Verificar y reconectar sesión activa
+  useEffect(() => {
+    const verificarYReconectar = async () => {
+      try {
+        const sesion = await obtenerSesion();
+        
+        if (sesion && ruta) {
+          console.log('🔄 Sesión activa encontrada:', sesion);
+          
+          // Reconectar automáticamente
+          await socketService.connect();
+          console.log('✅ Socket reconectado automáticamente');
+          
+          // Restaurar estado
+          setIdRepartidor(sesion.idRepartidor);
+          setTrackingActivo(true);
+          
+          // Configurar event listeners
+          socketService.onLocationUpdate((locationData) => {
+            console.log('📍 Ubicación actualizada:', locationData);
+          });
+
+          socketService.onOrderMilestone((milestoneData) => {
+            console.log('🎯 Hito alcanzado:', milestoneData);
+            setUltimoHito(milestoneData.hito);
+            Alert.alert('¡Notificación!', `Falta ${milestoneData.hito} para la siguiente parada`);
+          });
+
+          socketService.onDriverFinished(() => {
+            console.log('🏁 Ruta finalizada desde el servidor');
+            limpiarSesion();
+            setTrackingActivo(false);
+          });
+
+          socketService.onError((errorData) => {
+            console.error('❌ Error del socket:', errorData);
+            Alert.alert('Error', 'Error en la conexión del socket');
+          });
+          
+          // Emitir driver:start con puntos
+          const puntos = ruta.detalleParadas.map(p => p.codigo);
+          socketService.iniciarRuta(sesion.idRepartidor, puntos, sesion.rutaId);
+          
+          console.log('✅ Tracking restaurado correctamente');
+        }
+      } catch (error) {
+        console.error('❌ Error al verificar sesión:', error);
+      }
+    };
+
+    if (ruta && !trackingActivo) {
+      verificarYReconectar();
+    }
+  }, [ruta]);
 
   // Limpiar socket cuando el componente se desmonta
   useEffect(() => {
@@ -351,6 +494,7 @@ export default function TrackingScreen() {
           paradas={ruta.detalleParadas} 
           onBack={() => router.back()}
           geometria={ruta.geometria}
+          rutaId={rutaId}
           onIniciarRuta={async () => {
             setObteniendoUbicacion(true);
             try {
@@ -396,6 +540,7 @@ export default function TrackingScreen() {
               socketService.onDriverFinished(() => {
                 console.log('🏁 Ruta finalizada desde el servidor');
                 Alert.alert('Ruta finalizada', 'La jornada ha terminado');
+                limpiarSesion();
                 setTrackingActivo(false);
               });
 
@@ -414,6 +559,9 @@ export default function TrackingScreen() {
               setIdRepartidor(repId);
               setRoom(roomName);
               setTrackingActivo(true);
+              
+              // 💾 Guardar sesión para reconexión
+              await guardarSesion(Number(rutaId), repId);
 
               // 6️⃣ Obtener ubicación y abrir Google Maps
               const ubicacion = await obtenerUbicacionActual();
@@ -428,6 +576,7 @@ export default function TrackingScreen() {
               console.error('❌ Mensaje:', err.message);
               Alert.alert('Error', err.message || 'No se pudo iniciar el tracking');
               setTrackingActivo(false);
+              await limpiarSesion();
             } finally {
               setObteniendoUbicacion(false);
             }

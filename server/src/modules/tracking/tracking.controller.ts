@@ -3,6 +3,8 @@ import { Request } from "express";
 import { Response } from "express";
 import { trackingStore } from "../../store/storeTracking.service";
 import { rutasService } from "../rutas/rutas.service.js";
+import { EstadoRuta } from "../../databases/prisma/generated/prisma/enums.js";
+import { RutaEntregaModel } from "../../databases/mongoDB/models/rutaEntrega.model.js";
 
 export class TrackingController {
 
@@ -30,6 +32,21 @@ export class TrackingController {
 
             // Crear la sesión en el store
             trackingStore.crearSession(idRepartidor, puntos as string[], rutaId);
+
+            // Actualizar estado de la ruta a EN_PROCESO
+            await rutasService.actualizarEstadoRuta(rutaId, EstadoRuta.EN_PROCESO);
+
+            // Actualizar estado de los puntos de entrega de EN_BODEGA a PENDIENTE
+            const rutaEntrega = await RutaEntregaModel.findOne({ rutaId });
+            if (rutaEntrega) {
+                rutaEntrega.puntosEntrega.forEach(punto => {
+                    if (punto.estadoEntrega === "EN_BODEGA") {
+                        punto.estadoEntrega = "PENDIENTE";
+                    }
+                });
+                await rutaEntrega.save();
+                console.log(`✅ ${rutaEntrega.puntosEntrega.length} puntos cambiados a PENDIENTE`);
+            }
 
             // Obtener el nombre de la room desde BD
             const room = await obtenerRoom(rutaId);
