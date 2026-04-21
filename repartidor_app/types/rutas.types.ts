@@ -15,7 +15,7 @@ export interface DetalleParada {
   direccion: string;
   cliente: string;
   contactoCliente: string;
-  estadoEntrega: 'Pendiente' | 'Entregado' | 'Fallido' | 'EN_BODEGA' | 'EN_CAMINO' | 'ENTREGADO' | 'FALLIDO';
+  estadoEntrega: 'Pendiente' | 'Entregado' | 'Fallido' | 'EN_BODEGA' | 'PENDIENTE' | 'EN_ENTREGA' | 'EN_CAMINO' | 'ENTREGADO' | 'FALLIDO';
   pesoProducto: number;
   descripcionEntrega: string;
   latitud: number;

@@ -20,7 +20,7 @@ interface DetalleParadaResumen {
     direccion: string | null;
     cliente: string | null;
     contactoCliente: string | null;
-    estadoEntrega: 'Pendiente' | 'En camino' | 'Entregado';
+    estadoEntrega: 'Pendiente' | 'En camino' | 'Entregado' | 'EN_BODEGA' | 'PENDIENTE' | 'EN_ENTREGA' | 'EN_CAMINO' | 'ENTREGADO' | 'FALLIDO';
     tiempoEstimadoParada: number | null;
     pesoProducto: number | null;
     descripcionEntrega: string | null;
@@ -549,7 +549,7 @@ export class RutasService {
                     direccion: punto.direccion ?? null,
                     cliente: punto.nombreCliente ?? null,
                     contactoCliente: punto.contactoCliente ?? null,
-                    estadoEntrega: punto.estadoEntrega === 'ENTREGADO' ? 'Entregado' : 'Pendiente',
+                    estadoEntrega: punto.estadoEntrega,
                     tiempoEstimadoParada: null,
                     pesoProducto: punto.pesoProducto ?? null,
                     descripcionEntrega: punto.descripcionEntrega ?? null,
@@ -718,7 +718,7 @@ export class RutasService {
                 direccion: punto.direccion ?? null,
                 cliente: punto.nombreCliente ?? null,
                 contactoCliente: punto.contactoCliente ?? null,
-                estadoEntrega: punto.estadoEntrega === 'ENTREGADO' ? 'Entregado' : 'Pendiente',
+                estadoEntrega: punto.estadoEntrega,
                 tiempoEstimadoParada: null,
                 pesoProducto: punto.pesoProducto ?? null,
                 descripcionEntrega: punto.descripcionEntrega ?? null,

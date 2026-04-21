@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 from app.services.optimization import OptimizationService
 from app.models.schema import OptimizacionRequest, OptimizacionResponse
+import httpx
 import os
 import logging
 
@@ -34,6 +35,11 @@ async def optimizar(request: OptimizacionRequest):
         return result
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except httpx.ReadTimeout as exc:
+        raise HTTPException(
+            status_code=504,
+            detail="OSRM no respondió a tiempo al construir la matriz de rutas.",
+        ) from exc
     except HTTPException:
         raise
     except Exception as exc:

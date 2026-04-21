@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
-import { RepartidorDuplicadoEnLoteError, RepartidorYaAsignadoError, rutasService } from './rutas.service';
-import { validarGuardarRutasRequest, validarRutaIdRequest } from './rutas.request.js';
 import type { IPuntoEntrega } from '../../databases/mongoDB/schema';
-import type { RutaRepartidorGeoJSON, RutaRepartidorResumen } from '../../types/routing.types';
-import { EstadoRuta } from '../../databases/prisma/generated/prisma/browser';
+import { validarGuardarRutasRequest, validarRutaIdRequest } from './rutas.request.js';
+import { RepartidorDuplicadoEnLoteError, RepartidorYaAsignadoError, rutasService } from './rutas.service';
 
 
 export class RutasController {
@@ -86,6 +84,7 @@ export class RutasController {
         }
         catch (error) {
             const mensajeError = error instanceof Error ? error.message : 'Error interno del servidor';
+            console.log('Error al consultar rutas del repartidor:', error);
             res.status(500).json({ error: mensajeError });
         }
     }
@@ -122,8 +121,8 @@ export class RutasController {
             res.status(400).json({ error: `El campo puntoId debe ser un entero positivo. Recibido: ${req.body.puntoId} (tipo: ${typeof req.body.puntoId})` });
             return;
         }
-        if (typeof nuevoEstado !== 'string' || !['EN_BODEGA', 'PENDIENTE', 'EN_CAMINO', 'ENTREGADO', 'FALLIDO'].includes(nuevoEstado)) {
-            res.status(400).json({ error: 'El campo nuevoEstado debe ser uno de los siguientes: EN_BODEGA, PENDIENTE, EN_CAMINO, ENTREGADO, FALLIDO' });
+        if (typeof nuevoEstado !== 'string' || !['EN_BODEGA', 'PENDIENTE', 'EN_ENTREGA', 'EN_CAMINO', 'ENTREGADO', 'FALLIDO'].includes(nuevoEstado)) {
+            res.status(400).json({ error: 'El campo nuevoEstado debe ser uno de los siguientes: EN_BODEGA, PENDIENTE, EN_ENTREGA, EN_CAMINO, ENTREGADO, FALLIDO' });
             return;
         }
         

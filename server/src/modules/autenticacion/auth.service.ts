@@ -26,7 +26,7 @@ type LoginLogisticoResponse = {
 
 type LoginRepartidorResponse = {
   mensaje: string;
-  usuario: {
+  repartidor: {
     id: number;
     nombre: string;
     email: string;
@@ -95,7 +95,7 @@ async function loginRepartidor(email: string, password: string): Promise<LoginRe
 
   return {
     mensaje: "Autenticación exitosa",
-    usuario: {
+    repartidor: {
       id: usuario.id,
       nombre: usuario.nombre,
       email: usuario.email,

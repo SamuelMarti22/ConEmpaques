@@ -5,7 +5,7 @@ export interface Usuario {
     nombre?: string;
     codigoEntrega?: string;
     rutaId?: number;
-    estadoEntrega?: 'EN_BODEGA' | 'PENDIENTE' | 'EN_CAMINO' | 'ENTREGADO' | 'FALLIDO';
+    estadoEntrega?: 'EN_BODEGA' | 'PENDIENTE' | 'EN_ENTREGA' | 'EN_CAMINO' | 'ENTREGADO' | 'FALLIDO';
     rol: 'logistico' | 'cliente';
 }
 

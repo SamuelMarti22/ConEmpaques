@@ -1,6 +1,9 @@
 import { io, Socket } from 'socket.io-client';
+import Constants from "expo-constants";
 
-const SOCKET_URL = 'http://192.168.1.11:3000';
+const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+
+const SOCKET_URL = `${apiBaseUrl}`;
 
 class SocketService {
   private socket: Socket | null = null;

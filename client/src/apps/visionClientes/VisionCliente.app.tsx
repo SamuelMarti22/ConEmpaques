@@ -132,7 +132,7 @@ export default function VisionCliente() {
                         <div className="clienteTrack__lineaBase" />
                         <div
                             className={esFallido ? 'clienteTrack__lineaActiva clienteTrack__lineaActiva--fallido' : 'clienteTrack__lineaActiva'}
-                            style={{ width: `${(pasoActual - 1) * 33.3333}%` }}
+                            style={{ width: `${((pasoActual - 1) / 3) * 76}%` }}
                         />
 
                         <div className="clienteTrack__nodos">
