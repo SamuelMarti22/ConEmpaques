@@ -239,7 +239,7 @@ export default function PlaneacionRutas() {
         return puntosEntregaRef.current?.obtenerPuntosActuales() || [];
     };
 
-    const cargarRutasGuardadas = async (): Promise<void> => {
+    const cargarRutasGuardadas = useCallback(async (): Promise<void> => {
         try {
             const respuesta = await fetch('http://localhost:3000/api/rutas');
 
@@ -257,11 +257,11 @@ export default function PlaneacionRutas() {
         } catch (error) {
             console.error('No se pudieron cargar las rutas guardadas', error);
         }
-    };
+    }, [rutaGuardadaSeleccionadaId]);
 
     useEffect(() => {
         void cargarRutasGuardadas();
-    }, []);
+    }, [cargarRutasGuardadas]);
 
     const eliminarRutaGuardada = async (rutaId: number): Promise<void> => {
         setEliminandoRutaId(rutaId);

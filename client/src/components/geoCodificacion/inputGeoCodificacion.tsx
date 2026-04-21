@@ -37,6 +37,12 @@ export default function InputGeoCodificacion({
 	const timeoutRef = useRef<number | null>(null);
 	const contenedorRef = useRef<HTMLDivElement | null>(null);
 
+	const reiniciarPredicciones = () => {
+		setPredicciones([]);
+		setMostrarLista(false);
+		setCargandoPredicciones(false);
+	};
+
 	const puedeBuscar = useMemo(
 		() => textoBusqueda.trim().length >= minCaracteresBusqueda,
 		[textoBusqueda, minCaracteresBusqueda]
@@ -56,9 +62,9 @@ export default function InputGeoCodificacion({
 
 	useEffect(() => {
 		if (!puedeBuscar || disabled) {
-			setPredicciones([]);
-			setMostrarLista(false);
-			setCargandoPredicciones(false);
+			queueMicrotask(() => {
+				reiniciarPredicciones();
+			});
 			return;
 		}
 

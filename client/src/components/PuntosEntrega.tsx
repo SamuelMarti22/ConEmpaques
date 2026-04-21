@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { PuntoEntrega } from '../classes/PuntoEntrega';
 import ModalNuevoPunto, { type DatosNuevoPunto } from './modalNuevoPunto';
 import './PuntosEntrega.css';
@@ -24,14 +24,20 @@ const PuntosEntrega = forwardRef<PuntosEntregaAtributos, PuntosEntregaProps>(({ 
     const nextId = useRef(1); //Variable para asignar IDs automáticos a los puntos, ya que el backend no los genera al ser solo un mock
     const omitirPersistenciaRef = useRef(true);
 
-    useEffect(() => {
+    const sincronizarPuntosDesdeStorage = useCallback(() => {
         omitirPersistenciaRef.current = true;
         const puntosGuardados = recuperarPuntosGuardados(storageKey);
-        setPuntosActuales(puntosGuardados);
         onVaciarMarcadoresMapa();
         puntosGuardados.forEach((punto) => onAgregarMarcadorMapa(punto));
+        setPuntosActuales(puntosGuardados);
         setIndiceEdicion(null);
     }, [onAgregarMarcadorMapa, onVaciarMarcadoresMapa, storageKey]);
+
+    useEffect(() => {
+        queueMicrotask(() => {
+            sincronizarPuntosDesdeStorage();
+        });
+    }, [sincronizarPuntosDesdeStorage]);
 
     useEffect(() => {
         const maxId = puntosActuales.reduce((maximo, punto) => Math.max(maximo, punto.getId()), 0);

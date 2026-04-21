@@ -114,6 +114,29 @@
   padding: 10px;
 }
 
+.historialRutas__modoSwitch {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  border: 1px solid #c6e3db;
+  border-radius: 9px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.historialRutas__modoBoton {
+  border: none;
+  background: #ffffff;
+  color: #3f5551;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.historialRutas__modoBoton--activo {
+  background: #e8f7f1;
+  color: var(--color-verde-oscuro);
+}
+
 .historialRutas__campo {
   display: flex;
   flex-direction: column;
@@ -211,6 +234,85 @@
   margin: 0 0 10px 0;
   color: #4b5563;
   font-size: 0.86rem;
+}
+
+.historialRutas__pedidoCard {
+  border: 1px solid #d8eae4;
+  border-radius: 14px;
+  padding: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(21, 62, 54, 0.08);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.historialRutas__pedidoCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(21, 62, 54, 0.14);
+}
+
+.historialRutas__pedidoCard--seleccionada {
+  border-color: #2f8b75;
+  box-shadow: 0 0 0 3px rgba(47, 139, 117, 0.16);
+}
+
+.historialRutas__pedidoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.historialRutas__pedidoHeader strong {
+  color: #0f3f36;
+}
+
+.historialRutas__pedidoHeader span {
+  color: #5d6b73;
+  font-size: 0.82rem;
+}
+
+.historialRutas__pedidoDato {
+  margin: 6px 0;
+  color: #33434b;
+  font-size: 0.9rem;
+}
+
+.historialRutas__pedidoMeta {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  color: #5b6670;
+  font-size: 0.82rem;
+}
+
+.historialRutas__badgeEstado {
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.historialRutas__badgeEstado--pendiente {
+  background: #f3f4f6;
+  color: #4b5563;
+  border-color: #d1d5db;
+}
+
+.historialRutas__badgeEstado--enCamino {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.historialRutas__badgeEstado--entregado {
+  background: #eaf8f2;
+  color: #185946;
+  border-color: #bfe3d6;
 }
 
 .historialRutas__grupo {

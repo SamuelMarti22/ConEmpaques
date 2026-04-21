@@ -474,7 +474,7 @@ describe("Rutas", () => {
       await rutasController.actualizarEstadoPunto(req, res as Response);
 
       esperarRespuesta(res, 400, {
-        error: "El campo nuevoEstado debe ser uno de los siguientes: EN_BODEGA, PENDIENTE, EN_CAMINO, ENTREGADO, FALLIDO",
+        error: "El campo nuevoEstado debe ser uno de los siguientes: EN_BODEGA, PENDIENTE, EN_ENTREGA, EN_CAMINO, ENTREGADO, FALLIDO",
       });
     });
 
@@ -868,7 +868,7 @@ describe("Rutas", () => {
       expect(salida[0].repartidor.estado).toBe("finalizado");
       expect(salida[0].geometria.geometry.coordinates).toEqual([]);
       expect(salida[0].resumen.cargaActualKg).toBe(0);
-      expect(salida[0].detalleParadas[0].estadoEntrega).toBe("Pendiente");
+      expect(salida[0].detalleParadas[0].estadoEntrega).toBe("PENDIENTE");
       expect(salida[0].resumen.horaFinEstimada).not.toBeNull();
     });
 
@@ -1047,7 +1047,7 @@ describe("Rutas", () => {
       const salida = await rutasService.consultarDetalleRuta("90");
 
       expect(salida.rutaId).toBe(90);
-      expect(salida.detalleParadas[0].estadoEntrega).toBe("Entregado");
+      expect(salida.detalleParadas[0].estadoEntrega).toBe("ENTREGADO");
       expect(salida.geometria.geometry.coordinates).toEqual([]);
     });
 

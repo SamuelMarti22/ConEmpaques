@@ -2,7 +2,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './MapaInteractivo.css';
 
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
 import { PuntoEntrega } from '../classes/PuntoEntrega';
 
 const env = import.meta.env
@@ -74,7 +74,7 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
     const rutasRef = useRef<GeometriaRuta[]>([]);
     const indiceRutaResaltadaRef = useRef<number | null>(null);
 
-    const construirFeatureCollection = (
+    const construirFeatureCollection = useCallback((
         rutas: GeometriaRuta[],
         indiceRutaSeleccionada: number | null,
     ): GeoJSON.FeatureCollection => {
@@ -98,9 +98,9 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
             type: 'FeatureCollection',
             features,
         };
-    };
+    }, []);
 
-    const actualizarCapaRutas = (rutas: GeometriaRuta[]) => {
+    const actualizarCapaRutas = useCallback((rutas: GeometriaRuta[]) => {
         const mapa = mapRef.current;
         if (!mapa || !mapa.isStyleLoaded()) return;
 
@@ -127,7 +127,7 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
                 'line-opacity': 0.9,
             },
         });
-    };
+    }, [construirFeatureCollection]);
 
     useEffect(() => {
         if (!contenedorMapa.current) return;
@@ -144,7 +144,7 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
         });
 
         return () => { mapRef.current?.remove(); };
-    }, []);
+    }, [actualizarCapaRutas]);
 
     useImperativeHandle(ref, () => ({
         agregarPunto: (punto: PuntoEntrega) => {
