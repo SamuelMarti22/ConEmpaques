@@ -6,6 +6,8 @@ type ConfiguracionVisualizacionRutas = {
     rutasGuardadas: RutaGuardadaUI[];
     rutaSeleccionadaId?: number | null;
     limpiarSiVacio?: boolean;
+    repintarRutas?: boolean;
+    ubicacionesRepartidores?: Record<number, { lat: number; lng: number; timestamp: number; simulado?: boolean }>;
 };
 
 function esGeometriaValida(ruta: RutaGuardadaUI): boolean {
@@ -86,6 +88,8 @@ export function visualizarRutasEnMapa({
     rutasGuardadas,
     rutaSeleccionadaId = null,
     limpiarSiVacio = true,
+    repintarRutas = true,
+    ubicacionesRepartidores = {},
 }: ConfiguracionVisualizacionRutas): void {
     if (!mapa) return;
 
@@ -102,7 +106,9 @@ export function visualizarRutasEnMapa({
         return;
     }
 
-    mapa.pintarRutasGeoJSON(rutasFiltradas.map((ruta) => ruta.geometria));
+    if (repintarRutas) {
+        mapa.pintarRutasGeoJSON(rutasFiltradas.map((ruta) => ruta.geometria));
+    }
 
     const puntosEntrega = rutasFiltradas.flatMap((ruta) =>
         ruta.detalleParadas.map((parada) => ({
@@ -146,6 +152,23 @@ export function visualizarRutasEnMapa({
         return [marcadorInicio, marcadorFin];
     });
 
+    const marcadoresRepartidor = rutasFiltradas.flatMap((ruta) => {
+        const ubicacion = ubicacionesRepartidores[ruta.rutaId];
+        if (!ubicacion) {
+            return [];
+        }
+
+        return [{
+            puntoId: -200000 - ruta.rutaId,
+            cliente: `Repartidor #${ruta.repartidor.id}`,
+            direccion: `Actualizado: ${new Date(ubicacion.timestamp).toLocaleTimeString()}`,
+            latitud: ubicacion.lat,
+            longitud: ubicacion.lng,
+            estadoEntrega: 'En camino' as const,
+            tipoMarcador: 'repartidor' as const,
+        }];
+    });
+
     mapa.limpiarPuntosEntrega();
-    mapa.pintarPuntosEntrega([...puntosEntrega, ...marcadoresInicioFin]);
+    mapa.pintarPuntosEntrega([...puntosEntrega, ...marcadoresInicioFin, ...marcadoresRepartidor]);
 }

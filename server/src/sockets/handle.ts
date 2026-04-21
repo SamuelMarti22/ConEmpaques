@@ -37,7 +37,7 @@ export const registerHandlers = (io: Server, socket: Socket) => {
             }
 
             const position = { lat, lng, timestamp: Date.now() }
-            trackingStore.agregarPosicion(idRepartidor, position)
+            trackingStore.agregarPosicion(idRuta, position)
 
             console.log(`📍 Ubicación recibida - Repartidor ${idRepartidor}: ${lat.toFixed(4)}, ${lng.toFixed(4)}`)
 
@@ -48,7 +48,9 @@ export const registerHandlers = (io: Server, socket: Socket) => {
                 lat,
                 lng,
                 eta,
-                timestamp: position.timestamp
+                timestamp: position.timestamp,
+                idRuta,
+                idRepartidor,
             })
 
             // Evaluar hitos para notificaciones
@@ -90,7 +92,7 @@ export const registerHandlers = (io: Server, socket: Socket) => {
         try {
             const idRepartidor = socket.data.idRepartidor
             const room = await obtenerRoom(idRuta)
-            trackingStore.eliminarSession(idRepartidor)
+            trackingStore.eliminarSession(idRuta)
             io.to(room).emit('driver:finished')
             console.log(`Repartidor ${idRepartidor} terminó su jornada`)
         } catch (error) {

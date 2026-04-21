@@ -2,7 +2,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './MapaInteractivo.css';
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { PuntoEntrega } from '../classes/PuntoEntrega';
 
 const env = import.meta.env
@@ -12,7 +12,8 @@ mapboxgl.accessToken = MAPBOX_TOKEN;
 const coordenadasMedellin: [number, number] = [-75.5636, 6.2442];
 const FUENTE_RUTAS_ID = 'rutas-geojson-source';
 const CAPA_RUTAS_ID = 'rutas-geojson-layer';
-const COLORES_RUTAS = ['#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#0891b2', '#ca8a04'];
+const COLOR_TRAMO_PASADO = '#9ca3af';
+const COLOR_TRAMO_PENDIENTE = '#2563eb';
 
 function normalizarEstadoEntrega(estado: PuntoEntregaSimple['estadoEntrega']): 'Pendiente' | 'En proceso' | 'Entregado' {
     if (estado === 'En camino') {
@@ -51,7 +52,7 @@ type PuntoEntregaSimple = {
     latitud: number;
     longitud: number;
     estadoEntrega: 'Pendiente' | 'En camino' | 'Entregado';
-    tipoMarcador?: 'punto' | 'inicio' | 'fin';
+    tipoMarcador?: 'punto' | 'inicio' | 'fin' | 'repartidor';
 };
 
 //Funciones que expone a otros componentes, para modificar sus propios marcadores
@@ -60,6 +61,8 @@ export interface MapaInteractivoFunciones {
     eliminarPunto: (id: number) => void;
     vaciarPuntos: () => void;
     pintarRutasGeoJSON: (rutas: GeometriaRuta[]) => void;
+    actualizarInflexionRuta: (indiceRuta: number, punto: [number, number] | null) => void;
+    despintarGeometriaDesdeHasta: (indiceRuta: number, puntoA: [number, number], puntoB: [number, number]) => void;
     limpiarRutas: () => void;
     resaltarRutaPorIndice: (indiceRuta: number | null) => void;
     pintarPuntosEntrega: (puntos: PuntoEntregaSimple[]) => void;
@@ -71,21 +74,82 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
     const mapRef = useRef<mapboxgl.Map | null>(null);
     const marcadoresRef = useRef<Map<number, mapboxgl.Marker>>(new Map());
     const marcadoresPuntosEntregaRef = useRef<Map<number, mapboxgl.Marker>>(new Map());
-    const rutasRef = useRef<GeometriaRuta[]>([]);
+    const rutasBaseRef = useRef<GeometriaRuta[]>([]);
+    const puntosInflexionRef = useRef<Map<number, [number, number]>>(new Map());
     const indiceRutaResaltadaRef = useRef<number | null>(null);
 
-    const construirFeatureCollection = useCallback((
-        rutas: GeometriaRuta[],
-        indiceRutaSeleccionada: number | null,
-    ): GeoJSON.FeatureCollection => {
-        const featuresTotales: GeoJSON.Feature[] = rutas.map((ruta, indiceOriginal) => ({
-            type: 'Feature',
-            geometry: ruta.geometry as unknown as GeoJSON.Geometry,
-            properties: {
-                color: COLORES_RUTAS[indiceOriginal % COLORES_RUTAS.length],
-                indiceRuta: indiceOriginal,
-            },
-        }));
+    const obtenerIndiceMasCercano = (coordenadas: number[][], punto: [number, number]): number => {
+        let indiceMasCercano = 0;
+        let distanciaMinima = Number.POSITIVE_INFINITY;
+
+        coordenadas.forEach((coord, indice) => {
+            const deltaLng = coord[0] - punto[0];
+            const deltaLat = coord[1] - punto[1];
+            const distancia = (deltaLng * deltaLng) + (deltaLat * deltaLat);
+
+            if (distancia < distanciaMinima) {
+                distanciaMinima = distancia;
+                indiceMasCercano = indice;
+            }
+        });
+
+        return indiceMasCercano;
+    };
+
+    const construirFeatureCollection = (indiceRutaSeleccionada: number | null): GeoJSON.FeatureCollection => {
+        const featuresTotales: GeoJSON.Feature[] = [];
+
+        rutasBaseRef.current.forEach((ruta, indiceOriginal) => {
+            const coords = ruta.geometry.coordinates;
+            if (!Array.isArray(coords) || coords.length < 2) {
+                return;
+            }
+
+            const puntoInflexion = puntosInflexionRef.current.get(indiceOriginal);
+            if (!puntoInflexion) {
+                featuresTotales.push({
+                    type: 'Feature',
+                    geometry: ruta.geometry as unknown as GeoJSON.Geometry,
+                    properties: {
+                        color: COLOR_TRAMO_PENDIENTE,
+                        indiceRuta: indiceOriginal,
+                    },
+                });
+                return;
+            }
+
+            const indiceInflexion = obtenerIndiceMasCercano(coords, puntoInflexion);
+            const tramoPasado = coords.slice(0, indiceInflexion + 1);
+            const tramoPendiente = coords.slice(indiceInflexion);
+
+            if (tramoPasado.length >= 2) {
+                featuresTotales.push({
+                    type: 'Feature',
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: tramoPasado,
+                    } as unknown as GeoJSON.Geometry,
+                    properties: {
+                        color: COLOR_TRAMO_PASADO,
+                        indiceRuta: indiceOriginal,
+                    },
+                });
+            }
+
+            if (tramoPendiente.length >= 2) {
+                featuresTotales.push({
+                    type: 'Feature',
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: tramoPendiente,
+                    } as unknown as GeoJSON.Geometry,
+                    properties: {
+                        color: COLOR_TRAMO_PENDIENTE,
+                        indiceRuta: indiceOriginal,
+                    },
+                });
+            }
+        });
 
         const features = indiceRutaSeleccionada === null
             ? featuresTotales
@@ -98,13 +162,13 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
             type: 'FeatureCollection',
             features,
         };
-    }, []);
+    };
 
-    const actualizarCapaRutas = useCallback((rutas: GeometriaRuta[]) => {
+    const actualizarCapaRutas = () => {
         const mapa = mapRef.current;
         if (!mapa || !mapa.isStyleLoaded()) return;
 
-        const featureCollection = construirFeatureCollection(rutas, indiceRutaResaltadaRef.current);
+        const featureCollection = construirFeatureCollection(indiceRutaResaltadaRef.current);
 
         const sourceExistente = mapa.getSource(FUENTE_RUTAS_ID) as mapboxgl.GeoJSONSource | undefined;
         if (sourceExistente) {
@@ -127,7 +191,7 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
                 'line-opacity': 0.9,
             },
         });
-    }, [construirFeatureCollection]);
+    };
 
     useEffect(() => {
         if (!contenedorMapa.current) return;
@@ -140,11 +204,11 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
         });
 
         mapRef.current.on('load', () => {
-            actualizarCapaRutas(rutasRef.current);
+            actualizarCapaRutas();
         });
 
         return () => { mapRef.current?.remove(); };
-    }, [actualizarCapaRutas]);
+    }, []);
 
     useImperativeHandle(ref, () => ({
         agregarPunto: (punto: PuntoEntrega) => {
@@ -166,7 +230,7 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
             marcadoresRef.current.clear();
         },
         pintarRutasGeoJSON: (rutas: GeometriaRuta[]) => {
-            rutasRef.current = rutas.filter(
+            rutasBaseRef.current = rutas.filter(
                 (ruta) =>
                     !!ruta &&
                     ruta.type === 'Feature' &&
@@ -174,16 +238,41 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
                     Array.isArray(ruta.geometry.coordinates) &&
                     ruta.geometry.coordinates.length > 0,
             );
-            actualizarCapaRutas(rutasRef.current);
+            puntosInflexionRef.current.clear();
+            actualizarCapaRutas();
+        },
+        actualizarInflexionRuta: (indiceRuta: number, punto: [number, number] | null) => {
+            if (indiceRuta < 0) {
+                return;
+            }
+
+            if (!rutasBaseRef.current[indiceRuta]) {
+                return;
+            }
+
+            if (punto) {
+                puntosInflexionRef.current.set(indiceRuta, punto);
+            } else {
+                puntosInflexionRef.current.delete(indiceRuta);
+            }
+
+            actualizarCapaRutas();
+        },
+        despintarGeometriaDesdeHasta: (indiceRuta: number, puntoA: [number, number], puntoB: [number, number]) => {
+            // Compatibilidad: ahora usamos punto de inflexión y no mutamos la geometría base.
+            void puntoA;
+            puntosInflexionRef.current.set(indiceRuta, puntoB);
+            actualizarCapaRutas();
         },
         limpiarRutas: () => {
-            rutasRef.current = [];
+            rutasBaseRef.current = [];
+            puntosInflexionRef.current.clear();
             indiceRutaResaltadaRef.current = null;
-            actualizarCapaRutas([]);
+            actualizarCapaRutas();
         },
         resaltarRutaPorIndice: (indiceRuta: number | null) => {
             indiceRutaResaltadaRef.current = indiceRuta;
-            actualizarCapaRutas(rutasRef.current);
+            actualizarCapaRutas();
         },
         pintarPuntosEntrega: (puntos: PuntoEntregaSimple[]) => {
             if (!mapRef.current) return;
@@ -196,17 +285,22 @@ const MapaInteractivo = forwardRef<MapaInteractivoFunciones>((_props, ref) => {
             puntos.forEach((punto, indice) => {
                 const esInicio = punto.tipoMarcador === 'inicio';
                 const esFin = punto.tipoMarcador === 'fin';
+                const esRepartidor = punto.tipoMarcador === 'repartidor';
                 const colorMarcador = esInicio
                     ? '#059669'
                     : esFin
                         ? '#dc2626'
-                        : colorPorEstadoEntrega(punto.estadoEntrega);
+                        : esRepartidor
+                            ? '#111827'
+                            : colorPorEstadoEntrega(punto.estadoEntrega);
                 const estadoNormalizado = normalizarEstadoEntrega(punto.estadoEntrega);
                 const textoPopup = esInicio
                     ? `Inicio: ${punto.cliente || 'Ruta'}`
                     : esFin
                         ? `Fin: ${punto.cliente || 'Ruta'}`
-                        : `${punto.cliente || 'Sin nombre'} (${estadoNormalizado})`;
+                        : esRepartidor
+                            ? `${punto.cliente || 'Repartidor'} · ${punto.direccion || 'Sin hora'}`
+                            : `${punto.cliente || 'Sin nombre'} (${estadoNormalizado})`;
 
                 const popup = new mapboxgl.Popup().setText(textoPopup);
                 
