@@ -21,14 +21,14 @@ const { obtenerRoom } = await import("../../src/sockets/rooms.service");
 describe("registerHandlers", () => {
     let mockIo: any;
     let mockSocket: any;
-    let eventHandlers: Record<string, Function>;
+    let eventHandlers: Record<string, (arg?: any) => void>;
 
     beforeEach(() => {
         vi.clearAllMocks();
         eventHandlers = {};
 
         mockSocket = {
-            on: vi.fn((event: string, handler: Function) => {
+            on: vi.fn((event: string, handler: (arg?: any) => void) => {
                 eventHandlers[event] = handler;
                 return mockSocket;
             }),

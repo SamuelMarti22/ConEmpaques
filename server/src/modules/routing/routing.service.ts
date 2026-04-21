@@ -74,13 +74,14 @@ export class RoutingService {
                     mensaje.includes('network')
                 ) {
                     throw new Error(
-                        `No fue posible conectar con el microservicio de optimización (${this.rutingServer}). Verifica que esté ejecutándose en el puerto esperado.`
+                        `No fue posible conectar con el microservicio de optimización (${this.rutingServer}). Verifica que esté ejecutándose en el puerto esperado.`,
+                        { cause: error }
                     );
                 }
                 // Si es un error lanzado por validación o respuesta del microservicio
                 throw error;
             }
-            throw new Error("No fue posible encontrar una ruta optima para esta combinación de puntos de entrega y capacidades de repartidores.");
+            throw new Error("No fue posible encontrar una ruta optima para esta combinación de puntos de entrega y capacidades de repartidores.", { cause: error });
         }
     }
 

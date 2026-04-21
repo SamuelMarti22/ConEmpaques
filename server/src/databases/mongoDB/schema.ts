@@ -68,7 +68,7 @@ export interface IRutaEntregaMethods {
 // SUBDOCUMENTO
 //////////////////////
 
-export const PuntoEntregaSchema = new Schema<IPuntoEntrega, mongoose.Model<IPuntoEntrega, {}, IPuntoEntregaMethods>, IPuntoEntregaMethods>({
+export const PuntoEntregaSchema = new Schema<IPuntoEntrega, mongoose.Model<IPuntoEntrega, object, IPuntoEntregaMethods>, IPuntoEntregaMethods>({
   id: { type: Number, required: true },
   nombreCliente: { type: String, required: true },
   codigo: { type: String, required: true },
@@ -94,7 +94,7 @@ export const PuntoEntregaSchema = new Schema<IPuntoEntrega, mongoose.Model<IPunt
 // DOCUMENTO PRINCIPAL
 //////////////////////
 
-export const RutaEntregaSchema = new Schema<IRutaEntrega, mongoose.Model<IRutaEntrega, {}, IRutaEntregaMethods>, IRutaEntregaMethods>(
+export const RutaEntregaSchema = new Schema<IRutaEntrega, mongoose.Model<IRutaEntrega, object, IRutaEntregaMethods>, IRutaEntregaMethods>(
   {
     rutaId: {
       type: Number,
@@ -113,7 +113,7 @@ export const RutaEntregaSchema = new Schema<IRutaEntrega, mongoose.Model<IRutaEn
   }
 );
 
-export const RutaEntregaModel = mongoose.model<IRutaEntrega, mongoose.Model<IRutaEntrega, {}, IRutaEntregaMethods>>(
+export const RutaEntregaModel = mongoose.model<IRutaEntrega, mongoose.Model<IRutaEntrega, object, IRutaEntregaMethods>>(
   "RutaEntrega",
   RutaEntregaSchema
 );
