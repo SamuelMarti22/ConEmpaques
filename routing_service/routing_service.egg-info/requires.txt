@@ -8,3 +8,4 @@ python-dotenv
 [dev]
 pytest
 pytest-asyncio
+ruff

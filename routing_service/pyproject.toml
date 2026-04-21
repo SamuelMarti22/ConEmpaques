@@ -20,10 +20,41 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "pytest-asyncio"
+    "pytest-asyncio",
+    "ruff"
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["app/test"]
 python_files = "test_*.py"
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+exclude = [
+    ".git",
+    ".venv",
+    "routing-env",
+    "__pycache__",
+    "*.egg-info",
+    "dist",
+    "build"
+]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+]
+ignore = [
+    "E501",   # line-length (ya controlado por line-length)
+    "W505",   # doc-line-too-long
+]
