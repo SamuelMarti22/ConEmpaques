@@ -108,7 +108,8 @@ export class RutasController {
 
     async actualizarEstadoPunto(req: Request, res: Response): Promise<void> {
         const rutaId = Number(req.params.rutaId);
-        let { puntoId, nuevoEstado } = req.body;
+        const { puntoId: puntIdRaw, nuevoEstado } = req.body;
+        let puntoId = puntIdRaw;
 
         // Convertir puntoId a número si es string
         puntoId = Number(puntoId);

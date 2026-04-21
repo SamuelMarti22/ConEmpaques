@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import InputGeoCodificacion, { type PuntoGeocodificado } from './geoCodificacion/inputGeoCodificacion';
 import './modalNuevoPunto.css';
 
@@ -33,9 +33,7 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm, modo = 'cr
 
     const inputClienteRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        if (!isOpen) return;
-
+    const inicializarFormulario = useCallback(() => {
         if (modo === 'editar' && datosIniciales) {
             setClienteManual(datosIniciales.cliente);
             setPeso(String(datosIniciales.peso));
@@ -58,7 +56,15 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm, modo = 'cr
         setDescripcion('');
         setUbicacionSeleccionada(null);
         setErrorValidacion(null);
-    }, [isOpen, modo, datosIniciales]);
+    }, [modo, datosIniciales]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        queueMicrotask(() => {
+            inicializarFormulario();
+        });
+    }, [isOpen, inicializarFormulario]);
 
     const handleSeleccionarUbicacion = (data: PuntoGeocodificado) => {
         setUbicacionSeleccionada(data);

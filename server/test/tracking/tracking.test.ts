@@ -95,7 +95,7 @@ describe("TrackingController", () => {
 
         await controller.iniciarTrackingRuta(req, res);
 
-        expect(puntosEntrega[0].estadoEntrega).toBe("PENDIENTE");
+        expect(puntosEntrega[0].estadoEntrega).toBe("EN_ENTREGA");
         expect(puntosEntrega[1].estadoEntrega).toBe("ENTREGADO");
         expect(saveMock).toHaveBeenCalled();
         expect(res.status).toHaveBeenCalledWith(200);
