@@ -27,6 +27,10 @@ async function cargarControllerConMocks() {
   const eliminarRutaMock = vi.fn();
   const consultarRutasRepartidorMock = vi.fn();
   const consultarDetalleRutaMock = vi.fn();
+  const actualizarEstadoRutaMock = vi.fn();
+  const actualizarEstadoPuntoMock = vi.fn();
+  const finalizarRutaMock = vi.fn();
+  const cancelarRutaMock = vi.fn();
   class RepartidorYaAsignadoErrorMock extends Error {
     constructor(repartidorId: number) {
       super(`El repartidor ${repartidorId} ya tiene una ruta asignada para la fecha seleccionada`);
@@ -49,6 +53,10 @@ async function cargarControllerConMocks() {
       eliminarRuta: eliminarRutaMock,
       consultarRutasRepartidor: consultarRutasRepartidorMock,
       consultarDetalleRuta: consultarDetalleRutaMock,
+      actualizarEstadoRuta: actualizarEstadoRutaMock,
+      actualizarEstadoPunto: actualizarEstadoPuntoMock,
+      finalizarRuta: finalizarRutaMock,
+      cancelarRuta: cancelarRutaMock,
     },
   }));
 
@@ -61,6 +69,10 @@ async function cargarControllerConMocks() {
     eliminarRutaMock,
     consultarRutasRepartidorMock,
     consultarDetalleRutaMock,
+    actualizarEstadoRutaMock,
+    actualizarEstadoPuntoMock,
+    finalizarRutaMock,
+    cancelarRutaMock,
   };
 }
 
@@ -74,10 +86,12 @@ async function cargarRutasServiceConMocks() {
       deleteMany: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      updateMany: vi.fn(),
     },
     usuario: {
       findUnique: vi.fn(),
     },
+    $queryRaw: vi.fn(),
   };
   const rutaEntregaModelMock = {
     create: vi.fn(),
@@ -85,6 +99,8 @@ async function cargarRutasServiceConMocks() {
     exists: vi.fn().mockResolvedValue(false),
     find: vi.fn(),
     findOne: vi.fn(),
+    updateMany: vi.fn(),
+    updateOne: vi.fn(),
   };
 
   vi.doMock("../../src/databases/prisma/lib/prisma.js", () => ({
@@ -425,6 +441,136 @@ describe("Rutas", () => {
       esperarRespuesta(res, 200, { detalleRuta: { rutaId: 15 } });
     });
 
+    // Tests para actualizarEstadoPunto
+    it("retorna 400 cuando rutaId es inválido en actualizarEstadoPunto", async () => {
+      const { rutasController } = await cargarControllerConMocks();
+      const req = crearReqConParams({ rutaId: "abc" });
+      req.body = { puntoId: 1, nuevoEstado: "ENTREGADO" };
+      const res = crearRespuesta();
+
+      await rutasController.actualizarEstadoPunto(req, res as Response);
+
+      esperarRespuesta(res, 400, { error: "El parámetro rutaId debe ser un entero positivo" });
+    });
+
+    it("retorna 400 cuando puntoId es inválido en actualizarEstadoPunto", async () => {
+      const { rutasController } = await cargarControllerConMocks();
+      const req = crearReqConParams({ rutaId: "1" });
+      req.body = { puntoId: "abc", nuevoEstado: "ENTREGADO" };
+      const res = crearRespuesta();
+
+      await rutasController.actualizarEstadoPunto(req, res as Response);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.payload.error).toContain("El campo puntoId debe ser un entero positivo");
+    });
+
+    it("retorna 400 cuando nuevoEstado es inválido en actualizarEstadoPunto", async () => {
+      const { rutasController } = await cargarControllerConMocks();
+      const req = crearReqConParams({ rutaId: "1" });
+      req.body = { puntoId: 1, nuevoEstado: "ESTADO_INVALIDO" };
+      const res = crearRespuesta();
+
+      await rutasController.actualizarEstadoPunto(req, res as Response);
+
+      esperarRespuesta(res, 400, {
+        error: "El campo nuevoEstado debe ser uno de los siguientes: EN_BODEGA, PENDIENTE, EN_CAMINO, ENTREGADO, FALLIDO",
+      });
+    });
+
+    it("retorna 200 cuando actualiza estado de punto correctamente", async () => {
+      const { rutasController, actualizarEstadoPuntoMock } = await cargarControllerConMocks();
+      actualizarEstadoPuntoMock.mockResolvedValue(undefined);
+      const req = crearReqConParams({ rutaId: "1" });
+      req.body = { puntoId: 1, nuevoEstado: "ENTREGADO" };
+      const res = crearRespuesta();
+
+      await rutasController.actualizarEstadoPunto(req, res as Response);
+
+      expect(actualizarEstadoPuntoMock).toHaveBeenCalledWith(1, 1, "ENTREGADO");
+      esperarRespuesta(res, 200, { mensaje: "Estado del punto actualizado correctamente" });
+    });
+
+    it("retorna 500 cuando actualizar estado de punto falla", async () => {
+      const { rutasController, actualizarEstadoPuntoMock } = await cargarControllerConMocks();
+      actualizarEstadoPuntoMock.mockRejectedValue(new Error("Error al actualizar punto"));
+      const req = crearReqConParams({ rutaId: "1" });
+      req.body = { puntoId: 1, nuevoEstado: "ENTREGADO" };
+      const res = crearRespuesta();
+
+      await rutasController.actualizarEstadoPunto(req, res as Response);
+
+      esperarRespuesta(res, 500, { error: "Error al actualizar punto" });
+    });
+
+    // Tests para finalizarRuta
+    it("retorna 400 cuando rutaId es inválido en finalizarRuta", async () => {
+      const { rutasController } = await cargarControllerConMocks();
+      const req = crearReqConParams({ rutaId: "0" });
+      const res = crearRespuesta();
+
+      await rutasController.finalizarRuta(req, res as Response);
+
+      esperarRespuesta(res, 400, { error: "El parámetro rutaId debe ser un entero positivo" });
+    });
+
+    it("retorna 200 cuando finaliza ruta correctamente", async () => {
+      const { rutasController, finalizarRutaMock } = await cargarControllerConMocks();
+      finalizarRutaMock.mockResolvedValue(undefined);
+      const req = crearReqConParams({ rutaId: "5" });
+      const res = crearRespuesta();
+
+      await rutasController.finalizarRuta(req, res as Response);
+
+      expect(finalizarRutaMock).toHaveBeenCalledWith(5);
+      esperarRespuesta(res, 200, { mensaje: "Ruta finalizada correctamente" });
+    });
+
+    it("retorna 500 cuando finalizar ruta falla", async () => {
+      const { rutasController, finalizarRutaMock } = await cargarControllerConMocks();
+      finalizarRutaMock.mockRejectedValue(new Error("No existe la ruta 999"));
+      const req = crearReqConParams({ rutaId: "999" });
+      const res = crearRespuesta();
+
+      await rutasController.finalizarRuta(req, res as Response);
+
+      esperarRespuesta(res, 500, { error: "No existe la ruta 999" });
+    });
+
+    // Tests para cancelarRuta
+    it("retorna 400 cuando rutaId es inválido en cancelarRuta", async () => {
+      const { rutasController } = await cargarControllerConMocks();
+      const req = crearReqConParams({ rutaId: "-1" });
+      const res = crearRespuesta();
+
+      await rutasController.cancelarRuta(req, res as Response);
+
+      esperarRespuesta(res, 400, { error: "El parámetro rutaId debe ser un entero positivo" });
+    });
+
+    it("retorna 200 cuando cancela ruta correctamente", async () => {
+      const { rutasController, cancelarRutaMock } = await cargarControllerConMocks();
+      cancelarRutaMock.mockResolvedValue(undefined);
+      const req = crearReqConParams({ rutaId: "7" });
+      const res = crearRespuesta();
+
+      await rutasController.cancelarRuta(req, res as Response);
+
+      expect(cancelarRutaMock).toHaveBeenCalledWith(7);
+      esperarRespuesta(res, 200, { mensaje: "Ruta cancelada correctamente" });
+    });
+
+    it("retorna 500 cuando cancelar ruta falla", async () => {
+      const { rutasController, cancelarRutaMock } = await cargarControllerConMocks();
+      cancelarRutaMock.mockRejectedValue(new Error("No existe la ruta 888"));
+      const req = crearReqConParams({ rutaId: "888" });
+      const res = crearRespuesta();
+
+      await rutasController.cancelarRuta(req, res as Response);
+
+      esperarRespuesta(res, 500, { error: "No existe la ruta 888" });
+    });
+
   });
 
   // Service:
@@ -451,6 +597,62 @@ describe("Rutas", () => {
       expect(prismaMock.ruta.create).toHaveBeenCalled();
       expect(rutaEntregaModelMock.create).toHaveBeenCalled();
       expect(salida[0].rutaId).toBe(101);
+    });
+
+    it("calcula cargaActualKg ignorando puntos con pesoProducto inválido al guardar", async () => {
+      const { rutasService, prismaMock, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
+      configurarMocksGuardarRuta({
+        prismaMock,
+        rutaEntregaModelMock,
+        rutaCreada: {
+          id: 302,
+          fechaReparto: new Date("2026-04-20T10:00:00.000Z"),
+          estadoRuta: "PENDIENTE",
+          horaInicioEntrega: new Date("2026-04-20T08:00:00.000Z"),
+          horaFinalizacionEntrega: null,
+        },
+      });
+
+      const puntosConPesosVariados = [
+        {
+          id: 1,
+          nombreCliente: "Cliente A",
+          contactoCliente: "3000000001",
+          latitud: 6.24,
+          longitud: -75.57,
+          pesoProducto: 15,
+          descripcionEntrega: "Casa",
+          direccion: "Calle 1",
+        },
+        {
+          id: 2,
+          nombreCliente: "Cliente B",
+          contactoCliente: "3000000002",
+          latitud: 6.25,
+          longitud: -75.58,
+          pesoProducto: Number.NaN,
+          descripcionEntrega: "Apartamento",
+          direccion: "Calle 2",
+        },
+        {
+          id: 3,
+          nombreCliente: "Cliente C",
+          contactoCliente: "3000000003",
+          latitud: 6.26,
+          longitud: -75.59,
+          pesoProducto: 20,
+          descripcionEntrega: "Tienda",
+          direccion: "Calle 3",
+        },
+      ] as any;
+
+      const salida = await ejecutarGuardarService(rutasService, {
+        puntosEntrega: puntosConPesosVariados,
+        rutasRepartidorGeoJSON: [crearRutaGeoJSON({ ruta: [1, 2, 3] })],
+      });
+
+      expect(salida[0].resumen.cargaActualKg).toBe(35);
+      expect(salida[0].resumen.numeroPedidos).toBe(3);
     });
 
     it("lanza error cuando el repartidor aparece repetido en el mismo lote", async () => {
@@ -847,6 +1049,153 @@ describe("Rutas", () => {
       expect(salida.rutaId).toBe(90);
       expect(salida.detalleParadas[0].estadoEntrega).toBe("Entregado");
       expect(salida.geometria.geometry.coordinates).toEqual([]);
+    });
+
+    it("consultarDetalleRuta ignora puntos con pesoProducto NaN en cálculo de carga", async () => {
+      const { rutasService, prismaMock, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.findUnique.mockResolvedValue({
+        id: 91,
+        repartidorId: 3,
+        fechaReparto: new Date("2026-04-16T10:00:00.000Z"),
+        estadoRuta: "EN_PROCESO",
+        distanciaTotal: 15,
+        tiempoEstimado: 150,
+        repartidor: { id: 3, nombre: "María", capacidadVehiculo: 30 },
+      });
+      rutaEntregaModelMock.findOne.mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          rutaId: 91,
+          puntosEntrega: [
+            {
+              id: 1,
+              codigo: "XYZ123",
+              direccion: "Calle 1",
+              nombreCliente: "Cliente A",
+              contactoCliente: "3000000001",
+              estadoEntrega: "ENTREGADO",
+              pesoProducto: 10,
+              descripcionEntrega: "Casa",
+              latitud: 6.24,
+              longitud: -75.57,
+            },
+            {
+              id: 2,
+              codigo: "XYZ124",
+              direccion: "Calle 2",
+              nombreCliente: "Cliente B",
+              contactoCliente: "3000000002",
+              estadoEntrega: "PENDIENTE",
+              pesoProducto: Number.NaN,
+              descripcionEntrega: "Apartamento",
+              latitud: 6.25,
+              longitud: -75.58,
+            },
+            {
+              id: 3,
+              codigo: "XYZ125",
+              direccion: "Calle 3",
+              nombreCliente: "Cliente C",
+              contactoCliente: "3000000003",
+              estadoEntrega: "PENDIENTE",
+              pesoProducto: null,
+              descripcionEntrega: "Tienda",
+              latitud: 6.26,
+              longitud: -75.59,
+            },
+          ],
+          geometria: [[6.24, -75.57], [6.25, -75.58]],
+        }),
+      });
+
+      const salida = await rutasService.consultarDetalleRuta("91");
+
+      expect(salida.rutaId).toBe(91);
+      expect(salida.detalleParadas).toHaveLength(3);
+      expect(salida.resumen.cargaActualKg).toBe(10);
+      expect(salida.resumen.numeroPedidos).toBe(3);
+    });
+
+    it("actualizarEstadoRuta actualiza el estado correctamente", async () => {
+      const { rutasService, prismaMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.updateMany.mockResolvedValue({ count: 1 });
+
+      await rutasService.actualizarEstadoRuta(10, "EN_PROCESO");
+
+      expect(prismaMock.ruta.updateMany).toHaveBeenCalledWith({
+        where: { id: 10 },
+        data: { estadoRuta: "EN_PROCESO" },
+      });
+    });
+
+    it("actualizarEstadoRuta lanza error cuando ruta no existe", async () => {
+      const { rutasService, prismaMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(rutasService.actualizarEstadoRuta(999, "EN_PROCESO")).rejects.toThrow(
+        "No existe la ruta 999 para actualizar"
+      );
+    });
+
+    it("actualizarEstadoPuntos actualiza estado de todos los puntos", async () => {
+      const { rutasService, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
+      rutaEntregaModelMock.updateMany = vi.fn().mockResolvedValue({ modifiedCount: 1 });
+
+      await rutasService.actualizarEstadoPuntos(50, "ENTREGADO");
+
+      expect(rutaEntregaModelMock.updateMany).toHaveBeenCalledWith(
+        { rutaId: 50 },
+        { $set: { "puntosEntrega.$[].estadoEntrega": "ENTREGADO" } }
+      );
+    });
+
+    it("actualizarEstadoPunto actualiza estado de un punto específico", async () => {
+      const { rutasService, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
+      rutaEntregaModelMock.updateOne = vi.fn().mockResolvedValue({ modifiedCount: 1 });
+
+      await rutasService.actualizarEstadoPunto(50, 123, "ENTREGADO");
+
+      expect(rutaEntregaModelMock.updateOne).toHaveBeenCalledWith(
+        { rutaId: 50, "puntosEntrega.id": 123 },
+        { $set: { "puntosEntrega.$.estadoEntrega": "ENTREGADO" } }
+      );
+    });
+
+    it("finalizarRuta actualiza estado a ENTREGADA y puntos a ENTREGADO", async () => {
+      const { rutasService, prismaMock, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.updateMany.mockResolvedValue({ count: 1 });
+      rutaEntregaModelMock.updateMany = vi.fn().mockResolvedValue({ modifiedCount: 1 });
+
+      await rutasService.finalizarRuta(60);
+
+      expect(prismaMock.ruta.updateMany).toHaveBeenCalledWith({
+        where: { id: 60 },
+        data: { estadoRuta: "ENTREGADA" },
+      });
+      expect(rutaEntregaModelMock.updateMany).toHaveBeenCalledWith(
+        { rutaId: 60 },
+        { $set: { "puntosEntrega.$[].estadoEntrega": "ENTREGADO" } }
+      );
+    });
+
+    it("cancelarRuta actualiza estado a CANCELADA", async () => {
+      const { rutasService, prismaMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.updateMany.mockResolvedValue({ count: 1 });
+
+      await rutasService.cancelarRuta(70);
+
+      expect(prismaMock.ruta.updateMany).toHaveBeenCalledWith({
+        where: { id: 70 },
+        data: { estadoRuta: "CANCELADA" },
+      });
+    });
+
+    it("cancelarRuta lanza error cuando ruta no existe", async () => {
+      const { rutasService, prismaMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(rutasService.cancelarRuta(999)).rejects.toThrow(
+        "No existe la ruta 999 para actualizar"
+      );
     });
   });
 });

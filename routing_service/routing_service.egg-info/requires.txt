@@ -4,5 +4,7 @@ pydantic
 httpx
 ortools
 python-dotenv
+
+[dev]
 pytest
 pytest-asyncio

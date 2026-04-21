@@ -57,7 +57,10 @@ export class TrackingController {
         }
         catch (error) {
             const mensajeError = error instanceof Error ? error.message : 'Error interno del servidor';
-            res.status(500).json({ error: mensajeError });
+            res.status(500).json({
+                mensaje: 'Error al iniciar tracking de la ruta',
+                error: mensajeError
+            });
         }
     }
 

@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: routing-service
+Version: 1.0.0
+Summary: Servicio de optimización de rutas
+Author: ConEmpaques
+Requires-Python: >=3.9
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
+Requires-Dist: pydantic
+Requires-Dist: httpx
+Requires-Dist: ortools
+Requires-Dist: python-dotenv
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-asyncio; extra == "dev"
