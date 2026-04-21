@@ -126,7 +126,7 @@ describe("authService", () => {
                 },
             });
             expect(resultado.mensaje).toBe("Autenticación exitosa");
-            expect(resultado.usuario).toEqual({
+            expect(resultado.repartidor).toEqual({
                 id: 2,
                 nombre: "Repartidor",
                 email: "repartidor@empresa.com",
