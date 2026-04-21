@@ -15,6 +15,7 @@ import RutaInfoCard from '../../components/pedidos/RutaInfoCard.component';
 import { styles } from './Pedidos.style';
 import { COLORS } from '../../assets/styles/Colores.style';
 import { RutaResumen } from '../../types/rutas.types';
+import Constants from "expo-constants";
 
 export default function PedidosScreen() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function PedidosScreen() {
         const id = await AsyncStorage.getItem("idRepartidor");
         if (id) {
           setIdRepartidor(parseInt(id, 10));
+          console.log("✅ ID del repartidor cargado:", id);
         } else {
           setError("No se encontró el ID del repartidor. Por favor, inicia sesión nuevamente.");
         }
@@ -51,9 +53,11 @@ export default function PedidosScreen() {
     try {
       isRefresh ? setRefreshing(true) : setLoading(true);
       setError(null);
+      const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+      console.log('📡 Consultando rutas en url:', apiBaseUrl);
 
       const response = await fetch(
-        `http://10.149.177.33:3000/api/rutas/repartidor/${idRepartidor}`
+        `${apiBaseUrl}/api/rutas/repartidor/${idRepartidor}`
       );
       const data = await response.json();
 

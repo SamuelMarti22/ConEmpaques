@@ -14,7 +14,7 @@ export interface IPuntoEntrega {
   longitud: number;
   pesoProducto: number;
   descripcionEntrega: string;
-  estadoEntrega: "EN_BODEGA" | "PENDIENTE" | "EN_CAMINO" | "ENTREGADO" | "FALLIDO";
+  estadoEntrega: "EN_BODEGA" | "PENDIENTE" | "EN_ENTREGA" | "EN_CAMINO" | "ENTREGADO" | "FALLIDO";
   fechaHoraEntrega?: Date;
   firmaUrl?: string;
   motivoFallido?: string;
@@ -41,8 +41,8 @@ export interface IPuntoEntregaMethods {
   setLongitud(valor: number): void;
   getDescripcionEntrega(): string;
   setDescripcionEntrega(valor: string): void;
-  getEstadoEntrega(): "EN_BODEGA" | "PENDIENTE" | "EN_CAMINO" | "ENTREGADO" | "FALLIDO";
-  setEstadoEntrega(valor: "EN_BODEGA" | "PENDIENTE" | "EN_CAMINO" | "ENTREGADO" | "FALLIDO"): void;
+  getEstadoEntrega(): "EN_BODEGA" | "PENDIENTE" | "EN_ENTREGA" | "EN_CAMINO" | "ENTREGADO" | "FALLIDO";
+  setEstadoEntrega(valor: "EN_BODEGA" | "PENDIENTE" | "EN_ENTREGA" | "EN_CAMINO" | "ENTREGADO" | "FALLIDO"): void;
   getFechaHoraEntrega(): Date | undefined;
   setFechaHoraEntrega(valor: Date): void;
   getFirmaUrl(): string | undefined;
@@ -81,7 +81,7 @@ export const PuntoEntregaSchema = new Schema<IPuntoEntrega, mongoose.Model<IPunt
 
   estadoEntrega: {
     type: String,
-    enum: ["EN_BODEGA", "PENDIENTE", "EN_CAMINO", "ENTREGADO", "FALLIDO"],
+    enum: ["EN_BODEGA", "PENDIENTE", "EN_ENTREGA", "EN_CAMINO", "ENTREGADO", "FALLIDO"],
     default: "EN_BODEGA",
   },
 

@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { styles } from "./login.style";
 
 export default function Login() {
@@ -15,7 +16,8 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       setIsSubmitting(true);
-      const res = await fetch("http://10.149.177.33:3000/api/auth/repartidor", {
+      const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+      const res = await fetch(`${apiBaseUrl}/api/auth/repartidor`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,23 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { obtenerUbicacionActual, obtenerUbicacionEnTiempoReal } from '@/services/ubicacion.service';
-import {
-  View, Text, TouchableOpacity,
-  SafeAreaView, ScrollView, Linking, Alert, ActivityIndicator,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { styles } from './Tracking.style';
-import { DetalleParada, RutaGuardada } from '../../types/rutas.types';
-import { COLORS } from '../../assets/styles/Colores.style';
 import { abrirGoogleMapsConRuta } from '@/services/RutaGoogleMaps.app';
 import { socketService } from '@/services/socket.service';
+import { obtenerUbicacionActual, obtenerUbicacionEnTiempoReal } from '@/services/ubicacion.service';
 import Feather from '@expo/vector-icons/Feather';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  SafeAreaView, ScrollView,
+  Text, TouchableOpacity,
+  View,
+} from 'react-native';
+import { COLORS } from '../../assets/styles/Colores.style';
+import { DetalleParada, RutaGuardada } from '../../types/rutas.types';
+import { styles } from './Tracking.style';
+import Constants from "expo-constants";
 
 const C = COLORS;
 
 const ESTADO_CFG = {
   EN_BODEGA: { bg: '#e8f4f8', text: '#1F6F5F' },
   PENDIENTE: { bg: '#fff3cd', text: '#856404' }, 
+  EN_ENTREGA: { bg: '#fff0e0', text: '#d97706' },
   EN_CAMINO: { bg: '#e3f2fd', text: '#1565c0' },
   ENTREGADO: { bg: '#d1f0e4', text: '#1F6F5F' },
   FALLIDO:   { bg: '#fde8e8', text: '#a32d2d' },
@@ -82,6 +88,8 @@ const ParadasListScreen = ({
   trackingActivo?: boolean,
   rutaId?: string | number,
 }) => {
+  const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+
   // Calcula distancia entre dos puntos
   const calcularDistancia = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const toRad = (deg: number) => deg * Math.PI / 180;
@@ -92,8 +100,40 @@ const ParadasListScreen = ({
     return (6371 * c).toFixed(2);
   };
 
+  const actualizarSiguientePuntoEnEntrega = async (indiceActual: number) => {
+    const siguienteParada = paradas[indiceActual + 1];
+
+    if (!siguienteParada) {
+      return;
+    }
+
+    if (!siguienteParada.puntoId || !Number.isInteger(siguienteParada.puntoId) || siguienteParada.puntoId <= 0) {
+      throw new Error(`No se pudo obtener un punto válido para la siguiente parada (orden ${siguienteParada.orden})`);
+    }
+
+    const response = await fetch(
+      `${apiBaseUrl}/api/rutas/${rutaId}/actualizarPunto`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          puntoId: Number(siguienteParada.puntoId),
+          nuevoEstado: 'EN_ENTREGA',
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'Error al actualizar el siguiente punto a EN_ENTREGA');
+    }
+  };
+
   // Función para actualizar el estado de un punto
-  const actualizarEstadoPunto = async (puntoId: number, nuevoEstado: 'ENTREGADO' | 'FALLIDO') => {
+  const actualizarEstadoPunto = async (puntoId: number, nuevoEstado: 'ENTREGADO' | 'FALLIDO', indiceActual: number) => {
     try {
       // Validar puntoId
       if (!puntoId || !Number.isInteger(puntoId) || puntoId <= 0) {
@@ -110,7 +150,7 @@ const ParadasListScreen = ({
       console.log('📤 Enviando actualización:', { rutaId, puntoId, nuevoEstado });
 
       const response = await fetch(
-        `http://10.149.177.33:3000/api/rutas/${rutaId}/actualizarPunto`,
+        `${apiBaseUrl}/api/rutas/${rutaId}/actualizarPunto`,
         {
           method: 'POST',
           headers: {
@@ -128,6 +168,8 @@ const ParadasListScreen = ({
       if (!response.ok) {
         throw new Error(data?.error || 'Error al actualizar el estado');
       }
+
+      await actualizarSiguientePuntoEnEntrega(indiceActual);
 
       Alert.alert('Éxito', `Punto actualizado a ${nuevoEstado}`);
     } catch (error) {
@@ -278,7 +320,7 @@ const ParadasListScreen = ({
                     style={{ flex: 1, backgroundColor: C.teal, borderRadius: 8, paddingVertical: 12 }}
                     onPress={() => {
                       console.log('🔍 Parada:', parada);
-                      actualizarEstadoPunto(parada.puntoId, 'ENTREGADO');
+                      actualizarEstadoPunto(parada.puntoId, 'ENTREGADO', idx);
                     }}
                   >
                     <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>✓ Entregado</Text>
@@ -287,7 +329,7 @@ const ParadasListScreen = ({
                     style={{ flex: 1, backgroundColor: '#d32f2f', borderRadius: 8, paddingVertical: 12 }}
                     onPress={() => {
                       console.log('🔍 Parada:', parada);
-                      actualizarEstadoPunto(parada.puntoId, 'FALLIDO');
+                      actualizarEstadoPunto(parada.puntoId, 'FALLIDO', idx);
                     }}
                   >
                     <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>✗ Fallido</Text>
@@ -320,6 +362,8 @@ export default function TrackingScreen() {
   const [room, setRoom] = useState<string | null>(null);
   const [ultimoHito, setUltimoHito] = useState<string | null>(null);
 
+  const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+
   useEffect(() => {
     const cargarDetalleRuta = async () => {
       try {
@@ -333,7 +377,7 @@ export default function TrackingScreen() {
         console.log('Cargando detalles para ruta ID:', rutaId);
 
         const response = await fetch(
-          `http://192.168.1.11:3000/api/rutas/${rutaId}`
+          `${apiBaseUrl}/api/rutas/${rutaId}`
           
         );
       
@@ -452,7 +496,7 @@ export default function TrackingScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.screen}>
-        <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>...
+        <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
           <ActivityIndicator size="large" color={C.teal} />
           <Text style={{ marginTop: 12, color: '#666' }}>Cargando ruta...</Text>
         </View>
@@ -501,7 +545,7 @@ export default function TrackingScreen() {
               // 1️⃣ Iniciar tracking en el servidor
               console.log('🚀 Iniciando tracking para ruta:', rutaId);
               
-              const url = `http://192.168.1.11:3000/api/tracking/iniciar/${rutaId}`;
+              const url = `${apiBaseUrl}/api/tracking/iniciar/${rutaId}`;
               console.log('📍 URL del endpoint:', url);
               
               const responseTracking = await fetch(url, { method: 'POST' });

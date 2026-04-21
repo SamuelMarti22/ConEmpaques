@@ -1,10 +1,9 @@
+import { Request, Response } from "express";
+import { RutaEntregaModel } from "../../databases/mongoDB/models/rutaEntrega.model.js";
+import { EstadoRuta } from "../../databases/prisma/generated/prisma/enums.js";
 import { obtenerRoom } from "../../sockets/rooms.service";
-import { Request } from "express";
-import { Response } from "express";
 import { trackingStore } from "../../store/storeTracking.service";
 import { rutasService } from "../rutas/rutas.service.js";
-import { EstadoRuta } from "../../databases/prisma/generated/prisma/enums.js";
-import { RutaEntregaModel } from "../../databases/mongoDB/models/rutaEntrega.model.js";
 
 export class TrackingController {
 
@@ -36,12 +35,30 @@ export class TrackingController {
             const rutaEntrega = await RutaEntregaModel.findOne({ rutaId });
             if (rutaEntrega) {
                 rutaEntrega.puntosEntrega.forEach(punto => {
-                    if (punto.estadoEntrega === "EN_BODEGA") {
+                    if (punto.estadoEntrega === "EN_BODEGA" || punto.estadoEntrega === "EN_ENTREGA") {
                         punto.estadoEntrega = "PENDIENTE";
                     }
                 });
+
+                const primerPuntoPendienteIndex = rutaEntrega.puntosEntrega.findIndex(
+                    punto => punto.estadoEntrega === "PENDIENTE"
+                );
+
+                if (primerPuntoPendienteIndex >= 0) {
+                    rutaEntrega.puntosEntrega.forEach((punto, index) => {
+                        if (index === primerPuntoPendienteIndex) {
+                            punto.estadoEntrega = "EN_ENTREGA";
+                            return;
+                        }
+
+                        if (punto.estadoEntrega === "EN_ENTREGA") {
+                            punto.estadoEntrega = "PENDIENTE";
+                        }
+                    });
+                }
+
                 await rutaEntrega.save();
-                console.log(`✅ ${rutaEntrega.puntosEntrega.length} puntos cambiados a PENDIENTE`);
+                console.log(`✅ ${rutaEntrega.puntosEntrega.length} puntos actualizados al iniciar tracking (primer punto en EN_ENTREGA)`);
             }
 
             const room = await obtenerRoom(rutaId);

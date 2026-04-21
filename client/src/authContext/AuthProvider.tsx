@@ -1,5 +1,9 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AuthContext, type Usuario } from "./AuthContext";
+import {
+	notificarCambioAPrimerTramoEntrega,
+	solicitarPermisoNotificacionesSiHaceFalta,
+} from "../components/notificacionCliente/notificacionCliente.component";
 
 const STORAGE_TOKEN_KEY = "conempaques.auth.token";
 const STORAGE_USUARIO_KEY = "conempaques.auth.usuario";
@@ -12,7 +16,7 @@ interface PuntoEntregaClienteResponse {
 	id: number;
 	nombreCliente: string;
 	codigo: string;
-	estadoEntrega: 'EN_BODEGA' | 'PENDIENTE' | 'EN_CAMINO' | 'ENTREGADO' | 'FALLIDO';
+	estadoEntrega: 'EN_BODEGA' | 'PENDIENTE' | 'EN_ENTREGA' | 'EN_CAMINO' | 'ENTREGADO' | 'FALLIDO';
 }
 
 interface ObtenerPedidoClienteResponse {
@@ -20,6 +24,9 @@ interface ObtenerPedidoClienteResponse {
 	puntoEntrega: PuntoEntregaClienteResponse;
 	error?: string;
 }
+
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+const CLIENTE_POLLING_INTERVAL_MS = 30_000;
 
 function leerTokenInicial(): string | null {
 	return localStorage.getItem(STORAGE_TOKEN_KEY);
@@ -45,11 +52,28 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 	const [usuario, setUsuario] = useState<Usuario | null>(() => leerUsuarioInicial());
 	const [cargando, setCargando] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const estadoEntregaClienteRef = useRef<Usuario["estadoEntrega"] | undefined>(leerUsuarioInicial()?.estadoEntrega);
+
+	const consultarPedidoCliente = useCallback(async (codigoNormalizado: string): Promise<ObtenerPedidoClienteResponse> => {
+		const respuesta = await fetch(`${API_BASE_URL}/api/clientes/pedidos/${encodeURIComponent(codigoNormalizado)}`);
+		const payload = (await respuesta.json().catch(() => null)) as ObtenerPedidoClienteResponse | null;
+
+		if (!respuesta.ok) {
+			throw new Error(payload?.error ?? "No se pudo validar el código de entrega");
+		}
+
+		if (!payload?.puntoEntrega) {
+			throw new Error("Respuesta inválida del servidor al consultar el pedido");
+		}
+
+		return payload;
+	}, []);
 
 	const logout = useCallback(() => {
 		setToken(null);
 		setUsuario(null);
 		setError(null);
+		estadoEntregaClienteRef.current = undefined;
 
 		localStorage.removeItem(STORAGE_TOKEN_KEY);
 		localStorage.removeItem(STORAGE_USUARIO_KEY);
@@ -74,6 +98,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
 			setToken(nuevoToken);
 			setUsuario(nuevoUsuario);
+			estadoEntregaClienteRef.current = nuevoUsuario.estadoEntrega;
 
 			localStorage.setItem(STORAGE_TOKEN_KEY, nuevoToken);
 			localStorage.setItem(STORAGE_USUARIO_KEY, JSON.stringify(nuevoUsuario));
@@ -97,16 +122,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 				throw new Error("Debes enviar un código de entrega válido");
 			}
 
-			const respuesta = await fetch(`http://localhost:3000/api/clientes/pedidos/${encodeURIComponent(codigoNormalizado)}`);
-			const payload = (await respuesta.json().catch(() => null)) as ObtenerPedidoClienteResponse | null;
-
-			if (!respuesta.ok) {
-				throw new Error(payload?.error ?? "No se pudo validar el código de entrega");
-			}
-
-			if (!payload?.puntoEntrega) {
-				throw new Error("Respuesta inválida del servidor al consultar el pedido");
-			}
+			const payload = await consultarPedidoCliente(codigoNormalizado);
 
 			const nuevoToken = `cliente-token-${Date.now()}`;
 			const nuevoUsuario: Usuario = {
@@ -120,6 +136,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
 			setToken(nuevoToken);
 			setUsuario(nuevoUsuario);
+			estadoEntregaClienteRef.current = nuevoUsuario.estadoEntrega;
 
 			localStorage.setItem(STORAGE_TOKEN_KEY, nuevoToken);
 			localStorage.setItem(STORAGE_USUARIO_KEY, JSON.stringify(nuevoUsuario));
@@ -130,7 +147,72 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 		} finally {
 			setCargando(false);
 		}
-	}, []);
+	}, [consultarPedidoCliente]);
+
+	useEffect(() => {
+		if (usuario?.rol !== "cliente" || !usuario.codigoEntrega) {
+			return;
+		}
+
+		solicitarPermisoNotificacionesSiHaceFalta();
+
+		const codigoNormalizado = usuario.codigoEntrega.trim().toUpperCase();
+		if (codigoNormalizado.length === 0) {
+			return;
+		}
+
+		let cancelado = false;
+
+		const refrescarEstadoCliente = async () => {
+			try {
+				const payload = await consultarPedidoCliente(codigoNormalizado);
+				if (cancelado) {
+					return;
+				}
+
+				const estadoAnterior = estadoEntregaClienteRef.current;
+				estadoEntregaClienteRef.current = payload.puntoEntrega.estadoEntrega;
+
+				setUsuario((usuarioActual) => {
+					if (!usuarioActual || usuarioActual.rol !== "cliente") {
+						return usuarioActual;
+					}
+
+					const usuarioActualizado: Usuario = {
+						...usuarioActual,
+						id: payload.puntoEntrega.id,
+						nombre: payload.puntoEntrega.nombreCliente || usuarioActual.nombre || "cliente",
+						codigoEntrega: payload.puntoEntrega.codigo,
+						rutaId: payload.rutaId,
+						estadoEntrega: payload.puntoEntrega.estadoEntrega,
+						rol: "cliente",
+					};
+
+					localStorage.setItem(STORAGE_USUARIO_KEY, JSON.stringify(usuarioActualizado));
+					return usuarioActualizado;
+				});
+
+				notificarCambioAPrimerTramoEntrega({
+					estadoAnterior,
+					estadoNuevo: payload.puntoEntrega.estadoEntrega,
+					codigoEntrega: payload.puntoEntrega.codigo,
+					nombreCliente: payload.puntoEntrega.nombreCliente,
+				});
+			} catch (errorActualizacion) {
+				console.error("No se pudo refrescar el estado del pedido del cliente:", errorActualizacion);
+			}
+		};
+
+		void refrescarEstadoCliente();
+		const intervalId = window.setInterval(() => {
+			void refrescarEstadoCliente();
+		}, CLIENTE_POLLING_INTERVAL_MS);
+
+		return () => {
+			cancelado = true;
+			window.clearInterval(intervalId);
+		};
+	}, [usuario?.rol, usuario?.codigoEntrega, consultarPedidoCliente]);
 
 	const value = useMemo(
 		() => ({
