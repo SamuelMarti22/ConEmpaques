@@ -32,6 +32,19 @@ type PedidoHistorialUI = {
   pedido: RutaGuardadaUI['detalleParadas'][number];
 };
 
+export function resolverPedidoSeleccionadoParaRuta(
+  anterior: string | null,
+  pedidos: Array<{ id: string; rutaId: number }>,
+  siguienteRuta: number,
+): string | null {
+  if (!anterior) return null;
+  const pedidoActual = pedidos.find((pedido) => pedido.id === anterior);
+  if (!pedidoActual || pedidoActual.rutaId !== siguienteRuta) {
+    return null;
+  }
+  return anterior;
+}
+
 function textoBusquedaRuta(ruta: RutaGuardadaUI): string {
   const clientes = ruta.detalleParadas.map((parada, indice) => nombreParada(parada, indice)).join(' ');
   const codigos = ruta.detalleParadas.map((parada) => parada.codigoSeguimiento ?? '').join(' ');
@@ -208,14 +221,7 @@ export default function HistorialRutasApp() {
 
     setModo('pedidos');
 
-    setPedidoSeleccionadoId((anterior) => {
-      if (!anterior) return null;
-      const pedidoActual = pedidos.find((pedido) => pedido.id === anterior);
-      if (!pedidoActual || pedidoActual.rutaId !== siguienteRuta) {
-        return null;
-      }
-      return anterior;
-    });
+    setPedidoSeleccionadoId((anterior) => resolverPedidoSeleccionadoParaRuta(anterior, pedidos, siguienteRuta));
   };
 
   const seleccionarPedido = (pedido: PedidoHistorialUI) => {
