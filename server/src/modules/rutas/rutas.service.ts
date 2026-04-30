@@ -189,13 +189,13 @@ export class RutasService {
         throw new Error('No se pudo generar un codigo de seguimiento unico');
     }
 
-    async depurarRutasAntiguas(diasRetencion = 30): Promise<{ rutasEliminadas: number; documentosMongoEliminados: number }> {
+    async depurarRutasAntiguas(diasRetencion = 30): Promise<{ rutasEliminadas: number; documentosMongoEliminados: number; puntosEliminados: number }> {
         if (!Number.isInteger(diasRetencion) || diasRetencion <= 0) {
             throw new Error('diasRetencion debe ser un entero positivo');
         }
 
         if (DEPURACION_RUTAS_EN_CURSO) {
-            return { rutasEliminadas: 0, documentosMongoEliminados: 0 };
+            return { rutasEliminadas: 0, documentosMongoEliminados: 0, puntosEliminados: 0 };
         }
 
         DEPURACION_RUTAS_EN_CURSO = true;
@@ -216,11 +216,36 @@ export class RutasService {
             });
 
             if (rutasAntiguas.length === 0) {
-                return { rutasEliminadas: 0, documentosMongoEliminados: 0 };
+                return { rutasEliminadas: 0, documentosMongoEliminados: 0, puntosEliminados: 0 };
             }
 
             const rutasIds = rutasAntiguas.map((ruta) => ruta.id);
 
+            // PASO 1: Obtener documentos de Mongo para contar puntos que serán eliminados
+            const rutasEntregaAEliminar = await RutaEntregaModel.find({
+                rutaId: {
+                    $in: rutasIds,
+                },
+            }).lean();
+
+            let totalPuntosAEliminar = 0;
+            rutasEntregaAEliminar.forEach((rutaEntrega) => {
+                const cantidadPuntos = rutaEntrega.puntosEntrega?.length ?? 0;
+                totalPuntosAEliminar += cantidadPuntos;
+            });
+
+            console.log(`🔍 Depuración de rutas (>${diasRetencion} días): ${rutasIds.length} rutas antiguas encontradas con ${totalPuntosAEliminar} puntos de entrega asociados`);
+
+            // PASO 2: Eliminar documentos de Mongo (que incluyen puntos embebidos)
+            const resultadoMongo = await RutaEntregaModel.deleteMany({
+                rutaId: {
+                    $in: rutasIds,
+                },
+            });
+
+            console.log(`✅ MONGO: ${resultadoMongo.deletedCount ?? 0} documentos eliminados (contenían ${totalPuntosAEliminar} puntos de entrega)`);
+
+            // PASO 3: Eliminar rutas de MySQL
             const resultadoMysql = await prisma.ruta.deleteMany({
                 where: {
                     id: {
@@ -229,15 +254,12 @@ export class RutasService {
                 },
             });
 
-            const resultadoMongo = await RutaEntregaModel.deleteMany({
-                rutaId: {
-                    $in: rutasIds,
-                },
-            });
+            console.log(`✅ MYSQL: ${resultadoMysql.count} rutas eliminadas`);
 
             return {
                 rutasEliminadas: resultadoMysql.count,
                 documentosMongoEliminados: typeof resultadoMongo.deletedCount === 'number' ? resultadoMongo.deletedCount : 0,
+                puntosEliminados: totalPuntosAEliminar,
             };
         } finally {
             DEPURACION_RUTAS_EN_CURSO = false;
@@ -463,6 +485,23 @@ export class RutasService {
     }
 
     async eliminarRuta(rutaId: number): Promise<void> {
+        const rutaExistente = await prisma.ruta.findUnique({
+            where: {
+                id: rutaId,
+            },
+            select: {
+                id: true,
+            },
+        });
+
+        if (!rutaExistente) {
+            throw new Error(`No existe la ruta ${rutaId}`);
+        }
+
+        await RutaEntregaModel.deleteMany({
+            rutaId,
+        });
+
         const rutaEliminada = await prisma.ruta.deleteMany({
             where: {
                 id: rutaId,
@@ -472,10 +511,6 @@ export class RutasService {
         if (rutaEliminada.count === 0) {
             throw new Error(`No existe la ruta ${rutaId}`);
         }
-
-        await RutaEntregaModel.deleteMany({
-            rutaId,
-        });
     }
 
     async listarRutasGuardadas(): Promise<RutaGuardadaResumen[]> {

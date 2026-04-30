@@ -752,7 +752,7 @@ describe("Rutas", () => {
     // Si no hay filas afectadas en MySQL, la ruta no existe y se debe lanzar error.
     it("eliminarRuta lanza error cuando no existe", async () => {
       const { rutasService, prismaMock } = await cargarRutasServiceConMocks();
-      prismaMock.ruta.deleteMany.mockResolvedValue({ count: 0 });
+      prismaMock.ruta.findUnique.mockResolvedValue(null);
 
       await expect(rutasService.eliminarRuta(999)).rejects.toThrow("No existe la ruta 999");
     });
@@ -760,13 +760,21 @@ describe("Rutas", () => {
     // Eliminar exitosamente implica limpiar tanto MySQL como documento asociado en Mongo.
     it("eliminarRuta elimina en mysql y mongo cuando existe", async () => {
       const { rutasService, prismaMock, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
+      prismaMock.ruta.findUnique.mockResolvedValue({ id: 10 });
       prismaMock.ruta.deleteMany.mockResolvedValue({ count: 1 });
       rutaEntregaModelMock.deleteMany.mockResolvedValue({ deletedCount: 1 });
 
       await rutasService.eliminarRuta(10);
 
+      expect(prismaMock.ruta.findUnique).toHaveBeenCalledWith({
+        where: { id: 10 },
+        select: { id: true },
+      });
       expect(prismaMock.ruta.deleteMany).toHaveBeenCalledWith({ where: { id: 10 } });
       expect(rutaEntregaModelMock.deleteMany).toHaveBeenCalledWith({ rutaId: 10 });
+      expect(rutaEntregaModelMock.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+        prismaMock.ruta.deleteMany.mock.invocationCallOrder[0],
+      );
     });
 
     // Listado sin resultados debe devolver arreglo vacío, no null/undefined.
@@ -876,6 +884,24 @@ describe("Rutas", () => {
       const { rutasService, prismaMock, rutaEntregaModelMock } = await cargarRutasServiceConMocks();
       prismaMock.ruta.findMany.mockResolvedValue([{ id: 11 }, { id: 12 }]);
       prismaMock.ruta.deleteMany.mockResolvedValue({ count: 2 });
+      rutaEntregaModelMock.find.mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          {
+            rutaId: 11,
+            puntosEntrega: [
+              { id: 1, nombreCliente: 'A' },
+              { id: 2, nombreCliente: 'B' },
+              { id: 3, nombreCliente: 'C' },
+            ],
+          },
+          {
+            rutaId: 12,
+            puntosEntrega: [
+              { id: 4, nombreCliente: 'D' },
+            ],
+          },
+        ]),
+      });
       rutaEntregaModelMock.deleteMany.mockResolvedValue({ deletedCount: 2 });
 
       const resultado = await rutasService.depurarRutasAntiguas(30);
@@ -902,7 +928,10 @@ describe("Rutas", () => {
           $in: [11, 12],
         },
       });
-      expect(resultado).toEqual({ rutasEliminadas: 2, documentosMongoEliminados: 2 });
+      expect(rutaEntregaModelMock.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+        prismaMock.ruta.deleteMany.mock.invocationCallOrder[0],
+      );
+      expect(resultado).toEqual({ rutasEliminadas: 2, documentosMongoEliminados: 2, puntosEliminados: 4 });
     });
 
     it("depurarRutasAntiguas no elimina nada cuando no hay rutas vencidas", async () => {
@@ -911,7 +940,7 @@ describe("Rutas", () => {
 
       const resultado = await rutasService.depurarRutasAntiguas(30);
 
-      expect(resultado).toEqual({ rutasEliminadas: 0, documentosMongoEliminados: 0 });
+      expect(resultado).toEqual({ rutasEliminadas: 0, documentosMongoEliminados: 0, puntosEliminados: 0 });
       expect(prismaMock.ruta.deleteMany).not.toHaveBeenCalled();
       expect(rutaEntregaModelMock.deleteMany).not.toHaveBeenCalled();
     });

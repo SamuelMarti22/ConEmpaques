@@ -100,9 +100,9 @@ const iniciar = async () => {
 	const ejecutarDepuracionRutas = async () => {
 		try {
 			const resultado = await rutasService.depurarRutasAntiguas(DIAS_RETENCION_RUTAS);
-			if (resultado.rutasEliminadas > 0 || resultado.documentosMongoEliminados > 0) {
+			if (resultado.rutasEliminadas > 0 || resultado.documentosMongoEliminados > 0 || resultado.puntosEliminados > 0) {
 				console.log(
-					`Depuracion rutas +30 dias: MySQL=${resultado.rutasEliminadas}, Mongo=${resultado.documentosMongoEliminados}`,
+					`📋 Depuracion rutas +${DIAS_RETENCION_RUTAS} dias: Rutas=${resultado.rutasEliminadas}, Puntos de Entrega=${resultado.puntosEliminados}, Documentos Mongo=${resultado.documentosMongoEliminados}`,
 				);
 			}
 		} catch (error) {
