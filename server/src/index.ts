@@ -14,6 +14,7 @@ import { clienteController } from "./modules/vistaCliente/cliente.controller.js"
 import geoCodificacionRutasController from "./modules/geoCodificacion/geoCodificacion.controller.js";
 import { rutasService } from "./modules/rutas/rutas.service.js";
 import { registerHandlers } from "./sockets/handle.js";
+import { setSocketServer } from "./sockets/io.gateway.js";
 import { authController } from "./modules/autenticacion/auth.controller.js";
 
 
@@ -62,6 +63,9 @@ app.post("/api/rutas/:rutaId/actualizarPunto", rutasController.actualizarEstadoP
 const trackingController = new TrackingController();
 app.post("/api/tracking/iniciar/:rutaId", (req, res) => trackingController.iniciarTrackingRuta(req, res));
 app.get("/api/tracking/ubicacion/:rutaId", (req, res) => trackingController.obtenerUbicacionRepartidor(req, res));
+app.post("/api/tracking/simulacion/iniciar/:rutaId", (req, res) => trackingController.iniciarSimulacionRuta(req, res));
+app.post("/api/tracking/simulacion/detener/:rutaId", (req, res) => trackingController.detenerSimulacionRuta(req, res));
+app.get("/api/tracking/simulacion/estado/:rutaId", (req, res) => trackingController.estadoSimulacionRuta(req, res));
 
 
 // Ruta vista cliente
@@ -86,6 +90,8 @@ const iniciar = async () => {
 			methods: ["GET", "POST"]
 		}
 	});
+
+	setSocketServer(io);
 
 	// Registrar handlers de Socket.io
 	io.on("connection", (socket) => {

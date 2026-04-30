@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import HistorialRutasApp from '../../src/apps/historialRutas/HistorialRutas.app'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import HistorialRutasApp, { resolverPedidoSeleccionadoParaRuta } from '../../src/apps/historialRutas/HistorialRutas.app'
 import type { RutaGuardadaUI } from '../../src/components/guardadoRuta/botonGuardarRuta.component'
 
 // ---------------------------------------------------------------------------
@@ -398,6 +398,18 @@ describe('HistorialRutas — módulo completo', () => {
       const tarjetasAna = screen.getAllByText('Ana')
       expect(tarjetasAna.length).toBeGreaterThanOrEqual(1)
     })
+
+    it('resuelve pedido seleccionado para nueva ruta', () => {
+      const pedidos = [
+        { id: '101-1-11', rutaId: 101 },
+        { id: '202-1-21', rutaId: 202 },
+      ]
+
+      expect(resolverPedidoSeleccionadoParaRuta(null, pedidos, 101)).toBeNull()
+      expect(resolverPedidoSeleccionadoParaRuta('inexistente', pedidos, 101)).toBeNull()
+      expect(resolverPedidoSeleccionadoParaRuta('101-1-11', pedidos, 202)).toBeNull()
+      expect(resolverPedidoSeleccionadoParaRuta('101-1-11', pedidos, 101)).toBe('101-1-11')
+    })
   })
 
   // -------------------------------------------------------------------------
@@ -487,6 +499,19 @@ describe('HistorialRutas — módulo completo', () => {
 
       const contenedor = document.querySelector('.historialRutas__lista')
       expect(contenedor?.classList.contains('historialRutas__lista--lista')).toBe(true)
+    })
+
+    it('permite volver de lista a grid', async () => {
+      const user = userEvent.setup()
+      render(<HistorialRutasApp />)
+
+      await screen.findByText('Ruta mock #101')
+
+      await user.click(screen.getByRole('button', { name: /Lista/i }))
+      await user.click(screen.getByRole('button', { name: /Grid/i }))
+
+      const contenedor = document.querySelector('.historialRutas__lista')
+      expect(contenedor?.classList.contains('historialRutas__lista--lista')).toBe(false)
     })
   })
 

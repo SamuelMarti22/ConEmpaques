@@ -111,7 +111,7 @@ describe("registerHandlers", () => {
                 eta: 300,
             });
 
-            expect(trackingStore.agregarPosicion).toHaveBeenCalledWith(1, {
+            expect(trackingStore.agregarPosicion).toHaveBeenCalledWith(100, {
                 lat: 10.5,
                 lng: 20.5,
                 timestamp: expect.any(Number),
@@ -211,7 +211,7 @@ describe("registerHandlers", () => {
             });
 
             expect(obtenerRoom).toHaveBeenCalledWith(100);
-            expect(trackingStore.eliminarSession).toHaveBeenCalledWith(1);
+            expect(trackingStore.eliminarSession).toHaveBeenCalledWith(100);
             expect(mockToEmit).toHaveBeenCalledWith("driver:finished");
         });
 

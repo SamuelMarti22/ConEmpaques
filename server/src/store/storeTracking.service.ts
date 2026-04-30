@@ -1,5 +1,4 @@
-import { Posicion, DriverSession } from "../types/store.types";
-import { prisma } from "../databases/prisma/lib/prisma.js";
+import { DriverSession, Posicion } from "../types/store.types";
 const sessions = new Map<string, DriverSession>()
 
 export const trackingStore = {
@@ -28,8 +27,8 @@ export const trackingStore = {
 
 
   // Guardar nueva posición, máximo 3
-  agregarPosicion(idRepartidor: string, posicion: Posicion) {
-    const session = sessions.get(idRepartidor)
+    agregarPosicion(idRuta: string | number, posicion: Posicion) {
+        const session = sessions.get(String(idRuta))
     if (!session) return
 
     session.posiciones.unshift(posicion)          
