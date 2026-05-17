@@ -14,16 +14,6 @@ export function validarPaginacion(req: Request, res: Response): QueryPaginacion 
   const pagina = Math.max(1, parseInt(req.query.pagina as string) || 1);
   const porPagina = Math.max(1, Math.min(100, parseInt(req.query.porPagina as string) || 10));
 
-  if (!Number.isInteger(pagina) || pagina < 1) {
-    res.status(400).json({ error: 'Parámetro pagina debe ser un entero positivo' });
-    return null;
-  }
-
-  if (!Number.isInteger(porPagina) || porPagina < 1 || porPagina > 100) {
-    res.status(400).json({ error: 'Parámetro porPagina debe estar entre 1 y 100' });
-    return null;
-  }
-
   return { pagina, porPagina };
 }
 

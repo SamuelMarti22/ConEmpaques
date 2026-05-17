@@ -66,3 +66,77 @@ export function respuestaMuchasFallidas(cantidadFallidas: number, total: number)
   }));
   return { entregas, total, pagina: 1, porPagina: total };
 }
+
+export function respuestaRecientesConCasosBorde(): RecentDeliveriesResponse {
+  return {
+    entregas: [
+      {
+        id: '',
+        codigoSeguimiento: '',
+        cliente: 'Cliente D',
+        direccion: '',
+        estado: 'CANCELADO',
+        repartidor: '',
+        fechaEntrega: undefined as unknown as string,
+      },
+      {
+        id: '2',
+        codigoSeguimiento: '',
+        cliente: 'Cliente E',
+        direccion: 'Centro, Medellín',
+        estado: 'ASIGNADO',
+        repartidor: 'Ana López',
+        fechaEntrega: 'fecha-invalida',
+      },
+      {
+        id: '3',
+        codigoSeguimiento: 'ENT-003',
+        cliente: 'Cliente F',
+        direccion: 'Envigado',
+        estado: 'OTRO_ESTADO',
+        repartidor: 'Luis Pérez',
+        fechaEntrega: '2026-05-15T10:00:00.000Z',
+      },
+    ],
+    total: 3,
+    pagina: 1,
+    porPagina: 50,
+  };
+}
+
+export function respuestaRecientesPorFechas(): RecentDeliveriesResponse {
+  return {
+    entregas: [
+      {
+        id: '11',
+        codigoSeguimiento: 'ENT-011',
+        cliente: 'Cliente G',
+        direccion: 'Centro, Medellín',
+        estado: 'ENTREGADO',
+        repartidor: 'Ana López',
+        fechaEntrega: '2026-05-14T10:00:00.000Z',
+      },
+      {
+        id: '12',
+        codigoSeguimiento: 'ENT-012',
+        cliente: 'Cliente H',
+        direccion: 'Poblado, Medellín',
+        estado: 'ENTREGADO',
+        repartidor: 'Ana López',
+        fechaEntrega: '2026-05-15T10:00:00.000Z',
+      },
+      {
+        id: '13',
+        codigoSeguimiento: 'ENT-013',
+        cliente: 'Cliente I',
+        direccion: 'Envigado',
+        estado: 'ENTREGADO',
+        repartidor: 'Ana López',
+        fechaEntrega: '2026-05-16T10:00:00.000Z',
+      },
+    ],
+    total: 3,
+    pagina: 1,
+    porPagina: 50,
+  };
+}

@@ -11,8 +11,9 @@ vi.mock('recharts', () => {
       {
         'data-testid': 'recharts-chart',
         onClick: () => {
-          if (data?.[0]) {
-            onClick?.({ activePayload: [{ payload: data[0] }] });
+          const item = data?.find((d: any) => d.actual > 0 || d.exitosas > 0 || d.total > 0 || d.entregas > 0) || data?.[0];
+          if (item) {
+            onClick?.({ activePayload: [{ payload: item }] });
           }
         },
       },
@@ -38,9 +39,11 @@ vi.mock('recharts', () => {
   const tooltip = ({
     content,
     formatter,
+    labelFormatter,
   }: {
     content?: (p: { active: boolean; payload: Array<{ payload: Record<string, unknown> }> }) => React.ReactNode;
-    formatter?: (valor: number, nombre: string, item: { payload?: { porcentaje?: number } }) => [string, string];
+    formatter?: (valor: unknown, nombre: string, item: { payload?: { porcentaje?: number } }) => [string, string];
+    labelFormatter?: (label: string) => React.ReactNode;
   }) => {
     if (content) {
       return content({
@@ -50,6 +53,11 @@ vi.mock('recharts', () => {
     }
     if (formatter) {
       formatter(3, 'total', { payload: { porcentaje: 25 } });
+      formatter('test', 'actual', { payload: {} });
+      formatter(undefined, 'total', { payload: {} });
+    }
+    if (labelFormatter) {
+      labelFormatter('2026-05-15');
     }
     return null;
   };
