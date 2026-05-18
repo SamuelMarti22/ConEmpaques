@@ -13,6 +13,7 @@ import { rutasController } from "./modules/rutas/rutas.controller.js";
 import { TrackingController } from "./modules/tracking/tracking.controller.js";
 import { clienteController } from "./modules/vistaCliente/cliente.controller.js";
 import geoCodificacionRutasController from "./modules/geoCodificacion/geoCodificacion.controller.js";
+import { dashboardController } from "./modules/dashboard/dashboard.controller.js";
 import { rutasService } from "./modules/rutas/rutas.service.js";
 import { registerHandlers } from "./sockets/handle.js";
 import { setSocketServer } from "./sockets/io.gateway.js";
@@ -68,6 +69,14 @@ app.get("/api/tracking/ubicacion/:rutaId", (req, res) => trackingController.obte
 app.post("/api/tracking/simulacion/iniciar/:rutaId", (req, res) => trackingController.iniciarSimulacionRuta(req, res));
 app.post("/api/tracking/simulacion/detener/:rutaId", (req, res) => trackingController.detenerSimulacionRuta(req, res));
 app.get("/api/tracking/simulacion/estado/:rutaId", (req, res) => trackingController.estadoSimulacionRuta(req, res));
+
+// Todos estos endpoints consultan datos de la BD (Prisma + MongoDB)
+app.get("/api/dashboard/stats", (req, res) => dashboardController.obtenerEstadisticas(req, res));
+app.get("/api/dashboard/weekly", (req, res) => dashboardController.obtenerEstadisticasSemanales(req, res));
+app.get("/api/dashboard/monthly", (req, res) => dashboardController.obtenerEstadisticasMensuales(req, res));
+app.get("/api/dashboard/drivers", (req, res) => dashboardController.obtenerRepartidores(req, res));
+app.get("/api/dashboard/recent", (req, res) => dashboardController.obtenerEntregasRecientes(req, res));
+app.get("/api/dashboard/metrics", (req, res) => dashboardController.obtenerMetricas(req, res));
 
 
 // Ruta vista cliente
