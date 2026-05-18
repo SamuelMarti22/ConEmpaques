@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { createServer } from "http";
+import path from "path";
 import { Server } from "socket.io";
 import env from "./config/env.js";
 import { prisma } from "./databases/prisma/lib/prisma.js";
@@ -23,6 +24,7 @@ const INTERVALO_DEPURACION_RUTAS_MS = 12 * 60 * 60 * 1000;
 const DIAS_RETENCION_RUTAS = 30;
 app.use(express.json());
 app.use(cors());
+app.use('/images', express.static(path.join(process.cwd(), 'src/images')));
 
 // Rutas autenticacion
 app.post("/api/auth/logistico", authController.loginLogistico);
@@ -48,7 +50,6 @@ app.delete("/api/repartidores/:id/horarios/:horarioId", horarioController.elimin
 // Rutas para optimización de rutas
 app.post("/api/routing/optimizar", routingController.getRutaOptima);
 
-
 // Rutas para CRUD rutas
 app.get("/api/rutas", rutasController.obtenerRutasGuardadas);
 app.post("/api/rutas/guardar", rutasController.guardarRutas);
@@ -58,6 +59,7 @@ app.get("/api/rutas/:rutaId", rutasController.consultarDetalleRuta);
 app.post("/api/rutas/:rutaId/finalizar", rutasController.finalizarRuta);
 app.post("/api/rutas/:rutaId/cancelar", rutasController.cancelarRuta);
 app.post("/api/rutas/:rutaId/actualizarPunto", rutasController.actualizarEstadoPunto);
+app.post("/api/rutas/evidencia", rutasController.subirEvidenciaImagen);
 
 // Rutas para tracking
 const trackingController = new TrackingController();

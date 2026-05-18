@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import type { IPuntoEntrega } from '../../databases/mongoDB/schema';
+import { obtenerRutaImagen, uploadMiddleware } from './guardarImagenes.service.js';
 import { validarGuardarRutasRequest, validarRutaIdRequest } from './rutas.request.js';
 import { RepartidorDuplicadoEnLoteError, RepartidorYaAsignadoError, rutasService } from './rutas.service';
 
@@ -108,7 +109,7 @@ export class RutasController {
 
     async actualizarEstadoPunto(req: Request, res: Response): Promise<void> {
         const rutaId = Number(req.params.rutaId);
-        const { puntoId: puntIdRaw, nuevoEstado } = req.body;
+        const { puntoId: puntIdRaw, nuevoEstado, evidenciaImagenBase64 } = req.body;
         let puntoId = puntIdRaw;
 
         // Convertir puntoId a número si es string
@@ -126,14 +127,49 @@ export class RutasController {
             res.status(400).json({ error: 'El campo nuevoEstado debe ser uno de los siguientes: EN_BODEGA, PENDIENTE, EN_ENTREGA, EN_CAMINO, ENTREGADO, FALLIDO' });
             return;
         }
+        if (evidenciaImagenBase64 != null && typeof evidenciaImagenBase64 !== 'string') {
+            res.status(400).json({ error: 'El campo evidenciaImagenBase64 debe ser una cadena de texto base64 o null' });
+            return;
+        }
         
         try {
-            await rutasService.actualizarEstadoPunto(rutaId, puntoId, nuevoEstado as IPuntoEntrega['estadoEntrega']);
+            await rutasService.actualizarEstadoPunto(
+                rutaId,
+                puntoId,
+                nuevoEstado as IPuntoEntrega['estadoEntrega'],
+                evidenciaImagenBase64,
+            );
             res.status(200).json({ mensaje: 'Estado del punto actualizado correctamente' });
         } catch (error) {
             const mensajeError = error instanceof Error ? error.message : 'Error interno del servidor';
             res.status(500).json({ error: mensajeError });
         }
+    }
+
+    async subirEvidenciaImagen(req: Request, res: Response): Promise<void> {
+        uploadMiddleware.single('imagen')(req, res, (error) => {
+            if (error instanceof Error) {
+                res.status(400).json({ error: error.message });
+                return;
+            }
+
+            const archivo = (req as Request & { file?: Express.Multer.File }).file;
+
+            if (!archivo) {
+                res.status(400).json({ error: 'Debe enviar una imagen en el campo imagen' });
+                return;
+            }
+
+            const rutaImagen = obtenerRutaImagen(archivo.filename);
+            const urlCompleta = `${req.protocol}://${req.get('host')}${rutaImagen}`;
+
+            res.status(201).json({
+                mensaje: 'Imagen guardada correctamente',
+                rutaImagen,
+                urlCompleta,
+                nombreArchivo: archivo.filename,
+            });
+        });
     }
 
     async finalizarRuta(req: Request, res: Response): Promise<void> {

@@ -9,6 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../../components/pedidos/Header.component';
 import RutaInfoCard from '../../components/pedidos/RutaInfoCard.component';
@@ -69,20 +70,25 @@ export default function PedidosScreen() {
         ? data.detalleParadas.map((ruta: any) => {
           console.log(ruta.estadoRuta);
 
-          let estadoNormalizado = (ruta.estadoRuta || 'pendiente').toLowerCase();
+          const estadoNormalizado = String(ruta.estadoRuta || 'PENDIENTE').trim().toUpperCase();
           console.log('Estado normalizado:', estadoNormalizado);
           let estadoFinal = 'pendiente';
 
-          if (estadoNormalizado.includes('en_proceso')) {
+          if (estadoNormalizado === 'EN_PROCESO') {
             estadoFinal = 'en_proceso';
+          } else if (estadoNormalizado === 'ENTREGADA') {
+            estadoFinal = 'entregada';
+          } else if (estadoNormalizado === 'CANCELADA') {
+            estadoFinal = 'cancelada';
           }else{
-            estadoFinal = estadoNormalizado.charAt(0).toUpperCase() + estadoNormalizado.slice(1);
+            estadoFinal = estadoNormalizado.toLowerCase();
           }
 
           return {
             id: ruta.id,
             dia: '',
             fecha: ruta.fechaReparto,
+            estadoRuta: estadoNormalizado,
             estado: estadoFinal,
             cantidadPuntos: ruta.cantidadPuntos,
             tiempoPromedio: ruta.tiempoEstimado?.toString() || '0',
@@ -106,6 +112,14 @@ export default function PedidosScreen() {
       consultarRutas();
     }
   }, [idRepartidor, consultarRutas]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (idRepartidor) {
+        consultarRutas(true);
+      }
+    }, [idRepartidor, consultarRutas])
+  );
 
   const formatearFecha = (fecha: string): string => {
     const date = new Date(fecha);
@@ -180,6 +194,7 @@ export default function PedidosScreen() {
               id={item.id}
               dia={obtenerDia(item.fecha)}
               fecha={formatearFecha(item.fecha)}
+              estadoRuta={item.estadoRuta}
               estado={item.estado}
               cantidadPuntos={item.cantidadPuntos}
               tiempoPromedio={formatearTiempo(parseInt(item.tiempoPromedio, 10))}

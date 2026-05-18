@@ -21,7 +21,7 @@ const RutaInfoCard: React.FC<RutaInfoCardProps> = ({
   const key = (estado || 'pendiente').toLowerCase();
 
   const cfg = ESTADO_CONFIG[key] ?? ESTADO_CONFIG.pendiente;
-  const isActiva = key === 'en_proceso' || estado?.toLowerCase().includes('en_proceso');
+  const isActiva = key === 'en_proceso';
 
   return (
     <View style={[styles.card, isActiva && styles.cardActiva]}>

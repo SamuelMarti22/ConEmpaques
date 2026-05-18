@@ -39,6 +39,7 @@ interface GeometriaRutaResumen {
 export interface RutaGuardadaResumen {
     rutaId: number;
     fechaReparto: string;
+    estadoRuta: EstadoRuta;
     repartidor: {
         id: number;
         nombre: string | null;
@@ -67,6 +68,27 @@ function mapearEstadoRepartidor(estadoRuta: string): EstadoRepartidorResumen {
     }
 
     return 'disponible';
+}
+
+function obtenerEstadoRutaEfectivo(
+    estadoRuta: EstadoRuta,
+    puntosEntrega: Array<{ estadoEntrega?: string | null }> = [],
+): EstadoRuta {
+    if (estadoRuta === EstadoRuta.ENTREGADA || estadoRuta === EstadoRuta.CANCELADA) {
+        return estadoRuta;
+    }
+
+    if (
+        puntosEntrega.length > 0 &&
+        puntosEntrega.every((punto) => {
+            const estado = String(punto.estadoEntrega ?? '').toUpperCase();
+            return estado === 'ENTREGADO' || estado === 'FALLIDO';
+        })
+    ) {
+        return EstadoRuta.ENTREGADA;
+    }
+
+    return estadoRuta;
 }
 
 function formatearFechaHoraLocal(fecha: Date | null | undefined): string | null {
@@ -429,6 +451,7 @@ export class RutasService {
                 rutasGuardadas.push({
                     rutaId: rutaCreada.id,
                     fechaReparto: formatearFechaLocal(rutaCreada.fechaReparto),
+                    estadoRuta: rutaCreada.estadoRuta,
                     repartidor: {
                         id: ruta.repartidor_id,
                         nombre: repartidor?.nombre ?? null,
@@ -559,6 +582,7 @@ export class RutasService {
             return {
                 rutaId: ruta.id,
                 fechaReparto: formatearFechaLocal(ruta.fechaReparto),
+                estadoRuta: ruta.estadoRuta,
                 repartidor: {
                     id: ruta.repartidorId,
                     nombre: ruta.repartidor?.nombre ?? null,
@@ -667,11 +691,12 @@ export class RutasService {
         // Formatear respuesta
         const resultado = rutas.map(ruta => {
             const rutaMongo = rutasMongoPorRutaId.get(ruta.id);
+            const estadoRutaEfectivo = obtenerEstadoRutaEfectivo(ruta.estadoRuta, rutaMongo?.puntosEntrega ?? []);
             return {
                 id: ruta.id,
                 repartidorId: ruta.repartidorId,
                 fechaReparto: ruta.fechaReparto,
-                estadoRuta: ruta.estadoRuta,
+                estadoRuta: estadoRutaEfectivo,
                 horaInicioEntrega: ruta.horaInicioEntrega,
                 horaFinalizacionEntrega: ruta.horaFinalizacionEntrega,
                 distanciaTotal: ruta.distanciaTotal,
@@ -729,13 +754,16 @@ export class RutasService {
             return acumulado + pesoProducto;
         }, 0);
 
+        const estadoRutaEfectivo = obtenerEstadoRutaEfectivo(ruta.estadoRuta, puntos);
+
         return {
             rutaId: ruta.id,
             fechaReparto: ruta.fechaReparto.toISOString(),
+            estadoRuta: estadoRutaEfectivo,
             repartidor: {
                 id: ruta.repartidorId,
                 nombre: ruta.repartidor?.nombre ?? null,
-                estado: mapearEstadoRepartidor(ruta.estadoRuta),
+                estado: mapearEstadoRepartidor(estadoRutaEfectivo),
                 capacidad: ruta.repartidor?.capacidadVehiculo ?? null,
             },
             resumen: {
@@ -759,6 +787,7 @@ export class RutasService {
                 descripcionEntrega: punto.descripcionEntrega ?? null,
                 latitud: punto.latitud,
                 longitud: punto.longitud,
+                evidenciaImagen: punto.evidenciaImagen ?? null,
             })),
             geometria: {
                 type: 'Feature',
@@ -770,14 +799,24 @@ export class RutasService {
         };
     }
 
-    async actualizarEstadoRuta(rutaId: number, nuevoEstado: EstadoRuta): Promise<void> {
+    async actualizarEstadoRuta(
+        rutaId: number,
+        nuevoEstado: EstadoRuta,
+        horaFinalizacionEntrega?: Date | null,
+    ): Promise<void> {
+        const data: Record<string, unknown> = {
+            estadoRuta: nuevoEstado,
+        };
+
+        if (horaFinalizacionEntrega !== undefined) {
+            data.horaFinalizacionEntrega = horaFinalizacionEntrega;
+        }
+
         const rutaActualizada = await prisma.ruta.updateMany({
             where: {
                 id: rutaId,
             },
-            data: {
-                estadoRuta: nuevoEstado,
-            },
+            data,
         });
 
         if (rutaActualizada.count === 0) {
@@ -792,15 +831,28 @@ export class RutasService {
         );
     }
 
-    async actualizarEstadoPunto(rutaId: number, puntoId: number, estadoEntrega: IPuntoEntrega['estadoEntrega']): Promise<void> {
+    async actualizarEstadoPunto(
+        rutaId: number,
+        puntoId: number,
+        estadoEntrega: IPuntoEntrega['estadoEntrega'],
+        evidenciaImagen?: string | null,
+    ): Promise<void> {
+        const actualizacion: Record<string, unknown> = {
+            'puntosEntrega.$.estadoEntrega': estadoEntrega,
+        };
+
+        if (typeof evidenciaImagen === 'string' && evidenciaImagen.trim().length > 0) {
+            actualizacion['puntosEntrega.$.evidenciaImagen'] = evidenciaImagen;
+        }
+
         await RutaEntregaModel.updateOne(
             { rutaId, 'puntosEntrega.id': puntoId },
-            { $set: { 'puntosEntrega.$.estadoEntrega': estadoEntrega } }
+            { $set: actualizacion }
         );
     }
 
     async finalizarRuta(rutaId: number): Promise<void> {
-        await this.actualizarEstadoRuta(rutaId, EstadoRuta.ENTREGADA);
+        await this.actualizarEstadoRuta(rutaId, EstadoRuta.ENTREGADA, new Date());
         await this.actualizarEstadoPuntos(rutaId, 'ENTREGADO');
     }
 

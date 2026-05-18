@@ -3,11 +3,13 @@ import { socketService } from '@/services/socket.service';
 import { obtenerUbicacionActual, obtenerUbicacionEnTiempoReal } from '@/services/ubicacion.service';
 import Feather from '@expo/vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Linking,
   SafeAreaView, ScrollView,
   Text, TouchableOpacity,
@@ -19,6 +21,7 @@ import { styles } from './Tracking.style';
 import Constants from "expo-constants";
 
 const C = COLORS;
+const ESTADOS_RUTA_FINALIZADA = new Set(['ENTREGADA', 'CANCELADA']);
 
 const ESTADO_CFG = {
   EN_BODEGA: { bg: '#e8f4f8', text: '#1F6F5F' },
@@ -27,6 +30,11 @@ const ESTADO_CFG = {
   EN_CAMINO: { bg: '#e3f2fd', text: '#1565c0' },
   ENTREGADO: { bg: '#d1f0e4', text: '#1F6F5F' },
   FALLIDO:   { bg: '#fde8e8', text: '#a32d2d' },
+};
+
+type ImagenEntregaSeleccionada = {
+  uri: string;
+  url?: string;
 };
 
 const guardarSesion = async (rutaId: number, idRepartidor: number) => {
@@ -76,7 +84,9 @@ const ParadasListScreen = ({
   onBack,
   geometria,
   onIniciarRuta,
+  onFinalizarRuta,
   obteniendoUbicacion,
+  finalizandoRuta,
   trackingActivo,
   rutaId,
 }: { 
@@ -84,11 +94,36 @@ const ParadasListScreen = ({
   onBack: () => void,
   geometria?: any,
   onIniciarRuta?: () => void,
+  onFinalizarRuta?: () => void,
   obteniendoUbicacion?: boolean,
+  finalizandoRuta?: boolean,
   trackingActivo?: boolean,
   rutaId?: string | number,
 }) => {
   const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+  const [imagenesEntrega, setImagenesEntrega] = useState<Record<number, ImagenEntregaSeleccionada>>({});
+
+  const subirImagenEvidencia = async (uri: string) => {
+    const responseArchivo = await fetch(uri);
+    const blob = await responseArchivo.blob();
+    const nombreArchivo = uri.split('/').pop() || `evidencia-${Date.now()}.jpg`;
+    const formData = new FormData();
+
+    formData.append('imagen', blob as any, nombreArchivo);
+
+    const response = await fetch(`${apiBaseUrl}/api/rutas/evidencia`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'Error al subir la imagen');
+    }
+
+    return data.urlCompleta as string;
+  };
 
   // Calcula distancia entre dos puntos
   const calcularDistancia = (lat1: number, lng1: number, lat2: number, lng2: number) => {
@@ -98,6 +133,42 @@ const ParadasListScreen = ({
     const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2) * Math.sin(dLng/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return (6371 * c).toFixed(2);
+  };
+
+  const seleccionarImagen = async (puntoId: number) => {
+    try {
+      const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permiso.granted) {
+        Alert.alert('Permiso requerido', 'Necesitamos acceso a tus fotos para adjuntar una evidencia.');
+        return;
+      }
+
+      const resultado = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'] as any,
+        allowsEditing: true,
+        quality: 0.7,
+      });
+
+      if (resultado.canceled || !resultado.assets?.length) {
+        return;
+      }
+
+      const asset = resultado.assets[0];
+      const urlImagen = await subirImagenEvidencia(asset.uri);
+      const evidenciaSeleccionada: ImagenEntregaSeleccionada = {
+        uri: asset.uri,
+        url: urlImagen,
+      };
+
+      setImagenesEntrega((prev) => ({
+        ...prev,
+        [puntoId]: evidenciaSeleccionada,
+      }));
+    } catch (error) {
+      console.error('❌ Error al seleccionar imagen:', error);
+      Alert.alert('Error', 'No se pudo seleccionar la imagen');
+    }
   };
 
   const actualizarSiguientePuntoEnEntrega = async (indiceActual: number) => {
@@ -133,7 +204,12 @@ const ParadasListScreen = ({
   };
 
   // Función para actualizar el estado de un punto
-  const actualizarEstadoPunto = async (puntoId: number, nuevoEstado: 'ENTREGADO' | 'FALLIDO', indiceActual: number) => {
+  const actualizarEstadoPunto = async (
+    puntoId: number,
+    nuevoEstado: 'ENTREGADO' | 'FALLIDO',
+    indiceActual: number,
+    evidenciaImagenUrl?: string | null,
+  ) => {
     try {
       // Validar puntoId
       if (!puntoId || !Number.isInteger(puntoId) || puntoId <= 0) {
@@ -159,6 +235,7 @@ const ParadasListScreen = ({
           body: JSON.stringify({
             puntoId: Number(puntoId),
             nuevoEstado,
+            evidenciaImagenBase64: evidenciaImagenUrl ?? null,
           }),
         }
       );
@@ -201,24 +278,49 @@ const ParadasListScreen = ({
           </TouchableOpacity>
           <Text style={styles.mapTitle}>Resumen de {paradas.length} paradas </Text>
           {/* Botón Iniciar Ruta en lugar del badge */}
-          {onIniciarRuta && (
-            <TouchableOpacity
-              style={{ 
-                backgroundColor: '#FF6B35', 
-                borderRadius: 8, 
-                paddingVertical: 8, 
-                paddingHorizontal: 14,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-              disabled={obteniendoUbicacion || trackingActivo}
-              onPress={onIniciarRuta}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>
-                {obteniendoUbicacion ? '⏳' : trackingActivo ? '✓' : '▶️'}
-              </Text>
-            </TouchableOpacity>
-          )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            {onIniciarRuta && (
+              <TouchableOpacity
+                style={{ 
+                  backgroundColor: '#FF6B35', 
+                  borderRadius: 8, 
+                  paddingVertical: 8, 
+                  paddingHorizontal: 14,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+                disabled={obteniendoUbicacion || trackingActivo}
+                onPress={onIniciarRuta}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>
+                  {obteniendoUbicacion ? '⏳' : trackingActivo ? '✓' : '▶️'}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {onFinalizarRuta && (
+              <TouchableOpacity
+                style={{ 
+                  backgroundColor: '#d32f2f', 
+                  borderRadius: 8, 
+                  paddingVertical: 8, 
+                  paddingHorizontal: 14,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  opacity: finalizandoRuta ? 0.7 : 1,
+                }}
+                disabled={finalizandoRuta}
+                onPress={() => {
+                  console.log('🧪 [UI] Tap en boton finalizar');
+                  onFinalizarRuta();
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>
+                  {finalizandoRuta ? '⏳' : '⏹'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
       <ScrollView style={styles.body} contentContainerStyle={{ padding: 12, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
@@ -313,6 +415,59 @@ const ParadasListScreen = ({
                       {parada.descripcionEntrega}
                     </Text>
                   </View>
+                  <View style={[styles.infoItem, styles.infoFull, { marginTop: 6 }]}> 
+                    <Text style={styles.infoLabel}>Evidencia fotográfica</Text>
+                    <TouchableOpacity
+                      style={{
+                        marginTop: 6,
+                        borderRadius: 8,
+                        borderWidth: 1,
+                        borderColor: C.teal,
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        backgroundColor: '#fff',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 8,
+                      }}
+                      onPress={() => seleccionarImagen(parada.puntoId)}
+                    >
+                      <Feather name="image" size={16} color={C.teal} />
+                      <Text style={{ color: C.teal, fontWeight: '700' }}>
+                        {imagenesEntrega[parada.puntoId] ? 'Cambiar imagen' : 'Subir imagen'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {imagenesEntrega[parada.puntoId] ? (
+                      <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <Image
+                          source={{ uri: imagenesEntrega[parada.puntoId].uri }}
+                          style={{ width: 72, height: 72, borderRadius: 12, backgroundColor: '#f1f1f1' }}
+                        />
+                        <Text style={{ flex: 1, color: '#666', fontSize: 12 }}>
+                          Imagen lista para enviarse como evidencia de este punto.
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={{ marginTop: 8, color: '#888', fontSize: 12 }}>
+                        Opcional: adjunta una foto antes de marcar la entrega.
+                      </Text>
+                    )}
+
+                    {parada.estadoEntrega === 'ENTREGADO' && parada.evidenciaImagen ? (
+                      <View style={{ marginTop: 12 }}>
+                        <Text style={{ marginBottom: 8, color: '#444', fontSize: 12, fontWeight: '700' }}>
+                          Evidencia guardada
+                        </Text>
+                        <Image
+                          source={{ uri: parada.evidenciaImagen }}
+                          style={{ width: '100%', height: 180, borderRadius: 14, backgroundColor: '#f1f1f1' }}
+                          resizeMode="cover"
+                        />
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
                 {/* Botones de Entregado y Fallido */}
                 <View style={{ marginTop: 10, flexDirection: 'row', gap: 10 }}>
@@ -320,7 +475,19 @@ const ParadasListScreen = ({
                     style={{ flex: 1, backgroundColor: C.teal, borderRadius: 8, paddingVertical: 12 }}
                     onPress={() => {
                       console.log('🔍 Parada:', parada);
-                      actualizarEstadoPunto(parada.puntoId, 'ENTREGADO', idx);
+                      const evidencia = imagenesEntrega[parada.puntoId]?.url;
+
+                      if (!evidencia) {
+                        Alert.alert('Falta evidencia', 'Primero debes subir una imagen antes de marcar este punto como entregado.');
+                        return;
+                      }
+
+                        actualizarEstadoPunto(
+                          parada.puntoId,
+                          'ENTREGADO',
+                          idx,
+                          evidencia,
+                        );
                     }}
                   >
                     <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>✓ Entregado</Text>
@@ -329,7 +496,12 @@ const ParadasListScreen = ({
                     style={{ flex: 1, backgroundColor: '#d32f2f', borderRadius: 8, paddingVertical: 12 }}
                     onPress={() => {
                       console.log('🔍 Parada:', parada);
-                      actualizarEstadoPunto(parada.puntoId, 'FALLIDO', idx);
+                        actualizarEstadoPunto(
+                          parada.puntoId,
+                          'FALLIDO',
+                          idx,
+                          imagenesEntrega[parada.puntoId]?.url ?? null,
+                        );
                     }}
                   >
                     <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }}>✗ Fallido</Text>
@@ -355,6 +527,7 @@ export default function TrackingScreen() {
   // Los hooks deben ir aquí, fuera de cualquier if
   const [ubicacionActual, setUbicacionActual] = useState<{ lat: number, lng: number } | null>(null);
   const [obteniendoUbicacion, setObteniendoUbicacion] = useState(false);
+  const [finalizandoRuta, setFinalizandoRuta] = useState(false);
   
   // Estados para tracking
   const [trackingActivo, setTrackingActivo] = useState(false);
@@ -364,103 +537,207 @@ export default function TrackingScreen() {
 
   const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
 
-  useEffect(() => {
-    const cargarDetalleRuta = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const cargarDetalleRuta = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        if (!rutaId) {
-          throw new Error('No se proporcionó ID de ruta');
-        }
-
-        console.log('Cargando detalles para ruta ID:', rutaId);
-
-        const response = await fetch(
-          `${apiBaseUrl}/api/rutas/${rutaId}`
-          
-        );
-      
-        const data = await response.json();
-  
-
-        if (!response.ok) {
-          throw new Error(data?.message ?? 'Error al cargar la ruta');
-        }
-
-        // Acceder a detalleRuta dentro de la respuesta
-        const rutaData = data.detalleRuta || data;
-        setRuta(rutaData);
-        if (rutaData.detalleParadas && rutaData.detalleParadas.length > 0) {
-          console.log('Inicializando con parada 0');
-          setParadaSeleccionada(0);
-        } else {
-          console.log('No hay paradas disponibles');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error desconocido');
-      } finally {
-        setLoading(false);
+      if (!rutaId) {
+        throw new Error('No se proporcionó ID de ruta');
       }
-    };
 
-    cargarDetalleRuta();
-  }, [rutaId]);
+      console.log('Cargando detalles para ruta ID:', rutaId);
 
-  // 🔄 Verificar y reconectar sesión activa
-  useEffect(() => {
-    const verificarYReconectar = async () => {
-      try {
-        const sesion = await obtenerSesion();
-        
-        if (sesion && ruta) {
-          console.log('🔄 Sesión activa encontrada:', sesion);
-          
-          // Reconectar automáticamente
-          await socketService.connect();
-          console.log('✅ Socket reconectado automáticamente');
-          
-          // Restaurar estado
-          setIdRepartidor(sesion.idRepartidor);
-          setTrackingActivo(true);
-          
-          // Configurar event listeners
-          socketService.onLocationUpdate((locationData) => {
-            console.log('📍 Ubicación actualizada:', locationData);
-          });
+      const response = await fetch(
+        `${apiBaseUrl}/api/rutas/${rutaId}`
+      );
 
-          socketService.onOrderMilestone((milestoneData) => {
-            console.log('🎯 Hito alcanzado:', milestoneData);
-            setUltimoHito(milestoneData.hito);
-            Alert.alert('¡Notificación!', `Falta ${milestoneData.hito} para la siguiente parada`);
-          });
+      const data = await response.json();
 
-          socketService.onDriverFinished(() => {
-            console.log('🏁 Ruta finalizada desde el servidor');
-            limpiarSesion();
-            setTrackingActivo(false);
-          });
-
-          socketService.onError((errorData) => {
-            console.error('❌ Error del socket:', errorData);
-            Alert.alert('Error', 'Error en la conexión del socket');
-          });
-          
-          // Emitir driver:start con puntos
-          const puntos = ruta.detalleParadas.map(p => p.codigo);
-          socketService.iniciarRuta(sesion.idRepartidor, puntos, sesion.rutaId);
-          
-          console.log('✅ Tracking restaurado correctamente');
-        }
-      } catch (error) {
-        console.error('❌ Error al verificar sesión:', error);
+      if (!response.ok) {
+        throw new Error(data?.message ?? 'Error al cargar la ruta');
       }
-    };
 
-    if (ruta && !trackingActivo) {
-      verificarYReconectar();
+      const rutaData = data.detalleRuta || data;
+      setRuta(rutaData);
+      if (rutaData.detalleParadas && rutaData.detalleParadas.length > 0) {
+        console.log('Inicializando con parada 0');
+        setParadaSeleccionada(0);
+      } else {
+        console.log('No hay paradas disponibles');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setLoading(false);
     }
-  }, [ruta]);
+  }, [apiBaseUrl, rutaId]);
+
+  useEffect(() => {
+    void cargarDetalleRuta();
+  }, [cargarDetalleRuta]);
+
+  const finalizarRuta = () => {
+    console.log('🧪 [finalizarRuta] Boton presionado', {
+      rutaId,
+      trackingActivo,
+      finalizandoRuta,
+    });
+
+    if (!rutaId) {
+      console.log('🧪 [finalizarRuta] rutaId no disponible');
+      Alert.alert('Error', 'No se pudo obtener el ID de la ruta');
+      return;
+    }
+
+    console.log('🧪 [finalizarRuta] Mostrando confirmacion');
+    Alert.alert(
+      'Finalizar ruta',
+      '¿Seguro que deseas finalizar esta ruta?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+          onPress: () => {
+            console.log('🧪 [finalizarRuta] Usuario cancelo finalizacion');
+          },
+        },
+        {
+          text: 'Finalizar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('🧪 [finalizarRuta] Usuario confirmo finalizacion');
+              setFinalizandoRuta(true);
+
+              const endpoint = `${apiBaseUrl}/api/rutas/${rutaId}/finalizar`;
+              console.log('🧪 [finalizarRuta] Enviando request', { endpoint });
+              const response = await fetch(`${apiBaseUrl}/api/rutas/${rutaId}/finalizar`, {
+                method: 'POST',
+              });
+
+              const data = await response.json();
+              console.log('🧪 [finalizarRuta] Respuesta recibida', {
+                ok: response.ok,
+                status: response.status,
+                data,
+              });
+
+              if (!response.ok) {
+                throw new Error(data?.error || 'No se pudo finalizar la ruta');
+              }
+
+              setRuta((prevRuta) =>
+                prevRuta
+                  ? {
+                      ...prevRuta,
+                      estadoRuta: 'ENTREGADA',
+                    }
+                  : prevRuta,
+              );
+
+              if (trackingActivo) {
+                console.log('🧪 [finalizarRuta] Desconectando socket activo');
+                socketService.disconnect();
+              }
+
+              await limpiarSesion();
+              setTrackingActivo(false);
+              setUltimoHito(null);
+              console.log('🧪 [finalizarRuta] Recargando detalle de ruta');
+              await cargarDetalleRuta();
+
+              console.log('🧪 [finalizarRuta] Finalizacion exitosa');
+              Alert.alert('Éxito', 'Ruta finalizada correctamente');
+            } catch (error) {
+              console.error('🧪 [finalizarRuta] Error al finalizar ruta', error);
+              const mensaje = error instanceof Error ? error.message : 'Error desconocido';
+              Alert.alert('Error', mensaje);
+            } finally {
+              console.log('🧪 [finalizarRuta] Terminando flujo de finalizacion');
+              setFinalizandoRuta(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  // Si ya existe una sesión guardada para esta ruta, restaurar el tracking automáticamente.
+  useEffect(() => {
+    const restaurarSesionActiva = async () => {
+      try {
+        if (!ruta || trackingActivo || !rutaId) {
+          return;
+        }
+
+        const estadoRuta = (ruta.estadoRuta ?? '').toString().toUpperCase();
+
+        if (ESTADOS_RUTA_FINALIZADA.has(estadoRuta)) {
+          console.log('🧪 [restaurarSesionActiva] Ruta finalizada, limpiando sesion para evitar reactivacion');
+          await limpiarSesion();
+          setTrackingActivo(false);
+          return;
+        }
+
+        if (estadoRuta !== 'EN_PROCESO') {
+          console.log('🧪 [restaurarSesionActiva] Ruta no activa, no se restaura tracking', {
+            estadoRuta,
+          });
+          return;
+        }
+
+        const sesion = await obtenerSesion();
+
+        const idRepartidorSesion = sesion && Number(sesion.rutaId) === Number(rutaId)
+          ? Number(sesion.idRepartidor)
+          : ruta.repartidor.id;
+
+        console.log('🔄 Ruta activa detectada, reanudando tracking:', {
+          sesion,
+          idRepartidorSesion,
+          estadoRuta,
+        });
+
+        await socketService.connect();
+
+        socketService.onLocationUpdate((locationData) => {
+          console.log('📍 Ubicación actualizada:', locationData);
+        });
+
+        socketService.onOrderMilestone((milestoneData) => {
+          console.log('🎯 Hito alcanzado:', milestoneData);
+          setUltimoHito(milestoneData.hito);
+          Alert.alert('¡Notificación!', `Falta ${milestoneData.hito} para la siguiente parada`);
+        });
+
+        socketService.onDriverFinished(() => {
+          console.log('🏁 Ruta finalizada desde el servidor');
+          limpiarSesion();
+          setTrackingActivo(false);
+        });
+
+        socketService.onError((errorData) => {
+          console.error('❌ Error del socket:', errorData);
+          Alert.alert('Error', 'Error en la conexión del socket');
+        });
+
+        const puntos = ruta.detalleParadas.map((p) => p.codigo);
+        socketService.iniciarRuta(idRepartidorSesion, puntos, Number(rutaId));
+
+        if (!sesion || Number(sesion.idRepartidor) !== idRepartidorSesion) {
+          await guardarSesion(Number(rutaId), idRepartidorSesion);
+        }
+
+        setIdRepartidor(idRepartidorSesion);
+        setTrackingActivo(true);
+      } catch (error) {
+        console.error('❌ Error al restaurar sesión de tracking:', error);
+      }
+    };
+
+    restaurarSesionActiva();
+  }, [ruta, rutaId, trackingActivo]);
 
   // Limpiar socket cuando el componente se desmonta
   useEffect(() => {
@@ -539,6 +816,7 @@ export default function TrackingScreen() {
           onBack={() => router.back()}
           geometria={ruta.geometria}
           rutaId={rutaId}
+          onFinalizarRuta={finalizarRuta}
           onIniciarRuta={async () => {
             setObteniendoUbicacion(true);
             try {
@@ -626,6 +904,7 @@ export default function TrackingScreen() {
             }
           }}
           obteniendoUbicacion={obteniendoUbicacion}
+          finalizandoRuta={finalizandoRuta}
           trackingActivo={trackingActivo}
         />
       </>

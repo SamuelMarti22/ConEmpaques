@@ -17,6 +17,7 @@ export interface IPuntoEntrega {
   estadoEntrega: "EN_BODEGA" | "PENDIENTE" | "EN_ENTREGA" | "EN_CAMINO" | "ENTREGADO" | "FALLIDO";
   fechaHoraEntrega?: Date;
   firmaUrl?: string;
+  evidenciaImagen?: string;
   motivoFallido?: string;
 }
 
@@ -87,6 +88,7 @@ export const PuntoEntregaSchema = new Schema<IPuntoEntrega, mongoose.Model<IPunt
 
   fechaHoraEntrega: { type: Date },
   firmaUrl: { type: String },
+  evidenciaImagen: { type: String },
   motivoFallido: { type: String },
 });
 

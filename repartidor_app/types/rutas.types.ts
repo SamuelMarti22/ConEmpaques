@@ -1,7 +1,10 @@
+export type EstadoRuta = 'PENDIENTE' | 'EN_PROCESO' | 'ENTREGADA' | 'CANCELADA';
+
 export interface RutaResumen {
   id: number;
   dia: string;
   fecha: string;
+  estadoRuta: EstadoRuta | string;
   estado: string;
   cantidadPuntos: number;
   tiempoPromedio: string;
@@ -20,11 +23,13 @@ export interface DetalleParada {
   descripcionEntrega: string;
   latitud: number;
   longitud: number;
+  evidenciaImagen?: string;
 }
 
 export interface RutaGuardada {
   rutaId: number;
   fechaReparto: string;
+  estadoRuta: EstadoRuta | string;
   repartidor: {
     id: number;
     nombre: string | null;
