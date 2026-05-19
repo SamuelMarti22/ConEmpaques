@@ -93,7 +93,7 @@ const iniciar = async () => {
 
 	// Crear servidor HTTP para Socket.io
 	const server = createServer(app);
-	
+
 	// Inicializar Socket.io
 	const io = new Server(server, {
 		cors: {
@@ -108,7 +108,7 @@ const iniciar = async () => {
 	io.on("connection", (socket) => {
 		console.log(`✅ Cliente conectado: ${socket.id}`);
 		registerHandlers(io, socket);
-		
+
 		socket.on("disconnect", () => {
 			console.log(`❌ Cliente desconectado: ${socket.id}`);
 		});
@@ -133,9 +133,10 @@ const iniciar = async () => {
 	}, INTERVALO_DEPURACION_RUTAS_MS);
 
 	const puerto = Number(env.PORT ?? 3000);
-	server.listen(puerto, () => {
-		console.log(`🚀 Server running on http://localhost:${puerto}`);
-		console.log(`📡 Socket.io listening on ws://localhost:${puerto}`);
+
+	server.listen(puerto, "0.0.0.0", () => {
+		console.log(`🚀 Server running on port ${puerto}`);
+		console.log(`📡 Socket.io listening on port ${puerto}`);
 	});
 };
 
