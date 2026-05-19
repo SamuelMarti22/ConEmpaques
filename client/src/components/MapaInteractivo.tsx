@@ -6,7 +6,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { PuntoEntrega } from '../classes/PuntoEntrega';
 
 const env = import.meta.env
-const MAPBOX_TOKEN = env.MAPBOX_TOKEN as string;
+const MAPBOX_TOKEN = (env.VITE_MAPBOX_TOKEN ?? env.MAPBOX_TOKEN ?? '').trim();
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
 const coordenadasMedellin: [number, number] = [-75.5636, 6.2442];
