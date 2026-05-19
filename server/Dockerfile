@@ -6,6 +6,9 @@ COPY package*.json ./
 
 RUN npm install
 
+COPY src/databases/prisma ./prisma
+RUN npx prisma generate
+
 COPY . .
 
 RUN npm run build
@@ -13,3 +16,4 @@ RUN npm run build
 EXPOSE 3000
 
 CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+
