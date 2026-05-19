@@ -10,7 +10,7 @@ services:
   python-service:
     build: ./routing_service
     ports:
-    - "5000:5000"
+    - "8000:8000"
   backend:
     build: ./server
     ports:
