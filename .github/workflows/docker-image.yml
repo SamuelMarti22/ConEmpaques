@@ -62,6 +62,7 @@ jobs:
           file: ./client/Dockerfile
           build-args: |
             VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_MAPBOX_TOKEN=${{ secrets.VITE_MAPBOX_TOKEN }}
 
           push: true
 
