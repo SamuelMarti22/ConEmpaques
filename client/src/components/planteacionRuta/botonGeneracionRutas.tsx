@@ -1,4 +1,6 @@
 import { useState } from "react";
+const VITE_API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'http://localhost:3000';
+const API_BASE = VITE_API_URL.replace(/\/$/, '');
 import Swal from "sweetalert2";
 import type { PuntoEntregaFormateado, CapacidadRepartidor, RutaRepartidorGeoJSON } from "../../types/routing.types";
 
@@ -88,7 +90,7 @@ export default function BotonGeneracionRutas({
                 throw new Error("No hay repartidores disponibles. Intenta más tarde o verifica su disponibilidad.");
             }
 
-            const respuesta = await fetch('http://localhost:3000/api/routing/optimizar', {
+            const respuesta = await fetch(`${API_BASE}/api/routing/optimizar`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ puntosEntrega, capacidadesRepartidores })

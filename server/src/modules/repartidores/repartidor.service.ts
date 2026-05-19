@@ -1,4 +1,4 @@
-import { EstadoRuta, Role } from "../../databases/prisma/generated/prisma/enums.js";
+import { EstadoRuta, Role } from "@prisma/client";
 import { prisma } from "../../databases/prisma/lib/prisma.js";
 import { hash } from "bcryptjs";
 

@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { PuntoEntregaFormateado, RutaRepartidorGeoJSON } from "../../types/routing.types";
 
+const VITE_API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'http://localhost:3000';
+const API_BASE = VITE_API_URL.replace(/\/$/, '');
+
 export interface RutaGuardadaUI {
     rutaId: number;
     fechaReparto?: string | null;
@@ -110,7 +113,7 @@ export default function BotonGuardarRuta({obtenerPuntosActuales,rutaRepartidorGe
         const fechaRepartoPayload = formatearFechaLocal(fechaReparto);
 
         try {
-            const respuesta = await fetch('http://localhost:3000/api/rutas/guardar', {
+            const respuesta = await fetch(`${API_BASE}/api/rutas/guardar`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

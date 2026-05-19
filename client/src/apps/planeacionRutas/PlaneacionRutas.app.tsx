@@ -14,6 +14,8 @@ import ResumenRutasGuardadas from './ResumenRutasGuardadas'
 import { filtrarRutasDesdeFecha, filtrarRutasPorFecha, visualizarRutasEnMapa } from '../../components/visualizacionRutasMapa.auxiliar'
 
 import './PlaneacionRutas.css';
+const VITE_API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'http://localhost:3000';
+const API_BASE = VITE_API_URL.replace(/\/$/, '');
 
 interface RepartidorParaAsignacionResponse {
     id: number;
@@ -241,7 +243,7 @@ export default function PlaneacionRutas() {
 
     const cargarRutasGuardadas = useCallback(async (): Promise<void> => {
         try {
-            const respuesta = await fetch('http://localhost:3000/api/rutas');
+            const respuesta = await fetch(`${API_BASE}/api/rutas`);
 
             if (!respuesta.ok) {
                 throw new Error(`No se pudo consultar rutas guardadas (${respuesta.status})`);
@@ -267,7 +269,7 @@ export default function PlaneacionRutas() {
         setEliminandoRutaId(rutaId);
 
         try {
-            const respuesta = await fetch(`http://localhost:3000/api/rutas/${rutaId}`, {
+            const respuesta = await fetch(`${API_BASE}/api/rutas/${rutaId}`, {
                 method: 'DELETE',
             });
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RutaGuardadaUI } from '../../components/guardadoRuta/botonGuardarRuta.component';
 import RutaResumenCard from '../../components/rutaResumenCard/RutaResumenCard';
 import './HistorialRutas.css';
+import { URL_API_BASE } from '../estilosCompartidosRepartidores/repartidores.compartido';
 
 type HistorialRutasResponse = {
   rutasGuardadas?: RutaGuardadaUI[];
@@ -91,7 +92,7 @@ export default function HistorialRutasApp() {
     setError(null);
 
     try {
-      const respuesta = await fetch('http://localhost:3000/api/rutas');
+      const respuesta = await fetch(`${URL_API_BASE}/api/rutas`);
 
       if (!respuesta.ok) {
         throw new Error(`No se pudo consultar el historial (${respuesta.status})`);

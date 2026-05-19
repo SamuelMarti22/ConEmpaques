@@ -2,7 +2,7 @@
 import { randomUUID } from 'crypto';
 import { RutaEntregaModel } from '../../databases/mongoDB/models/rutaEntrega.model.js';
 import type { IPuntoEntrega } from '../../databases/mongoDB/schema';
-import { EstadoRuta } from '../../databases/prisma/generated/prisma/enums.js';
+import { EstadoRuta } from '@prisma/client';
 import { prisma } from "../../databases/prisma/lib/prisma.js";
 import { RutaRepartidorGeoJSON, RutaRepartidorResumen } from '../../types/routing.types';
 

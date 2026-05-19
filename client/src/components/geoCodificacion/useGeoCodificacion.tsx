@@ -1,5 +1,8 @@
 import { useCallback, useState } from 'react';
 
+const VITE_API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'http://localhost:3000';
+const API_BASE = VITE_API_URL.replace(/\/$/, '');
+
 interface ResultadoGeocodificacion {
     direccion: string;
     latitud: number;
@@ -23,7 +26,7 @@ export function useGeocodificacion() {
         setCargando(true);
         setError(null);
         try {
-            const response = await fetch('http://localhost:3000/api/geocoding/geocodificar', {
+            const response = await fetch(`${API_BASE}/api/geocoding/geocodificar`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ direccion })
@@ -45,7 +48,7 @@ export function useGeocodificacion() {
     const obtenerPredicciones = useCallback(async (input: string): Promise<Prediccion[]> => {
         if (!input.trim()) return [];
         try {
-            const response = await fetch(`http://localhost:3000/api/geocoding/predicciones?input=${encodeURIComponent(input)}`);
+            const response = await fetch(`${API_BASE}/api/geocoding/predicciones?input=${encodeURIComponent(input)}`);
             if (!response.ok) {
                 setError('No fue posible obtener sugerencias de direccion.');
                 return [];

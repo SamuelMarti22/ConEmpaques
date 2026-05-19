@@ -10,12 +10,15 @@ import {
 
 import './Entregas.app.css';
 
+const VITE_API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'http://localhost:3000';
+const API_BASE = VITE_API_URL.replace(/\/$/, '');
+
 type RutasResponse = {
     rutasGuardadas?: RutaGuardadaUI[];
 };
 
-const URL_RUTAS = 'http://localhost:3000/api/rutas';
-const URL_TRACKING_BASE = 'http://localhost:3000/api/tracking';
+const URL_RUTAS = `${API_BASE}/api/rutas`;
+const URL_TRACKING_BASE = `${API_BASE}/api/tracking`;
 const INTERVALO_ACTUALIZACION_MS = 3000;
 
 type UbicacionTracking = {

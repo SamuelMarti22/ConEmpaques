@@ -70,3 +70,5 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ---
 
 Y listo, con esto podrás correr el proyecto en tu computador local. Si tienes algún problema, no dudes en contactar a los desarrolladores iniciales.
+
+# Correr repartidor_app

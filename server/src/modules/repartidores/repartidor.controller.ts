@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { Prisma } from "../../databases/prisma/generated/prisma/client.js";
+import { Prisma } from "@prisma/client";
 import {
   RepartidorConEntregasActivasError,
   RepartidorNoEncontradoError,

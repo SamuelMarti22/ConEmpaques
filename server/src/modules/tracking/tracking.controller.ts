@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { RutaEntregaModel } from "../../databases/mongoDB/models/rutaEntrega.model.js";
-import { EstadoRuta } from "../../databases/prisma/generated/prisma/enums.js";
+import { EstadoRuta } from "@prisma/client";
 import { getSocketServer } from "../../sockets/io.gateway.js";
 import { obtenerRoom } from "../../sockets/rooms.service";
 import { trackingStore } from "../../store/storeTracking.service";
