@@ -60,6 +60,8 @@ jobs:
         with:
           context: ./client
           file: ./client/Dockerfile
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
 
           push: true
 

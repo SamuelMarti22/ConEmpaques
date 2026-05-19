@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '../', ''); // carga el .env de la raíz del repo
+  const env = loadEnv(mode, './', ''); // carga el .env de la raíz del repo
 
   return {
     plugins: [react()],
