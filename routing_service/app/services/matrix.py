@@ -28,6 +28,8 @@ class MatrixService:
     ) -> list[list[float]]:
         coordenadas = self.mapear_optimizacion_request(deposito, puntos_entrega)
         coordenadas_OSRM = self.mapear_coordenadas_OSRM(coordenadas)
+        print(f"Coordenadas OSRM para matriz de distancias: {coordenadas_OSRM}")
+        print(f"URL OSRM para matriz de distancias: {self.url_osrm}/table/v1/driving/{coordenadas_OSRM}?annotations=distance")
 
         url_osrm = f"{self.url_osrm}/table/v1/driving/{coordenadas_OSRM}?annotations=distance"
 
