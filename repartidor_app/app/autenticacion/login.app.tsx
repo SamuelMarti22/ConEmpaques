@@ -17,27 +17,27 @@ export default function Login() {
     try {
       setIsSubmitting(true);
       // const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
-      const apiBaseUrl = "http://32.196.136.221:3000";
-      const res = await fetch(`${apiBaseUrl}/api/auth/repartidor`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      // const apiBaseUrl = "http://32.196.136.221:3000";
+      // const res = await fetch(`${apiBaseUrl}/api/auth/repartidor`, {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     email,
+      //     password,
+      //   }),
+      // });
 
-      const data = await res.json();
-      console.log(data);
+      // const data = await res.json();
+      // console.log(data);
 
-      // Guardar el ID del repartidor en AsyncStorage
-      if (data?.id || data?.repartidor?.id) {
-        const idRepartidor = data.id || data.repartidor.id;
-        await AsyncStorage.setItem("idRepartidor", String(idRepartidor));
-        console.log("✅ ID del repartidor guardado:", idRepartidor);
-      }
+      // // Guardar el ID del repartidor en AsyncStorage
+      // if (data?.id || data?.repartidor?.id) {
+      //   const idRepartidor = data.id || data.repartidor.id;
+      //   await AsyncStorage.setItem("idRepartidor", String(idRepartidor));
+      //   console.log("✅ ID del repartidor guardado:", idRepartidor);
+      // }
 
       router.push("../pedidos/Pedidos.app");
     } catch (error) {

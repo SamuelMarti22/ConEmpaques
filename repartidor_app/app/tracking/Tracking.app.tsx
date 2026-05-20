@@ -22,6 +22,17 @@ import Constants from "expo-constants";
 
 const C = COLORS;
 const ESTADOS_RUTA_FINALIZADA = new Set(['ENTREGADA', 'CANCELADA']);
+const DEFAULT_API_BASE_URL = 'http://32.196.136.221:3000';
+
+const getApiBaseUrl = (): string => {
+  const apiUrlFromConfig =
+    Constants.expoConfig?.extra?.API_URL || process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_BASE_URL;
+
+  return apiUrlFromConfig
+    .replace('localhost', '32.196.136.221')
+    .replace('127.0.0.1', '32.196.136.221')
+    .replace(/\/$/, '');
+};
 
 const ESTADO_CFG = {
   EN_BODEGA: { bg: '#e8f4f8', text: '#1F6F5F' },
@@ -100,8 +111,7 @@ const ParadasListScreen = ({
   trackingActivo?: boolean,
   rutaId?: string | number,
 }) => {
-  // const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
-  const apiBaseUrl = "http://32.196.136.221:3000";
+  const apiBaseUrl = getApiBaseUrl();
   const [imagenesEntrega, setImagenesEntrega] = useState<Record<number, ImagenEntregaSeleccionada>>({});
 
   const subirImagenEvidencia = async (uri: string) => {
@@ -167,7 +177,7 @@ const ParadasListScreen = ({
         [puntoId]: evidenciaSeleccionada,
       }));
     } catch (error) {
-      console.error('❌ Error al seleccionar imagen:', error);
+    
       Alert.alert('Error', 'No se pudo seleccionar la imagen');
     }
   };
@@ -536,7 +546,7 @@ export default function TrackingScreen() {
   const [room, setRoom] = useState<string | null>(null);
   const [ultimoHito, setUltimoHito] = useState<string | null>(null);
 
-  const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+  const apiBaseUrl = getApiBaseUrl();
 
   const cargarDetalleRuta = useCallback(async () => {
     try {

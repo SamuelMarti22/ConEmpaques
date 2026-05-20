@@ -10,13 +10,25 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../../components/pedidos/Header.component';
 import RutaInfoCard from '../../components/pedidos/RutaInfoCard.component';
 import { styles } from './Pedidos.style';
 import { COLORS } from '../../assets/styles/Colores.style';
 import { RutaResumen } from '../../types/rutas.types';
 import Constants from "expo-constants";
+
+const DEFAULT_API_BASE_URL = 'http://32.196.136.221:3000';
+
+const getApiBaseUrl = (): string => {
+  const apiUrlFromConfig =
+    Constants.expoConfig?.extra?.API_URL || process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_BASE_URL;
+
+  // Evita usar localhost/127.0.0.1 en dispositivos fisicos.
+  return apiUrlFromConfig
+    .replace('localhost', '32.196.136.221')
+    .replace('127.0.0.1', '32.196.136.221')
+    .replace(/\/$/, '');
+};
 
 export default function PedidosScreen() {
   const router = useRouter();
@@ -30,7 +42,7 @@ export default function PedidosScreen() {
   useEffect(() => {
     const cargarIdRepartidor = async () => {
       try {
-        const id = await AsyncStorage.getItem("idRepartidor");
+        const id = "3";
         if (id) {
           setIdRepartidor(parseInt(id, 10));
           console.log("✅ ID del repartidor cargado:", id);
@@ -39,7 +51,7 @@ export default function PedidosScreen() {
         }
       } catch (err) {
         setError("Error al cargar el ID del repartidor");
-        console.error(err);
+        // console.error(err);
       }
     };
     cargarIdRepartidor();
@@ -54,14 +66,12 @@ export default function PedidosScreen() {
     try {
       isRefresh ? setRefreshing(true) : setLoading(true);
       setError(null);
-      // const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
-      const apiBaseUrl = "http://32.196.136.221:3000";
+      const apiBaseUrl = getApiBaseUrl();
       console.log('📡 Consultando rutas en url:', apiBaseUrl);
 
-      const response = await fetch(
-        `${apiBaseUrl}/api/rutas/repartidor/${idRepartidor}`
-      );
+      const response = await fetch(`${apiBaseUrl}/api/rutas/repartidor/${idRepartidor}`);
       const data = await response.json();
+      console.log('📡 Respuesta del servidor:', `${apiBaseUrl}/api/rutas/repartidor/${idRepartidor}`);
 
       if (!response.ok) {
         throw new Error(data?.message ?? 'Error al consultar rutas');

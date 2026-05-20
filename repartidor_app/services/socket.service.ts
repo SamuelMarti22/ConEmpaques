@@ -1,7 +1,12 @@
 import { io, Socket } from 'socket.io-client';
 import Constants from "expo-constants";
 
-const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+const DEFAULT_API_BASE_URL = 'http://32.196.136.221:3000';
+
+const apiBaseUrl = (Constants.expoConfig?.extra?.API_URL || process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_BASE_URL)
+  .replace('localhost', '32.196.136.221')
+  .replace('127.0.0.1', '32.196.136.221')
+  .replace(/\/$/, '');
 
 const SOCKET_URL = `${apiBaseUrl}`;
 

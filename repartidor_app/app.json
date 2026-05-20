@@ -45,7 +45,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "API_URL": "http://localhost:3000"
+      "API_URL": "http://32.196.136.221:3000"
     }
   }
 }
