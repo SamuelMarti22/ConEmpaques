@@ -215,7 +215,7 @@ export default function ModalNuevoPunto({ isOpen, onClose, onConfirm, modo = 'cr
 
                     <div className="modal-seccion">
                         <label className="modal-label" htmlFor="modal-peso">
-                            <i className="bi bi-speedometer2" aria-hidden="true"></i> Peso (kg)
+                            <i className="bi bi-speedometer2" aria-hidden="true"></i> Volumen (cm³)
                         </label>
                         <input
                             id="modal-peso"
