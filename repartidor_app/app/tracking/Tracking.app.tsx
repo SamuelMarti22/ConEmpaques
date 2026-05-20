@@ -100,7 +100,8 @@ const ParadasListScreen = ({
   trackingActivo?: boolean,
   rutaId?: string | number,
 }) => {
-  const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+  // const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+  const apiBaseUrl = "http://32.196.136.221:3000";
   const [imagenesEntrega, setImagenesEntrega] = useState<Record<number, ImagenEntregaSeleccionada>>({});
 
   const subirImagenEvidencia = async (uri: string) => {

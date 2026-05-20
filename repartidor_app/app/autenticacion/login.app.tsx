@@ -16,7 +16,8 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       setIsSubmitting(true);
-      const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+      // const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+      const apiBaseUrl = "http://32.196.136.221:3000";
       const res = await fetch(`${apiBaseUrl}/api/auth/repartidor`, {
         method: "POST",
         headers: {

@@ -54,7 +54,8 @@ export default function PedidosScreen() {
     try {
       isRefresh ? setRefreshing(true) : setLoading(true);
       setError(null);
-      const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+      // const apiBaseUrl = Constants.expoConfig?.extra?.API_URL || "http://localhost:3000";
+      const apiBaseUrl = "http://32.196.136.221:3000";
       console.log('📡 Consultando rutas en url:', apiBaseUrl);
 
       const response = await fetch(
