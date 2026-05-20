@@ -26,7 +26,7 @@ class GeometryRouteService:
         )
         coordenadas_OSRM = self.mapear_coordenadas_OSRM(coordenadas_entrega)
 
-        url_osrm = f"{self.osrm_url}/route/v1/driving/{coordenadas_OSRM}?geometries=geojson"
+        url_osrm = f"http://router.project-osrm.org/route/v1/driving/{coordenadas_OSRM}?geometries=geojson"
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.get(url_osrm)

@@ -7,7 +7,7 @@ from app.models.schema import PuntoEntrega
 
 class MatrixService:
     def __init__(self):
-        self.url_osrm = os.getenv("OSRM_URL")
+        self.url_osrm = os.getenv("OSRM_URL") or "http://router.project-osrm.org"
 
     def mapear_optimizacion_request(
         self, deposito: dict[str, float], puntos_entrega: list[PuntoEntrega]
@@ -31,7 +31,7 @@ class MatrixService:
         print(f"Coordenadas OSRM para matriz de distancias: {coordenadas_OSRM}")
         print(f"URL OSRM para matriz de distancias: {self.url_osrm}/table/v1/driving/{coordenadas_OSRM}?annotations=distance")
 
-        url_osrm = f"{self.url_osrm}/table/v1/driving/{coordenadas_OSRM}?annotations=distance"
+        url_osrm = f"http://router.project-osrm.org/table/v1/driving/{coordenadas_OSRM}?annotations=distance"
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.get(url_osrm)
@@ -46,7 +46,7 @@ class MatrixService:
         coordenadas = self.mapear_optimizacion_request(deposito, puntos_entrega)
         coordenadas_OSRM = self.mapear_coordenadas_OSRM(coordenadas)
 
-        url_osrm = f"{self.url_osrm}/table/v1/driving/{coordenadas_OSRM}"
+        url_osrm = f"http://router.project-osrm.org/table/v1/driving/{coordenadas_OSRM}"
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.get(url_osrm)
